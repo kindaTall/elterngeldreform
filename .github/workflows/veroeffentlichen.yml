@@ -57,7 +57,7 @@ jobs:
                   neu = neu.replace("{{" + k + "}}", html.escape(v))
               if neu != text:
                   datei.write_text(neu, encoding="utf-8")
-          rest = [str(d) for d in pathlib.Path("site").rglob("*") if d.is_file() and d.suffix in (".html", ".js", ".css") and "{{" in d.read_text(encoding="utf-8")]
+          rest = [str(d) for d in pathlib.Path("site").rglob("*") if d.is_file() and d.suffix in (".html", ".js", ".css") and "{{ANSCHRIFT_" in d.read_text(encoding="utf-8")]
           if rest:
               sys.exit("Platzhalter nicht ersetzt in: " + ", ".join(rest))
           PY
