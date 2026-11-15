@@ -109,28 +109,56 @@ function differenzFarbe(d, skala = 5000) {
   return `rgb(${von.map((v, i) => Math.round(v + (nach[i] - v) * k)).join(',')})`;
 }
 
+/** Raster der Karte: Felder im Abstand von `schritt` € Netto von 0 bis `max`, je Achse `n` Felder. */
+export const RASTER = Object.freeze({ schritt: 250, max: 5000, n: 5000 / 250 + 1 });
+
 /**
- * Karte der Differenz über Netto A (x) und Netto B (y) für einen festen Plan.
- * @param {{monateA:number, monateB:number, markierung?:{nettoA:number,nettoB:number}, optionen?:object}} p
+ * Karte der Differenz über Netto A (x) und Netto B (y) für einen festen Plan. Je Feld gerechnet an
+ * genau seinem Punkt (Netto i·250 / j·250). optionen.mutterschutz: Monate Mutterschutz der Mutter
+ * mit Einkommen (Standard 2), der Rest geht an vergleiche().
+ * Rückgabe: Spanne der Differenzen für die Legende, `felder[i][j]` ({nettoA, nettoB, differenz}, die
+ * Differenz in ganzen Euro wie im Rechner), `feldBei(x, y)` (Bildschirmpunkt → {i, j} oder null) und
+ * `markiere(feld | null)` für den Rahmen des gewählten Felds.
+ * @param {{monateA:number, monateB:number, markierung?:{nettoA:number,nettoB:number}, wahl?:{i:number,j:number}, optionen?:object}} p
  */
-export function heatmap(ziel, { monateA, monateB, markierung, optionen = {} }) {
-  const schritt = 250, max = 5000, n = max / schritt + 1;
+export function heatmap(ziel, { monateA, monateB, markierung, wahl, optionen = {} }) {
+  const { schritt, max, n } = RASTER;
   const W = breite(ziel), L = 64, R = 2, T = 4, B = 46;
   const H = Math.round(W - L - R) + T + B;
   const zw = (W - L - R) / n, zh = (H - T - B) / n;
   const s = svg(W, H, `Änderung der Elterngeld-Summe nach Netto beider Eltern bei ${monateA} + ${monateB} Monaten`);
   let minD = 0, maxD = 0;
+  const felder = [];
   for (let i = 0; i < n; i++) {
+    felder.push([]);
     for (let j = 0; j < n; j++) {
       const nettoA = i * schritt, nettoB = j * schritt;
-      const v = vergleiche({ ...optionen, nettoA, nettoB, monateA, monateB, mutterschutzMonate: nettoA > 0 ? 2 : 0 });
+      const v = vergleiche({ ...optionen, nettoA, nettoB, monateA, monateB, mutterschutzMonate: nettoA > 0 ? (optionen.mutterschutz ?? 2) : 0 });
       minD = Math.min(minD, v.differenz);
       maxD = Math.max(maxD, v.differenz);
-      const r = el('rect', { x: L + i * zw, y: T + (n - 1 - j) * zh, width: zw - 1, height: zh - 1, fill: differenzFarbe(v.differenz) });
-      r.append(el('title', {}, `Mutter ${euro(nettoA)}, Partner:in ${euro(nettoB)}: ${euroDiff(v.differenz)}`));
-      s.append(r);
+      felder[i].push({ nettoA, nettoB, differenz: ganzeDifferenz(v).differenz });
+      s.append(el('rect', { x: L + i * zw, y: T + (n - 1 - j) * zh, width: zw - 1, height: zh - 1, fill: differenzFarbe(v.differenz) }));
     }
   }
+  // Rahmen des gewählten Felds (eckig, dünn; der Kreis der eigenen Lage bleibt rund)
+  const rahmen = el('rect', { class: 'wahl', fill: 'none', stroke: TINTE, 'stroke-width': 1.5, 'pointer-events': 'none', visibility: 'hidden' });
+  const markiere = (f) => {
+    rahmen.setAttribute('visibility', f ? 'visible' : 'hidden');
+    if (!f) return;
+    rahmen.setAttribute('x', L + f.i * zw + 0.75);
+    rahmen.setAttribute('y', T + (n - 1 - f.j) * zh + 0.75);
+    rahmen.setAttribute('width', zw - 2.5);
+    rahmen.setAttribute('height', zh - 2.5);
+  };
+  markiere(wahl);
+  s.append(rahmen);
+  const feldBei = (clientX, clientY) => {
+    const b = s.getBoundingClientRect();
+    if (!b.width) return null;
+    const i = Math.floor(((clientX - b.left) * (W / b.width) - L) / zw);
+    const j = n - 1 - Math.floor(((clientY - b.top) * (H / b.height) - T) / zh);
+    return i >= 0 && i < n && j >= 0 && j < n ? { i, j } : null;
+  };
   for (let k = 0; k <= max; k += 1000) {
     const i = k / schritt;
     s.append(el('text', { x: L + i * zw + zw / 2, y: H - B + 16, 'text-anchor': 'middle' }, zahl.format(k)));
@@ -147,7 +175,7 @@ export function heatmap(ziel, { monateA, monateB, markierung, optionen = {} }) {
     s.append(el('text', { x: links ? cx - 13 : cx + 13, y: cy + 4, 'text-anchor': links ? 'end' : 'start', style: `fill:${TINTE};font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:3px` }, 'ihr'));
   }
   ziel.replaceChildren(s);
-  return { min: minD, max: maxD };
+  return { min: minD, max: maxD, felder, feldBei, markiere };
 }
 
 export function heatmapLegende(ziel, { min, max }) {
