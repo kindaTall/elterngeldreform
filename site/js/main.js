@@ -529,7 +529,7 @@ function teilenVerdrahten() {
       await navigator.clipboard.writeText(teilUrl());
       status('Link kopiert.');
     } catch {
-      status('Kopieren nicht möglich. Der Link steht im Text darüber.');
+      status('Kopieren nicht möglich. Der Link steht im Zitattext.');
     }
   });
   $('t-kopieren').addEventListener('click', async () => {
@@ -757,6 +757,7 @@ const sprungziel = (hash) => (hash.includes('=') ? '' : hash.slice(1));
 const startziel = sprungziel(location.hash);
 // Geteilter Link: Zustand in der Adresse, also eigene Zahlen; die Seite springt gleich zum Ergebnis
 const geteilt = location.hash.includes('=');
+if (geteilt) history.scrollRestoration = 'manual'; // sonst setzt der Browser beim Neuladen die alte Position darüber
 eigeneZahlen = geteilt;
 titelSetzen();
 ausUrl();
