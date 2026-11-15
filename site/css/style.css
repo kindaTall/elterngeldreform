@@ -187,9 +187,10 @@ h3 { font-weight: 650; font-size: 16px; line-height: 1.35; margin: 0 0 8px; }
    (Zitat in 2–3 Zeilen, darunter klein und grau der Absender). Passt die Reihe nicht, scrollt sie waagerecht
    (dünne Leiste, am Handy wischbar); sie bewegt sich nie von selbst. */
 /* Das Etikett steht als kleine Zeile über der Reihe, linksbündig mit dem Seiteninhalt; die Zitate haben darunter die volle Breite. */
-.stimmenband { border-top: 1px solid var(--linie); background: var(--grund); display: flex; flex-direction: column; align-items: stretch; min-width: 0; }
-.stimmen-etikett { flex: none; align-self: flex-start; font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--tinte-2); margin: 10px 0 0 max(20px, calc((100vw - var(--breit)) / 2 + 20px)); white-space: nowrap; text-decoration-color: var(--linie-2); }
-.stimmen-fenster { flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: var(--linie-2) transparent; padding: 8px 0 8px max(20px, calc((100vw - var(--breit)) / 2 + 20px)); }
+/* Das Etikett sitzt mittig auf der Trennlinie über der Reihe (weißer Grund unterbricht die Linie) */
+.stimmenband { position: relative; border-top: 1px solid var(--linie); background: var(--grund); display: flex; flex-direction: column; align-items: stretch; min-width: 0; }
+.stimmen-etikett { position: absolute; z-index: 2; top: 0; left: 50%; transform: translate(-50%, -50%); padding: 0 14px; background: var(--grund); font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--tinte-2); white-space: nowrap; text-decoration-color: var(--linie-2); }
+.stimmen-fenster { flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: var(--linie-2) transparent; padding: 22px 0 10px max(20px, calc((100vw - var(--breit)) / 2 + 20px)); }
 .stimmen-fenster::-webkit-scrollbar { height: 6px; }
 .stimmen-fenster::-webkit-scrollbar-thumb { background: var(--linie-2); border-radius: 3px; }
 .stimmen-spur { width: max-content; }
@@ -202,7 +203,6 @@ h3 { font-weight: 650; font-size: 16px; line-height: 1.35; margin: 0 0 8px; }
 @media (max-width: 899px) { .stimmenband { display: none; } }
 @media (max-width: 899px), (max-height: 599px) {
   .stimmenband { padding-top: 14px; margin-top: 8px; }
-  .stimmen-etikett { margin: 0 20px; }
   .stimmen-fenster { padding: 12px 20px 12px; scroll-snap-type: x proximity; scroll-padding-inline: 20px; }
   .stimmen-gruppe { gap: 28px; }
   .stimmen-gruppe li { width: 240px; scroll-snap-align: start; }
