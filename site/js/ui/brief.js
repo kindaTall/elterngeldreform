@@ -8,7 +8,7 @@
  * Die Seite versendet nichts: Der Text wird kopiert, gedruckt/als PDF gespeichert, als Datei
  * geladen oder per mailto: an das eigene E-Mail-Programm übergeben.
  */
-import { euro } from './diagramme.js';
+import { euro, ganzeDifferenz } from './diagramme.js';
 
 /** Adressaten. E-Mail nur, wo die Adresse öffentlich und funktionsbezogen ist. */
 export const ADRESSATEN = [
@@ -65,8 +65,8 @@ function aufteilung(a, b) {
  * @param {object} p
  * @param {object} p.eingabe   Eingabe des Rechners (nettoA, nettoB, alleinerziehend)
  * @param {object} p.vergleich Ergebnis von vergleiche(): dieselbe Aufteilung nach geltendem Recht und
- *                             nach dem Entwurf ({ alt, neu, differenz, differenzProzent, entfalleneMonate })
- * @param {object} [p.voll]    wird nicht mehr benutzt (früher: Absatz zum Umplanen auf 14 Monate)
+ *                             nach dem Entwurf ({ alt, neu, entfalleneMonate }); Differenz und Prozent
+ *                             bildet der Brief aus den gerundeten Summen (ganzeDifferenz)
  * @param {string} p.an        id aus ADRESSATEN
  * @param {string} [p.mdbName] Name der/des Abgeordneten für Anschrift und Anrede
  * @param {string} [p.name]    Absender
@@ -78,7 +78,7 @@ function aufteilung(a, b) {
  */
 export function brief({ eingabe, vergleich, an, mdbName = '', name = '', ort = '', situation = 'erwartet', forderungen = [], datum = new Date() }) {
   const adressat = ADRESSATEN.find((a) => a.id === an) || ADRESSATEN[0];
-  const { alt, neu, differenz, differenzProzent, entfalleneMonate } = vergleich;
+  const { alt, neu, entfalleneMonate } = vergleich;
   const allein = !!eingabe.alleinerziehend;
   const fremd = situation === 'solidarisch';
   const tag = datum.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -95,8 +95,8 @@ export function brief({ eingabe, vergleich, an, mdbName = '', name = '', ort = '
     plan = `${fremd ? 'Die Nettoeinkommen vor der Geburt betragen in meinem Beispiel' : 'Unsere Nettoeinkommen vor der Geburt betragen'} ${euro(eingabe.nettoA)} und ${euro(eingabe.nettoB)} im Monat. ${aufteilung(alt.plan.monateA, alt.plan.monateB)}`;
   }
 
-  // Vorzeichen am gerundeten Betrag, damit nie "0 € weniger" im Brief steht
-  const d = Math.round(differenz);
+  // Differenz aus den gerundeten Summen: passt zu den beiden Beträgen im Satz, und es steht nie "0 € weniger" im Brief
+  const { differenz: d, prozent: differenzProzent } = ganzeDifferenz(vergleich);
   const bekaeme = fremd ? 'bekäme die Familie' : allein ? 'bekäme ich' : 'bekämen wir';
   let ergebnis;
   if (d < 0) {

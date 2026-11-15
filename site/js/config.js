@@ -8,6 +8,8 @@
  *  - endpunkt: optional, hat Vorrang vor email. URL, die ein POST mit JSON
  *              {art, nachricht, kontakt, url} annimmt und mit 2xx antwortet. Schlägt der Aufruf
  *              fehl, fällt das Formular auf email zurück. Bei Nutzung den Abschnitt
- *              „Fehler melden“ in datenschutz.html anpassen (dort ist der E-Mail-Weg beschrieben).
+ *              „Fehler melden“ in datenschutz.html anpassen (dort ist der E-Mail-Weg beschrieben)
+ *              und `connect-src` in der Content-Security-Policy um den Host des Endpunkts
+ *              erweitern (Meta-Tag in index.html und Header in .htaccess, sonst blockt der Browser).
  */
-export const RUECKMELDUNG = { email: '', endpunkt: '' };
+export const RUECKMELDUNG = { email: 'info@elterngeld2027.de', endpunkt: '' };

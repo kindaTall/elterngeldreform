@@ -1,0 +1,7 @@
+# Deploy-Weg dieses Repos: der einzige Weg, auf dem die Seite auf den Server kommt.
+# Ablauf und Schutzmaßnahmen: Kopf und Kommentare in .github/workflows/veroeffentlichen.yml
+kind: ci
+how: "GitHub Actions veroeffentlichen.yml, von Hand gestartet: gh workflow run veroeffentlichen.yml"
+targets:
+  - {host: hetzner-webhosting, path: public_html}
+hotfix_contact: info@elterngeld2027.de

@@ -38,3 +38,26 @@ test('Minijob ohne Abzüge, kein Einkommen → 0', () => {
   assert.equal(elterngeldNetto(540), 437.5);
   assert.equal(elterngeldNetto(0), 0);
 });
+
+test('Minijob-Grenze 2026: bis 603 € nur der Pauschbetrag (102,50 €), ab 604 € Sozialabgaben', () => {
+  assert.equal(elterngeldNetto(603), 603 - 102.5);
+  // 604 €: Bemessung im Übergangsbereich 403,16 €, davon 21 % = 84,66 €; Lohnsteuer fällt keine an
+  assert.equal(elterngeldNetto(604), 416.84);
+  assert.ok(elterngeldNetto(604) < elterngeldNetto(603));
+});
+
+test('Übergangsbereich: 1.000 € brutto, Abgaben auf die geminderte Bemessung (856,13 €)', () => {
+  // 0,6667 × 603 + (2000/1397 − 603/1397 × 0,6667) × 397 = 856,13 €; 21 % = 179,79 €; keine Lohnsteuer
+  assert.equal(elterngeldNetto(1000), 717.71);
+  // am Ende des Übergangsbereichs schließt die volle Bemessung ohne Sprung an
+  assert.ok(elterngeldNetto(2001) - elterngeldNetto(2000) < 1);
+});
+
+test('Steuerklassen bei 3.000 € brutto: 2 um den Entlastungsbetrag, 3 um den Splittingtarif günstiger', () => {
+  const netto = (steuerklasse) => elterngeldNetto(3000, { steuerklasse });
+  assert.equal(netto(2), 2064.09);
+  assert.equal(netto(3), 2229.17);
+  assert.equal(netto(1), netto(4));
+  assert.ok(netto(5) < netto(1) && netto(1) < netto(2) && netto(2) < netto(3));
+  assert.equal(netto(6), netto(4)); // § 2e Abs. 3 BEEG
+});

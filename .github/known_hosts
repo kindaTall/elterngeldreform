@@ -1,0 +1,9 @@
+# Angehefteter Host-Schlüssel des Webhosting-Servers für .github/workflows/veroeffentlichen.yml.
+# Der Eintrag steht unter dem Alias "elterngeld-webhosting" (ssh -o HostKeyAlias=...), damit der
+# Servername nicht im Repo steht. Neu ermitteln, falls Hetzner den Schlüssel tauscht:
+#   ssh-keyscan -t ed25519,rsa <SFTP_HOST> | sed 's/^[^ ]* /elterngeld-webhosting /'
+# und die Fingerabdrücke (ssh-keygen -lf .github/known_hosts) mit einer zweiten Quelle vergleichen.
+# Stand 15.11.2026: ED25519 SHA256:g21oehpv2PpVMH6EzWEvuUp2zwWR8k/Rolfaccggb7U
+#                   RSA     SHA256:coJSk1XoHWRj3FLnY1Q6GWvmWy9sSyVMakOE/DlJsdA
+elterngeld-webhosting ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC2akme2/Hb73e9RXUb5L6lE9dg/7FUJrk4hAtK57hVl
+elterngeld-webhosting ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC5rUbzhGoVlaOeS2r19W3SBMYG9jyK5o2sLC6TLxvJihqC5gC3O4cwgWvTfyKYKvZaJsxZmYcNja+HsY0n1+vcQF0hSBIRp4Bxk3Zs8Rt/WDQ7EZNJKI0AH+LA6yFyWmYkdXSwUvYZA+ha7H3SBOkW8F4VomIJFvb5I3QY8jvUiqAUrnkxnaAUMnMZvEl7VDvCovQ/TQUNP+G1R52k5lDpsbKfID4GlESejjm1OB4sEzSioYGK3XtR9+lY6hd+U3b+b8SbNdLx7K5icAbWJL9i1Db86YiXsy3DTBofOQLI/865OEXCKjYssUnNJ2zvoUMfVJc645F8jxFqtJMkjWAaK3pg2LYdqSZ7OsVoEo5oPiwtvSbeRfPcXaA3Eo3Gny42ZrqDmlYihn4QQ1e0Ea5DGw0iAEiY/OBVvia9m22HAYP0rxh3y/nRDOdlxLIuQLh/4S/vjefRgwQGK8lww/IgqhVfsar3jtmVqHA1x/jTm1xuNuV907N48INOcXt6NJM=

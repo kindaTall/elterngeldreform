@@ -1,0 +1,125 @@
+# Lädt den Inhalt von site/ per SFTP zum Webhosting (Hetzner Webhosting S, nur SFTP).
+# Auslöser vorerst nur von Hand (gh workflow run veroeffentlichen.yml), damit kein Push ungewollt
+# live geht. Später erweiterbar um:  push: { branches: [main] }
+#
+# Zugang: Repository-Variablen SFTP_HOST und SFTP_USER, Secret SFTP_PASSWORD.
+# Variablen stehen im Klartext im Kopf des Schritts im (öffentlichen) Actions-Log. Wer Server und
+# Benutzer auch dort verbergen will, legt sie unter denselben Namen als Secrets an; die gehen vor.
+name: Veröffentlichen
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency: veroeffentlichen
+
+jobs:
+  veroeffentlichen:
+    name: Tests und Upload
+    if: github.ref == 'refs/heads/main'
+    # Feste Runner-Version statt ubuntu-latest: lftp spricht mit ssh über dessen Textausgabe,
+    # ein Versionssprung von lftp oder OpenSSH soll nicht unbemerkt in den Upload wandern.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Node 22 einrichten
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Abhängigkeiten installieren
+        run: npm ci --ignore-scripts
+      - name: Tests ausführen
+        run: npm test
+      # Die Anschrift des Betreibers steht nicht im öffentlichen Repo. Impressum und
+      # Datenschutzerklärung enthalten dort Platzhalter, die erst hier ersetzt werden.
+      - name: Anschrift in Impressum und Datenschutz einsetzen
+        env:
+          ANSCHRIFT_STRASSE: ${{ secrets.IMPRESSUM_STRASSE }}
+          ANSCHRIFT_ORT: ${{ secrets.IMPRESSUM_ORT }}
+        run: |
+          python3 - <<'PY'
+          import html, os, pathlib, sys
+          werte = {k: os.environ.get(k, "").strip() for k in ("ANSCHRIFT_STRASSE", "ANSCHRIFT_ORT")}
+          fehlend = [k for k, v in werte.items() if not v]
+          if fehlend:
+              sys.exit("Secrets fehlen: " + ", ".join("IMPRESSUM_" + k.split("_", 1)[1] for k in fehlend))
+          for datei in pathlib.Path("site").rglob("*.html"):
+              text = datei.read_text(encoding="utf-8")
+              neu = text
+              for k, v in werte.items():
+                  neu = neu.replace("{{" + k + "}}", html.escape(v))
+              if neu != text:
+                  datei.write_text(neu, encoding="utf-8")
+          rest = [str(d) for d in pathlib.Path("site").rglob("*") if d.is_file() and d.suffix in (".html", ".js", ".css") and "{{" in d.read_text(encoding="utf-8")]
+          if rest:
+              sys.exit("Platzhalter nicht ersetzt in: " + ", ".join(rest))
+          PY
+      - name: lftp installieren
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lftp
+          lftp --version | head -n 1
+      - name: Seite per SFTP hochladen
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST || vars.SFTP_HOST }}
+          SFTP_USER: ${{ secrets.SFTP_USER || vars.SFTP_USER }}
+          # Öffentliche Dateien liegen bei Hetzner im Verzeichnis public_html im Heimatverzeichnis
+          # des FTP-Hauptbenutzers (docs.hetzner.com/de/konsoleh/account-management/access-details/login-data/).
+          # Ohne Schrägstrich am Ende: sonst hängt lftp "site" an und legt public_html/site an.
+          SFTP_ZIEL: public_html
+          # lftp liest das Passwort aus LFTP_PASSWORD (open --env-password); es steht damit weder
+          # in der Kommandozeile noch in der Skriptdatei.
+          LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+        run: |
+          : "${SFTP_HOST:?Repository-Variable SFTP_HOST fehlt}"
+          : "${SFTP_USER:?Repository-Variable SFTP_USER fehlt}"
+          : "${LFTP_PASSWORD:?Repository-Secret SFTP_PASSWORD fehlt}"
+          # Server und Benutzer in der weiteren Ausgabe (lftp-Meldungen) unkenntlich machen.
+          echo "::add-mask::$SFTP_HOST"
+          echo "::add-mask::$SFTP_USER"
+
+          # Host-Schlüssel fest angeheftet: ssh vertraut nur .github/known_hosts (Eintrag unter dem
+          # Alias, damit der Servername nicht im Repo steht) und bricht bei jedem anderen Schlüssel ab.
+          # Anmeldung nur per Passwort; lftp beantwortet die Passwortfrage von ssh.
+          # lftp hängt "-s -l <Benutzer> -p <Port> <Server> sftp" an und startet das Ganze über
+          # die Shell, deshalb keine Leerzeichen oder Shell-Sonderzeichen in den Pfaden.
+          ssh_befehl="ssh -a -x"
+          ssh_befehl+=" -o UserKnownHostsFile=$GITHUB_WORKSPACE/.github/known_hosts"
+          ssh_befehl+=" -o GlobalKnownHostsFile=/dev/null"
+          ssh_befehl+=" -o StrictHostKeyChecking=yes"
+          ssh_befehl+=" -o HostKeyAlias=elterngeld-webhosting"
+          ssh_befehl+=" -o UpdateHostKeys=no"
+          ssh_befehl+=" -o PubkeyAuthentication=no"
+          ssh_befehl+=" -o PreferredAuthentications=password"
+
+          # mirror --reverse --delete: Zielordner wird zum Abbild von site/, alles andere dort wird
+          # gelöscht (auch eine Platzhalterseite des Hosters; gewollt, das Repo ist die Quelle).
+          # Vom Abgleich ausgenommen (weder hochgeladen noch gelöscht):
+          #   .DS_Store       Finder-Reste
+          #   .well-known/    Dateien zur Domain-Validierung für das Zertifikat, die der Hoster
+          #                   dort ablegen kann (ACME acme-challenge, pki-validation/fileauth.txt)
+          # Zugriffsprotokolle und Statistik führt Hetzner außerhalb von public_html (Abruf über
+          # konsoleH); dafür ist hier nichts auszunehmen.
+          # Muster ohne Backslash und $, weil lftp und die Shell beides selbst auswerten.
+          cat > "$RUNNER_TEMP/lftp-skript" <<EOF
+          set cmd:fail-exit yes
+          set net:max-retries 2
+          set net:timeout 30
+          set net:reconnect-interval-base 5
+          set sftp:auto-confirm no
+          set sftp:connect-program "$ssh_befehl"
+          open --user "$SFTP_USER" --env-password -p 22 "sftp://$SFTP_HOST"
+          mirror --reverse --delete --verbose --exclude-glob .DS_Store --exclude "^[.]well-known/" site "$SFTP_ZIEL"
+          EOF
+          lftp -f "$RUNNER_TEMP/lftp-skript"
+      - name: Erreichbarkeit prüfen
+        # Darf fehlschlagen, solange Domain und Zertifikat noch nicht aktiv sind.
+        continue-on-error: true
+        run: curl -sI --max-time 20 https://elterngeld2027.de/ | head -n 1

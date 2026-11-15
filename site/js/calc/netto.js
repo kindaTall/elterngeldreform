@@ -15,7 +15,7 @@
  * abgerufen 15.11.2026): test/netto.test.js
  * Zusatzbeitrag Krankenversicherung: Durchschnittssatz des Jahres (wie im amtlichen Rechner).
  */
-export const PAP = {
+const PAP = {
   2026: { GFB:12348, Z1:17799, Z2:69878, Z3:277825, a:914.51, b:173.10, c:1034.87, d:11135.63, e:19470.38,
           W1:14071, W2:34939, W3:222260, SOLZFREI:20350, KFB:9756, EFA:4260, ANP:1230, SAP:36,
           BBGRV:101400, BBGKV:69750, RV:0.093, AV:0.013, PV:0.018, KVZ_AVG:2.9, MINDEST_VSP:false },

@@ -7,8 +7,6 @@
  *    Monate, die nicht mehr zulässig sind, entfallen ersatzlos (so auch § 4 Abs. 3–4 BEEG-E).
  *  - vergleicheVoll(): Die Familie schöpft unter beiden Regelwerken alle Monate aus und plant
  *    dafür um (ALT 12 + 2, NEU 10 + 4).
- * Beide nehmen wahlweise eine andere Vergleichsbasis als ALT (`{ alt }`), etwa das geltende
- * Recht in Kaufkraft von 2007; die Monatsregeln bleiben dabei die von ALT.
  *
  * Elternteil A = Mutter/gebärender Elternteil, B = Partner:in.
  * Mutterschutz: Monate mit Mutterschaftsleistungen gelten als Basiselterngeld-Monate von A
@@ -135,10 +133,9 @@ function gegenueber(alt, neu) {
 /**
  * ALT gegen NEU für denselben Wunschplan. differenz < 0 = Verlust durch die Reform.
  * @param {Eingabe} eingabe
- * @param {{alt?: object}} [o] andere Vergleichsbasis als ALT, z. B. ALT_KAUFKRAFT_2007 (regeln.js)
  */
-export function vergleiche(eingabe, { alt = ALT } = {}) {
-  return gegenueber(berechne(eingabe, alt), berechne(eingabe, NEU));
+export function vergleiche(eingabe) {
+  return gegenueber(berechne(eingabe, ALT), berechne(eingabe, NEU));
 }
 
 /**
@@ -154,7 +151,7 @@ export function vollerPlan(regeln, alleinerziehend = false) {
  * ALT gegen NEU, wenn die Familie unter jedem Regelwerk den vollen Plan wählt, also für den
  * Entwurf umplant. monateA/monateB der Eingabe werden ignoriert.
  */
-export function vergleicheVoll(eingabe, { alt = ALT } = {}) {
+export function vergleicheVoll(eingabe) {
   const mit = (regeln) => berechne({ ...eingabe, ...vollerPlan(regeln, eingabe.alleinerziehend) }, regeln);
-  return gegenueber(mit(alt), mit(NEU));
+  return gegenueber(mit(ALT), mit(NEU));
 }

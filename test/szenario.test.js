@@ -2,7 +2,7 @@
 // Stiftung Warentest 30.10.2026, gegen-hartz.de), jeweils gegen die Formel nachgerechnet.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ALT, ALT_KAUFKRAFT_2007, NEU } from '../site/js/calc/regeln.js';
+import { ALT, NEU } from '../site/js/calc/regeln.js';
 import { vergleiche, vergleicheVoll, vollerPlan, zulaessigerPlan, berechne } from '../site/js/calc/szenario.js';
 
 test('djb: 1.800 € netto, 10 Monate, ohne Mutterschaftsleistungen −540 €', () => {
@@ -88,6 +88,68 @@ test('geltendes Recht: ohne Erwerbseinkommen keine Partnermonate (§ 4 Abs. 3 S.
   assert.equal(vergleiche({ nettoA: 0, nettoB: 2000, monateA: 12, monateB: 2 }).alt.bezugsmonate, 14);
 });
 
+test('Mutter ohne Einkommen: 12 + 2 mit 2.800 € beim Partner, −100 €', () => {
+  const v = vergleiche({ nettoA: 0, nettoB: 2800, monateA: 12, monateB: 2 });
+  assert.equal(v.alt.summe, 12 * 300 + 2 * 1800);
+  assert.equal(v.neu.summe, 10 * 330 + 2 * 1900);
+  assert.equal(v.differenz, -100);
+});
+
+test('Mutter ohne Einkommen mit Mutterschutzmonaten: der Rechenkern rechnet sie, wie sie übergeben werden', () => {
+  // Die Oberfläche übergibt bei 0 € keine Mutterschutzmonate (grundlage() in ui/zustand.js, test/zustand.test.js)
+  const v = vergleiche({ nettoA: 0, nettoB: 2800, monateA: 12, monateB: 2, mutterschutzMonate: 2 });
+  assert.equal(v.alt.summe, 10 * 300 + 2 * 1800);
+  assert.equal(v.neu.summe, 8 * 330 + 2 * 1900);
+});
+
+test('Zwillinge, 3 Mutterschutzmonate: 2.000 € netto, 12 Monate, je Monat 300 € Zuschlag', () => {
+  const eingabe = { nettoA: 2000, monateA: 12, monateB: 0, mehrlinge: 1, mutterschutzMonate: 3 };
+  const v = vergleiche(eingabe);
+  assert.equal(v.alt.summe, 9 * (1300 + 300));
+  // Entwurf: 10 Monate; von den vier 80-%-Monaten bleibt nach dem Mutterschutz einer
+  assert.equal(v.neu.summe, 1 * (1600 + 300) + 6 * (1000 + 300));
+  assert.deepEqual(v.neu.monate.A.map((m) => m.betrag), [0, 0, 0, 1900, 1300, 1300, 1300, 1300, 1300, 1300]);
+  // günstige Lesart: die vier 80-%-Monate beginnen nach dem Mutterschutz
+  const guenstig = vergleiche({ ...eingabe, mutterschutzVerbraucht80: false });
+  assert.equal(guenstig.alt.summe, v.alt.summe);
+  assert.equal(guenstig.neu.summe, 4 * (1600 + 300) + 3 * (1000 + 300));
+});
+
+test('Geschwisterbonus mit Mutterschutz: 10 % bzw. 5 %, mindestens 75 €, nur in ausgezahlten Monaten', () => {
+  const v = vergleiche({ nettoA: 2000, monateA: 12, monateB: 0, geschwisterbonus: true, mutterschutzMonate: 2 });
+  assert.equal(v.alt.summe, 10 * (1300 + 130));
+  assert.equal(v.neu.summe, 2 * (1600 + 80) + 6 * (1000 + 75));
+  assert.equal(v.neu.monate.A[0].betrag, 0);
+});
+
+test('Wunsch 12 + 12 wird in beiden Regelwerken zu 7 + 7', () => {
+  assert.deepEqual(zulaessigerPlan({ monateA: 12, monateB: 12 }, ALT), { monateA: 7, monateB: 7 });
+  assert.deepEqual(zulaessigerPlan({ monateA: 12, monateB: 12 }, NEU), { monateA: 7, monateB: 7 });
+  const v = vergleiche({ nettoA: 2000, nettoB: 3000, monateA: 12, monateB: 12 });
+  assert.equal(v.alt.summe, 21700);
+  assert.equal(v.neu.summe, 21500);
+  assert.equal(v.entfalleneMonate, 0);
+});
+
+test('2 + 12 Monate: im Entwurf höchstens 10 für den Partner, 2 Monate entfallen', () => {
+  const v = vergleiche({ nettoA: 1800, nettoB: 2800, monateA: 2, monateB: 12, mutterschutzMonate: 2 });
+  assert.deepEqual(v.alt.plan, { monateA: 2, monateB: 12 });
+  assert.deepEqual(v.neu.plan, { monateA: 2, monateB: 10 });
+  assert.equal(v.alt.summe, 12 * 1800); // beide Monate der Mutter liegen im Mutterschutz
+  assert.equal(v.neu.summe, 4 * 1900 + 6 * 1400);
+  assert.equal(v.entfalleneMonate, 2);
+});
+
+test('alleinerziehend ohne Einkommen, voller Plan: heute 12 × 300 €, im Entwurf 14 × 330 €', () => {
+  const v = vergleicheVoll({ nettoA: 0, alleinerziehend: true });
+  assert.deepEqual(v.alt.plan, { monateA: 12, monateB: 0 });
+  assert.deepEqual(v.neu.plan, { monateA: 14, monateB: 0 });
+  assert.equal(v.alt.summe, 3600);
+  assert.equal(v.neu.summe, 4620);
+  assert.equal(v.differenz, 1020);
+  assert.equal(v.entfalleneMonate, -2);
+});
+
 test('halbe Cent runden kaufmännisch', () => {
   // 1.101 € × 67 % = 737,67 €; 2.001 € × 65 % = 1.300,65 €; 1.001 € × 50 % = 500,50 €
   assert.equal(vergleiche({ nettoA: 1101, monateA: 2, monateB: 0 }).alt.summe, 1475.34);
@@ -116,28 +178,3 @@ test('volle Ausschöpfung: zweimal 3.000 € netto = −1.200 €, monateA/monat
   assert.equal(v.neu.summe, 20400);
   assert.equal(v.differenz, -1200);
 });
-
-test('Vergleichsbasis Kaufkraft 2007: Mindestbetrag 445 €, Höchstbetrag 2.660 €, sonst wie geltendes Recht', () => {
-  assert.equal(ALT_KAUFKRAFT_2007.mindestbetrag, 445);
-  assert.equal(ALT_KAUFKRAFT_2007.hoechstbetrag, 2660);
-  assert.deepEqual({ ...ALT_KAUFKRAFT_2007, id: ALT.id, name: ALT.name, mindestbetrag: 300, hoechstbetrag: 1800 }, { ...ALT });
-});
-
-// [nettoA, nettoB, alt in Kaufkraft 2007, alt, neu] – 12 + 2 Monate, 2 Mutterschutzmonate
-const kaufkraft = [
-  [3000, 3000, 23400, 21600, 16600],
-  [1800, 2800, 15340, 15300, 12080],
-];
-for (const [a, b, sKaufkraft, sAlt, sNeu] of kaufkraft) {
-  test(`Vergleichsbasis Kaufkraft 2007: ${a}/${b} € netto, ${sKaufkraft} € statt ${sAlt} € gegen ${sNeu} €`, () => {
-    const eingabe = { nettoA: a, nettoB: b, monateA: 12, monateB: 2, mutterschutzMonate: 2 };
-    const k = vergleiche(eingabe, { alt: ALT_KAUFKRAFT_2007 });
-    assert.equal(k.alt.summe, sKaufkraft);
-    assert.equal(k.neu.summe, sNeu);
-    assert.equal(k.differenz, sNeu - sKaufkraft);
-    // ohne zweite Angabe bleibt geltendes Recht die Basis
-    const v = vergleiche(eingabe);
-    assert.equal(v.alt.summe, sAlt);
-    assert.equal(v.neu.summe, sNeu);
-  });
-}

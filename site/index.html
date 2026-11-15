@@ -3,16 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <title>Elterngeldreform 2027 – Rechner: Was sich für deine Familie ändert</title>
 <meta name="description" content="Unabhängiger Vergleichsrechner zum Gesetzentwurf der Bundesregierung: Elterngeld nach geltendem Recht und nach der Reform ab November 2027, mit Quellen, Briefvorlage und Statistik.">
 <meta property="og:title" content="Elterngeldreform 2027: 1,36 Milliarden Euro weniger Elterngeld">
 <meta property="og:description" content="50 statt 65 Prozent ab dem fünften Monat, zehn statt zwölf Monate für einen Elternteil. Rechne nach, was der Gesetzentwurf für eure Familie bedeutet.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="og.png">
+<meta property="og:image" content="https://elterngeld2027.de/og.png">
+<meta property="og:url" content="https://elterngeld2027.de/">
+<link rel="canonical" href="https://elterngeld2027.de/">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23101216'/%3E%3Crect x='7' y='8' width='8' height='17' fill='%23c3c9d2'/%3E%3Crect x='17' y='15' width='8' height='10' fill='%23ff5a43'/%3E%3C/svg%3E">
 <link rel="preload" href="fonts/schibsted-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<script>document.documentElement.classList.add('js')</script>
+<script src="js/vorab.js"></script>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -35,18 +39,18 @@
       <div class="buehne-links">
         <p class="stand" data-zeig><a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurf der Bundesregierung</a> vom 12. November 2026, für Geburten ab 1. November 2027</p>
         <h1 data-zeig style="--i:1">1,36 Milliarden Euro weniger Elterngeld.</h1>
-        <p class="vorspann" data-zeig style="--i:2">So viel will die Bundesregierung im Jahr 2030 einsparen, fast ein Fünftel der heutigen Ausgaben. Bleibt es bei der heutigen Aufteilung, bekommen <a href="#statistik">nach unserem Überschlag</a> rund 80 Prozent der Familien weniger.</p>
+        <p class="vorspann" data-zeig style="--i:2">So viel will die Bundesregierung im Jahr 2030 einsparen, fast ein Fünftel der heutigen Ausgaben. Bleibt es bei der heutigen Aufteilung, bekämen <a href="#statistik">nach unserem Überschlag</a> rund <span id="vorspann-anteil">80</span> Prozent der Familien weniger (je nach Annahme <span id="vorspann-spanne">72 bis 87</span> Prozent).</p>
         <h2 class="plakat-titel" data-zeig style="--i:3">Was das für Familien heißt</h2>
         <ol class="plakate">
-          <li data-zeig style="--i:4"><div class="wechsel minus"><b id="plakat-schnitt">−1.700 €</b></div><p>Elterngeld weniger je Familie im Durchschnitt, wenn alle aufteilen wie bisher</p></li>
+          <li data-zeig style="--i:4"><div class="wechsel minus"><b id="plakat-schnitt">−1.700 €</b></div><p>Elterngeld weniger je Familie im Durchschnitt, wenn alle aufteilen wie bisher. <a href="#statistik">Nach unserem Überschlag</a>, je nach Annahme <span id="plakat-spanne">1.400 bis 2.300 €</span>.</p></li>
           <li data-zeig style="--i:5"><div class="wechsel minus"><b>2 Monate</b></div><p><strong>Lücke bis zum Kita-Anspruch</strong>, wenn der Partner nicht mindestens 2 Monate übernimmt, und zwar im Anschluss an die Mutter, nicht parallel. Gut die Hälfte der Väter nimmt heute gar kein Elterngeld.*</p></li>
         </ol>
-        <p class="quelle" data-zeig style="--i:6"><a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurf</a>, S. 3 und 5–9; Bundeshaushalt, Ist 2025: 7,06 Mrd. €; Kita-Anspruch: § 24 Abs. 2 SGB VIII · <a href="#regeln">Alle Änderungen im Vergleich</a><br>* Statistisches Bundesamt: Bei 53,6 % der 2023 geborenen Kinder bezog der Vater kein Elterngeld.</p>
+        <p class="quelle" data-zeig style="--i:6"><a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurf</a>, S. 3 und 5–9; Bundeshaushalt, Ist 2025: 7,06 Mrd. €; Kita-Anspruch: § 24 Abs. 2 SGB VIII · <a href="#regeln">Alle Änderungen im Vergleich</a><br>* Statistisches Bundesamt: Bei 53,6 % der 2023 geborenen Kinder bezog der Vater kein Elterngeld.<br>80 Prozent und Durchschnitt: eigene Modellrechnung auf Basis der Elterngeldstatistik des Statistischen Bundesamts, keine Zahl aus dem Entwurf.</p>
       </div>
       <div class="einschub dunkel" id="start" data-zeig style="--i:2">
         <h2>Was heißt das für uns?</h2>
         <p>Was verdient ihr vor der Geburt <span data-einkwort>netto</span> im Monat? Alle Angaben bleiben in eurem Browser.</p>
-        <form id="schnell" autocomplete="off">
+        <form id="schnell" autocomplete="off" novalidate>
           <label class="grossfeld"><span>Mutter</span>
             <span class="mit-euro"><input id="s-einkA" type="number" min="0" max="20000" step="50" inputmode="numeric"><i>€</i></span></label>
           <label class="grossfeld" id="s-partner"><span>Partner:in</span>
@@ -66,15 +70,11 @@
     <ul class="aufteilung" id="aufteilung" data-zeig></ul>
 
     <div class="fall ergebnisblock" id="ergebnisblock" data-zeig aria-live="polite">
-      <div class="ergebnis-kopf">
+      <div>
         <div class="differenz" id="ergebnis-zahl">–</div>
         <p class="satz" id="ergebnis-satz"></p>
-        <label class="bedingung extra" id="zeile-kk">
-          <input type="checkbox" id="kk">
-          <span class="b-text"><b>Mit Inflationsausgleich seit 2007 vergleichen</b><small>Mindest- und Höchstbetrag gelten seit 2007 unverändert. In heutiger Kaufkraft wären es 445 € statt 300 € und 2.660 € statt 1.800 €.</small></span>
-        </label>
       </div>
-      <div class="bedingungen-liste">
+      <div class="bedingungen-liste" id="nur-wenn">
         <h3>Aber nur, wenn:</h3>
         <label class="bedingung" id="zeile-um">
           <input type="checkbox" id="um">
@@ -97,7 +97,6 @@
         <label class="bedingung fest" id="zeile-mutter">
           <input type="checkbox" checked disabled>
           <span class="b-text"><b>Die Mutter bezieht höchstens 10 statt 12 Monate</b><small>Mehr lässt der Entwurf für einen Elternteil nicht zu. Den Kita-Anspruch gibt es ab dem ersten Geburtstag.</small></span>
-          <span class="preis"></span>
         </label>
       </div>
     </div>
@@ -126,7 +125,7 @@
     </div>
     </div>
     <div class="klappe" id="genauer" hidden>
-      <form class="eingaben" id="formular" autocomplete="off">
+      <form class="eingaben" autocomplete="off">
         <div class="umschalter" role="group" aria-label="Art der Einkommensangabe">
           <button type="button" data-modus="netto" aria-pressed="true">Netto eingeben</button>
           <button type="button" data-modus="brutto" aria-pressed="false">Brutto eingeben</button>
@@ -148,7 +147,7 @@
               <select id="d-monA"><option value="0">so viele wie möglich</option><option value="2">2 Monate</option><option value="3">3 Monate</option><option value="4">4 Monate</option><option value="5">5 Monate</option><option value="6">6 Monate</option><option value="7">7 Monate</option><option value="8">8 Monate</option><option value="9">9 Monate</option><option value="10">10 Monate</option><option value="11">11 Monate</option><option value="12">12 Monate</option></select>
             </div>
             <label class="haken"><input type="checkbox" id="mutterschutz"><span>Angestellt mit Mutterschaftsgeld<small>Die ersten zwei Lebensmonate sind durch Mutterschaftsgeld und Arbeitgeberzuschuss abgedeckt; Elterngeld wird dort nicht zusätzlich gezahlt.</small></span></label>
-            <label class="haken"><input type="checkbox" id="lesart"><span>Mutterschutz verbraucht zwei der 80-%-Monate<small>So lesen Juristinnenbund und Familienbund den Entwurf. Ausdrücklich geregelt ist es nicht. Ohne Haken rechnet der Rechner die für Familien günstigere Auslegung.</small></span></label>
+            <label class="haken"><input type="checkbox" id="lesart"><span>Mutterschutz verbraucht zwei der 80-%-Monate<small>So liest der Deutsche Juristinnenbund den Entwurf; Familienbund und Frauenrat rechnen im Ergebnis genauso. Ausdrücklich geregelt ist es nicht. Ohne Haken rechnet der Rechner die für Familien günstigere Auslegung.</small></span></label>
           </fieldset>
           <fieldset class="feldgruppe">
             <legend>Familie</legend>
@@ -166,6 +165,7 @@
                 <label for="d-monB">Elterngeld-Monate Partner:in</label>
                 <select id="d-monB"><option value="0">kein Elterngeld</option><option value="2">2 Monate</option><option value="3">3 Monate</option><option value="4">4 Monate</option><option value="5">5 Monate</option><option value="6">6 Monate</option><option value="7">7 Monate</option><option value="8">8 Monate</option><option value="9">9 Monate</option><option value="10">10 Monate</option><option value="11">11 Monate</option><option value="12">12 Monate</option></select>
               </div>
+              <p class="klein planhinweis" id="planhinweis" role="status" hidden></p>
             </div>
             <label class="haken"><input type="checkbox" id="allein"><span>Alleinerziehend<small>Bis zu 14 Monate; nach der Begründung des Entwurfs davon bis zu 8 Monate mit 80 %.</small></span></label>
             <label class="haken"><input type="checkbox" id="geschwister"><span>Geschwisterbonus<small>Ein weiteres Kind unter 3 oder zwei unter 6 Jahren. Heute 10 %, im Entwurf 5 %, jeweils mindestens 75 €. Vereinfacht in allen Monaten angesetzt.</small></span></label>
@@ -219,15 +219,17 @@
         </div>
       </form>
       <div>
-        <div class="blatt" id="brieftext" contenteditable="true" spellcheck="true" aria-label="Brieftext, bearbeitbar"></div>
+        <div class="blatt" id="brieftext" contenteditable="plaintext-only" spellcheck="true" aria-label="Brieftext, bearbeitbar"></div>
         <div class="knoepfe">
           <button class="knopf haupt" type="button" id="b-mail">E-Mail-Programm öffnen</button>
           <button class="knopf" type="button" id="b-kopieren">Text kopieren</button>
           <button class="knopf" type="button" id="b-pdf">Als PDF speichern / drucken</button>
           <button class="knopf" type="button" id="b-txt">Als Datei laden</button>
         </div>
-        <p class="status" id="b-status" role="status"></p>
-
+        <div class="meldungen">
+          <p class="status" id="b-status" role="status"></p>
+          <p class="geaendert unsichtbar" id="b-geaendert"><span>Du hast den Brief geändert. Neue Angaben aus Rechner und Formular werden nicht übernommen.</span> <button class="textknopf" type="button" id="b-neu">Vorlage neu erzeugen</button></p>
+        </div>
       </div>
     </div>
     </div>
@@ -239,7 +241,7 @@
           <p>Auf WeAct, der Petitionsplattform von Campact, läuft eine Petition an Bundesfamilienministerin Karin Prien. Mehr als 100.000 Menschen haben unterschrieben. Sie wurde im Sommer 2026 gegen die ersten Kürzungspläne gestartet; die Initiatorinnen lehnen auch die Aufteilung 4 + 6 + 4 und die Absenkung auf 50 Prozent ab.</p>
           <p class="klein">Die Petition stammt nicht von dieser Seite. Der Link führt zu weact.campact.de; dort gelten die Datenschutzbestimmungen von Campact.</p>
         </div>
-        <a class="knopf haupt gross pfeil" id="petition-link" href="https://weact.campact.de/petitions/keine-kurzungen-beim-elterngeld" target="_blank" rel="noopener">Zur Petition bei WeAct</a>
+        <a class="knopf haupt gross pfeil" href="https://weact.campact.de/petitions/keine-kurzungen-beim-elterngeld" target="_blank" rel="noopener">Zur Petition bei WeAct</a>
       </div>
     </div>
 
@@ -297,14 +299,14 @@
         <summary>Wer mehr bekommt und wer weniger</summary>
         <div class="inhalt">
           <p class="einleitung">Jedes Feld ist eine Familie: nach rechts steigt das Netto der Mutter, nach oben das Netto des Partners. Die Farbe zeigt, wie sich die Elterngeld-Summe ändert, wenn die Familie ihre heutige Aufteilung beibehält.</p>
-          <div class="umschalter" role="group" aria-label="Aufteilung der Monate heute" id="kartenplan">
+          <div class="umschalter" role="group" aria-label="Aufteilung der Monate heute">
             <button type="button" data-plan="12-2" aria-pressed="true">12 + 2 Monate</button>
             <button type="button" data-plan="12-0" aria-pressed="false">12 + 0</button>
             <button type="button" data-plan="10-4" aria-pressed="false">10 + 4</button>
             <button type="button" data-plan="7-7" aria-pressed="false">7 + 7</button>
           </div>
           <div class="diagramm schmal">
-            <h3 id="karte-titel">Änderung der Elterngeld-Summe</h3>
+            <h3>Änderung der Elterngeld-Summe</h3>
             <p class="unter" id="karte-unter"></p>
             <div id="heatmap"></div>
             <div id="heatmap-legende"></div>
@@ -363,7 +365,7 @@
         <h3>Was er nicht abbildet</h3>
         <p>Teilzeit während des Bezugs, den wegfallenden Partnerschaftsbonus, die Einkommensgrenze von 175.000 €, die Anrechnung auf Bürgergeld und den Progressionsvorbehalt in der Steuererklärung. Außer Acht bleibt auch, dass der Entwurf Sonderzahlungen wie Weihnachtsgeld künftig mitzählt; das erhöht das Elterngeld für Beschäftigte mit solchen Zahlungen. Im Brutto-Modus rechnet der Rechner das Netto so aus wie die Elterngeldstellen: mit pauschalen Abzügen für Steuern und Sozialabgaben (§§ 2e, 2f BEEG), Lohnsteuer nach dem amtlichen Programmablaufplan 2026.</p>
         <h3>Annahmen</h3>
-        <p>Gerechnet werden zwei Fälle. „Umgeplant“: Die Familie schöpft alle Monate aus, die Mutter nimmt so viele wie ein Elternteil darf, der Partner den Rest (heute 12 + 2, im Entwurf 10 + 4). „Wie bisher“: Die Aufteilung nach heutigem Recht wird übernommen, soweit der Entwurf sie zulässt; Monate, die nicht mehr zulässig sind, entfallen. Monate mit Mutterschaftsgeld zählen als volle Lebensmonate ohne Elterngeld-Auszahlung (zwei, bei Mehrlingen drei); tatsächlich endet die Schutzfrist einige Tage früher, was das Ergebnis um einige Dutzend Euro verschiebt. Der Geschwisterbonus ist in allen Monaten angesetzt. Für Alleinerziehende rechnet der Rechner mit acht Monaten zu 80 %; das steht in der Begründung des Entwurfs (S. 3, 27, 45), nicht im Gesetzestext selbst. Ob die Mutterschutzmonate zwei der vier 80-%-Monate der Mutter verbrauchen, sagt der Entwurf nicht ausdrücklich; er lässt aber die Regel unverändert, nach der sie als Elterngeld-Monate der Mutter gelten (§ 4 Abs. 4 Satz 3). Voreingestellt ist deshalb die Auslegung, dass sie mitzählen. Die andere Auslegung lässt sich unter „Weitere Angaben“ wählen.</p>
+        <p>Verglichen wird dieselbe Aufteilung der Monate nach geltendem Recht und nach dem Entwurf. Die Partnermonate wählt ihr in Schritt 2, die Monate der Mutter unter „Genauer rechnen“ (Vorgabe: so viele wie möglich). Was der Entwurf nicht zulässt, entfällt; aus 12 + 2 Monaten werden zum Beispiel 10 + 2. Monate mit Mutterschaftsgeld zählen als volle Lebensmonate ohne Elterngeld-Auszahlung (zwei, bei Mehrlingen drei), sofern die Mutter vor der Geburt Einkommen hat; tatsächlich endet die Schutzfrist einige Tage früher, was das Ergebnis um einige Dutzend Euro verschiebt. Der Geschwisterbonus ist in allen Monaten angesetzt. Für Alleinerziehende rechnet der Rechner mit acht Monaten zu 80 %; das steht in der Begründung des Entwurfs (S. 3, 27, 45), nicht im Gesetzestext selbst. Ob die Mutterschutzmonate zwei der vier 80-%-Monate der Mutter verbrauchen, sagt der Entwurf nicht ausdrücklich; er lässt aber die Regel unverändert, nach der sie als Elterngeld-Monate der Mutter gelten (§ 4 Abs. 4 Satz 3). Voreingestellt ist deshalb die Auslegung, dass sie mitzählen. So liest der Deutsche Juristinnenbund den Entwurf ausdrücklich (Stellungnahme 26-37 vom 2. November 2026); der Familienbund der Katholiken und der Deutsche Frauenrat rechnen im Ergebnis genauso (zwei Monate zu 80 %, sechs zu 50 %). Die Stellungnahmen beziehen sich auf den Referentenentwurf vom Oktober 2026; die Regel steht im Kabinettsentwurf unverändert. Die andere Auslegung lässt sich unter „Genauer rechnen“ wählen.</p>
         <h3>Stand des Verfahrens</h3>
         <p>Das Kabinett hat <a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">den Entwurf</a> am 12. November 2026 beschlossen. Bundestag und Bundesrat haben ihn noch nicht beraten; alles kann sich noch ändern. Gelten sollen die neuen Regeln für Kinder, die ab dem 1. November 2027 geboren werden.</p>
       </div>

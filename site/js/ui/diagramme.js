@@ -9,8 +9,23 @@ const NS = 'http://www.w3.org/2000/svg';
 const zahl = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 });
 const TINTE = '#101216';
 
-export const euro = (x) => `${zahl.format(Math.round(x))} €`.replace('-', '−');
-export const euroDiff = (x) => (x > 0 ? '+' : '') + euro(x);
+// Erst runden, dann das Vorzeichen bestimmen: −0,3 wird „0 €", nicht „−0 €"
+const ganz = (x) => Math.round(x) || 0;
+export const euro = (x) => `${zahl.format(ganz(x))} €`.replace('-', '−');
+export const euroDiff = (x) => (ganz(x) > 0 ? '+' : '') + euro(x);
+
+/**
+ * Summen und Differenz eines Vergleichs in ganzen Euro, die Differenz aus den gerundeten Summen:
+ * so passen „12.333 € statt 15.658 €" und die Differenz daneben immer zusammen. Überall benutzen,
+ * wo beide Summen und die Differenz stehen (Schritt 2, Brief, Teilen-Text, Teilen-Bild).
+ * @param {{alt: {summe: number}, neu: {summe: number}}} v Ergebnis von vergleiche()
+ * @returns {{alt: number, neu: number, differenz: number, prozent: number}} prozent mit einer Nachkommastelle
+ */
+export function ganzeDifferenz(v) {
+  const alt = ganz(v.alt.summe), neu = ganz(v.neu.summe);
+  const differenz = neu - alt;
+  return { alt, neu, differenz, prozent: alt > 0 ? Math.round((differenz / alt) * 1000) / 10 || 0 : 0 };
+}
 
 function el(name, attrs = {}, text) {
   const e = document.createElementNS(NS, name);
@@ -86,7 +101,7 @@ export function monatsdiagramm(ziel, vergleich) {
 }
 
 /** Farbe für eine Differenz: Verlust rot, Gewinn grün, 0 = hellgrau. */
-export function differenzFarbe(d, skala = 5000) {
+function differenzFarbe(d, skala = 5000) {
   const t = Math.max(-1, Math.min(1, d / skala));
   const von = [236, 238, 241];
   const nach = t < 0 ? [200, 44, 26] : [16, 122, 86];

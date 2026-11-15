@@ -53,9 +53,9 @@ export const OHNE_EINKOMMEN = { klasse: 'ohne Einkommen', netto: 0, muetter: 642
 export const OBERSTE_KLASSE = { niedrig: 2770, mittel: 3300, hoch: 3800 };
 
 /** Basis-Monate für Mütter in den ElterngeldPlus-Klassen (13 und mehr Bezugsmonate). */
-export const PLUS_MONATE = { niedrig: 11, mittel: 11, hoch: 12 };
+const PLUS_MONATE = { niedrig: 11, mittel: 11, hoch: 12 };
 /** Anteil alleinerziehender Mütter. */
-export const ALLEINERZIEHEND = { niedrig: 0, mittel: 0.05, hoch: 0.097 };
+const ALLEINERZIEHEND = { niedrig: 0, mittel: 0.05, hoch: 0.097 };
 
 // Bezugsdauer (Tab. 22922-01); `plus`: Klasse entsteht bei Müttern durch ElterngeldPlus
 export const DAUER = [

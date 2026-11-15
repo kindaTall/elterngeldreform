@@ -27,9 +27,28 @@ test('Brief enthält für keinen Adressaten und keine Situation „undefined" od
   }
 });
 
-test('Brief: Parameter voll wird ignoriert', () => {
-  const p = { eingabe, vergleich: vergleiche(eingabe), an: 'ausschuss', datum };
-  assert.deepEqual(brief({ ...p, voll: { differenz: 580 } }), brief(p));
+test('Brief bei Gewinn: Betrag mit „mehr" und der Grund, trotzdem zu schreiben', () => {
+  // Warentest-Beispiel 1.800/2.500 € netto, 10 + 4 Monate: +560 €
+  const e = { nettoA: 1800, nettoB: 2500, monateA: 10, monateB: 4 };
+  const { text } = brief({ eingabe: e, vergleich: vergleiche(e), an: 'ministerin', datum });
+  assert.ok(text.includes('nach dem Entwurf 18.760 €, also 560 € mehr. Ich schreibe Ihnen trotzdem:'));
+  assert.doesNotMatch(text, /weniger\.|fallen ganz weg|fällt ganz weg/);
+});
+
+test('Brief bei Differenz 0: ein Betrag für beide Fassungen, kein „0 € weniger"', () => {
+  // 500 € und 3.450 € netto, 7 + 7 Monate, 2 im Mutterschutz: 14.900 € nach beiden Fassungen
+  const e = { nettoA: 500, nettoB: 3450, monateA: 7, monateB: 7, mutterschutzMonate: 2 };
+  const v = vergleiche(e);
+  assert.equal(v.differenz, 0);
+  const { text } = brief({ eingabe: e, vergleich: v, an: 'mdb', datum });
+  assert.ok(text.includes('Nach geltendem Recht und nach dem Entwurf bekämen wir dafür 14.900 €. Ich schreibe Ihnen trotzdem:'));
+  assert.doesNotMatch(text, /0 € (weniger|mehr)/);
+});
+
+test('Brief: Differenz und Prozent aus den gerundeten Summen', () => {
+  const v = { ...vergleiche(eingabe), alt: { ...vergleiche(eingabe).alt, summe: 15657.5 }, neu: { ...vergleiche(eingabe).neu, summe: 12333.4 }, differenz: -3324.1, differenzProzent: -21.2 };
+  const { text } = brief({ eingabe, vergleich: v, an: 'mdb', datum });
+  assert.ok(text.includes('dafür 15.658 €, nach dem Entwurf 12.333 €. Das sind 3.325 € oder 21,2 Prozent weniger.'));
 });
 
 test('mailto: kurzer Brief steht im Link, die Adresse des Ausschusses auch', () => {

@@ -1,0 +1,22 @@
+# Sicherheits-Header für den Webhoster (Apache). Spiegelt die Meta-CSP der Seiten
+# (index.html, impressum.html, datenschutz.html): Wer die Policy ändert, ändert sie an beiden
+# Stellen gleich, denn der Browser wendet beide an und es gilt jeweils die strengere.
+# frame-ancestors gibt es nur hier, im Meta-Tag wirkt es nicht.
+# Impressum und Datenschutz laden kein Skript; dass der Header dort script-src 'self' erlaubt,
+# schadet nicht, ihre Meta-CSP bleibt strenger.
+<IfModule mod_headers.c>
+  Header always set Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+  Header always set X-Frame-Options "DENY"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "no-referrer"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+  # HSTS erst einschalten, wenn HTTPS dauerhaft steht (Zertifikat verlängert sich von selbst):
+  # Browser merken sich die Vorgabe und erreichen die Seite dann ohne gültiges Zertifikat nicht mehr.
+  # Header always set Strict-Transport-Security "max-age=31536000"
+</IfModule>
+
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+Options -Indexes

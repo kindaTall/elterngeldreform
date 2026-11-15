@@ -16,7 +16,11 @@
  * Nicht ausdrücklich im GE geregelt, hier als wählbare Annahme (siehe szenario.js):
  *  - ob Monate mit Mutterschaftsleistungen (§ 4 Abs. 4 S. 3 BEEG-E, S. 9: gelten als
  *    Basiselterngeld-Monate der Mutter) die "ersten vier Monate der Inanspruchnahme"
- *    mit 80 % verbrauchen. Lesart von djb (st26-37) und Familienbund: ja.
+ *    mit 80 % verbrauchen. Der Deutsche Juristinnenbund sagt ausdrücklich ja (st26-37 vom
+ *    02.11.2026: Anrechnung auf die ersten vier Monate); Familienbund der Katholiken und
+ *    Deutscher Frauenrat rechnen im Ergebnis genauso (zwei Monate zu 80 %, sechs zu 50 %).
+ *    Die Stellungnahmen betreffen den Referentenentwurf vom Oktober 2026; die Regel steht im
+ *    Kabinettsentwurf unverändert.
  *  - Alleinerziehende: "bis zu 8 Monate zu 80 %" steht nur in der Begründung (S. 3, 27, 45).
  */
 
@@ -41,16 +45,6 @@ export const ALT = Object.freeze({
   mehrlingszuschlag: 300, // § 2a Abs. 4
 });
 
-/**
- * Geltendes Recht, gemessen an der Kaufkraft von 2007 (nur als Vergleichsbasis, siehe
- * vergleiche() in szenario.js). Mindest- und Höchstbetrag gelten seit der Einführung 2007
- * unverändert (300 € / 1.800 €). Mit dem Verbraucherpreisindex des Statistischen Bundesamts
- * (Jahresdurchschnitt 2007 gegenüber Januar bis Oktober 2026, +48 %) entspräche das heute
- * 445 € und 2.660 €, gerundet. Nur diese beiden Beträge sind angepasst, nicht die
- * Einkommensgrenzen der Staffel (1.000 € / 1.200 €).
- */
-export const ALT_KAUFKRAFT_2007 = Object.freeze({ ...ALT, id: 'alt-kaufkraft', name: 'Geltendes Recht in Kaufkraft von 2007', mindestbetrag: 445, hoechstbetrag: 2660 });
-
 export const NEU = Object.freeze({
   id: 'neu',
   name: 'Gesetzentwurf 2026',
@@ -68,14 +62,17 @@ export const NEU = Object.freeze({
   flexibleMonate: 6, // § 4 Abs. 3 S. 1 BEEG-E, S. 9
   maxMonateElternteil: 10, // § 4 Abs. 4 S. 1 BEEG-E, S. 9
   maxMonatePaar: 14,
-  maxMonateOhnePartner: 10,
+  maxMonateOhnePartner: 10, // folgt aus Abs. 4 S. 1; dokumentiert nur, gerechnet wird über reservierte und flexible Monate
   maxMonateAlleinerziehend: 14, // § 4b BEEG-E, S. 10–11
   achtzigMonateAlleinerziehend: 8, // nur Begründung, S. 3, 27, 45
   minMonateElternteil: 2, // § 4 Abs. 4 S. 2 BEEG-E, S. 9
   geschwisterbonus: { prozent: 5, mindestens: 75 }, // § 2a Abs. 1 BEEG-E, S. 6; Begr. S. 41
   mehrlingszuschlag: 300, // § 2a Abs. 4 unverändert
-  stichtag: '2027-11-01', // Art. 11, S. 22; § 27 Abs. 1c, S. 12
+  stichtag: '2027-11-01', // Art. 11, S. 22; § 27 Abs. 1c, S. 12; dokumentiert nur, der Rechner fragt kein Geburtsdatum ab
 });
 
-/** Entlastung des Bundeshaushalts laut GE (Vorblatt D, S. 3–4), Mio. € pro Jahr, negativ = Einsparung. */
+/**
+ * Entlastung des Bundeshaushalts laut GE (Vorblatt D, S. 3–4), Mio. € pro Jahr, negativ = Einsparung.
+ * Dokumentiert nur die Quelle der 1,36 Mrd. € im Seitentext; gerechnet wird damit nicht.
+ */
 export const HAUSHALT_LAUT_ENTWURF = Object.freeze({ 2027: -60, 2028: -535, 2029: -1330, 2030: -1360 });
