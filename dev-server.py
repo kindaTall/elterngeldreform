@@ -7,13 +7,17 @@ Ohne den Header schätzt Safari aus `Last-Modified` selbst eine Cache-Dauer und 
 (`If-Modified-Since`) ignoriert, damit nie ein 304 auf einen alten Cache-Eintrag zeigt.
 
 Start: `npm run dev` oder `python3 dev-server.py` -> http://localhost:8137 (nur 127.0.0.1)
+Für die Entwürfe in entwuerfe/ (nicht im Repo): `python3 dev-server.py . 8138` liefert den
+Projektordner aus, damit die Entwürfe den Rechenkern aus site/js/ einbinden können.
 """
+import sys
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-PORT = 8137
-VERZEICHNIS = Path(__file__).resolve().parent / "site"
+WURZEL = Path(__file__).resolve().parent
+VERZEICHNIS = (WURZEL / sys.argv[1]).resolve() if len(sys.argv) > 1 else WURZEL / "site"
+PORT = int(sys.argv[2]) if len(sys.argv) > 2 else 8137
 
 
 class OhneCache(SimpleHTTPRequestHandler):

@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { vergleiche } from '../site/js/calc/szenario.js';
-import { brief, mailto, ADRESSATEN } from '../site/js/ui/brief.js';
+import { brief, mailto, ADRESSATEN, MAILTO_GRENZE } from '../site/js/ui/brief.js';
 
 const eingabe = { nettoA: 1800, nettoB: 2800, monateA: 12, monateB: 2, mutterschutzMonate: 2 };
 const datum = new Date(2026, 10, 15);
@@ -56,4 +56,21 @@ test('mailto: kurzer Brief steht im Link, die Adresse des Ausschusses auch', () 
   const m = mailto(b);
   assert.ok(m.href.startsWith('mailto:bildungundfamilie@bundestag.de?subject='));
   assert.equal(m.mitText, m.href.includes('&body='));
+});
+
+test('mailto: der Standardbrief steht für jeden Adressaten und jede Situation vollständig im Link', () => {
+  for (const a of ADRESSATEN) {
+    for (const situation of ['erwartet', 'eltern', 'solidarisch']) {
+      const b = brief({ eingabe, vergleich: vergleiche(eingabe), an: a.id, mdbName: 'Maria Mustermann-Beispielname', name: 'Alexandra Musterfrau-Langname', ort: 'Garmisch-Partenkirchen', situation, forderungen: ['rate', 'monate', 'mutterschutz', 'inflation'], datum });
+      const m = mailto(b);
+      assert.ok(m.mitText, `${a.id}/${situation}: ${m.href.length} Zeichen`);
+      assert.equal(decodeURIComponent(m.href.split('&body=')[1]), b.text);
+    }
+  }
+});
+
+test('mailto: über der Grenze nur Betreff und Adresse, der Text bleibt draußen', () => {
+  const m = mailto({ betreff: 'Betreff', text: 'ä'.repeat(MAILTO_GRENZE), email: 'a@example.org' });
+  assert.equal(m.mitText, false);
+  assert.equal(m.href, 'mailto:a@example.org?subject=Betreff');
 });

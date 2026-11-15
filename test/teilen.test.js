@@ -4,7 +4,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { vergleiche, vergleicheVoll } from '../site/js/calc/szenario.js';
 import { euro, euroDiff, ganzeDifferenz } from '../site/js/ui/diagramme.js';
-import { MINISTERIUM_ZITAT, teiltext, netzwerke, spaeterWeniger, umbrechen } from '../site/js/ui/teilen.js';
+import { SYMBOLE } from '../site/js/ui/symbole.js';
+import { MINISTERIUM_ZITAT, teiltext, kurztext, laengeX, laengeBluesky, KURZ_GRENZE, netzwerke, spaeterWeniger, umbrechen, bildTexte } from '../site/js/ui/teilen.js';
 
 const URL = 'https://example.org/#einkA=2000';
 const fuer = (eingabe, v = eingabe.alleinerziehend ? vergleicheVoll(eingabe) : vergleiche(eingabe)) => ({ eingabe, gezeigt: v });
@@ -96,6 +97,7 @@ test('Netzwerk-Links tragen Text und Adresse kodiert', () => {
   const liste = netzwerke('Text mit Leerzeichen & Zeichen', URL);
   assert.ok(liste.length >= 6);
   for (const n of liste) assert.doesNotMatch(n.href, / /);
+  for (const n of liste) assert.ok(SYMBOLE[n.symbol], `Symbol für ${n.name}`);
   assert.equal(liste.find((n) => n.name === 'WhatsApp').href, 'https://wa.me/?text=Text%20mit%20Leerzeichen%20%26%20Zeichen');
 });
 
@@ -119,4 +121,84 @@ test('Zeilenumbruch im Bild: keine Zeile breiter als der Platz, kein Wort geht v
   assert.deepEqual(umbrechen('kurz', 300, messe), ['kurz']);
   assert.deepEqual(umbrechen('Donaudampfschifffahrtsgesellschaftskapitän ja', 300, messe), ['Donaudampfschifffahrtsgesellschaftskapitän', 'ja']);
   assert.deepEqual(umbrechen('', 300, messe), []);
+});
+
+test('Bildtexte Standardfall: Zitat, Differenz je Familie, Summen und Bedingung wie im Teilen-Text', () => {
+  const a = fuer({ nettoA: 1800, nettoB: 2800, monateA: 12, monateB: 2, mutterschutzMonate: 2 });
+  const t = bildTexte(a);
+  assert.equal(t.richtung, 'weniger');
+  assert.equal(t.zitat, `\u201E${MINISTERIUM_ZITAT}\u201C`);
+  assert.equal(t.wer, 'Für unsere Familie hieße das:');
+  assert.equal(t.differenz, '−3.220 €');
+  assert.equal(t.vergleich, '12.080 € statt 15.300 €');
+  assert.equal(t.bedingung, 'Wenn der Partner 2 Monate nimmt: 2 Monate verfallen');
+  assert.equal(t.adresse, 'elterngeld2027.de');
+  assert.ok(teiltext(a, URL).includes(`${t.differenz} (${t.vergleich})`));
+});
+
+test('Bildtexte Plus: positive Richtung, ohne verfallende Monate keine Verfallszeile', () => {
+  const t = bildTexte(fuer({ nettoA: 600, nettoB: 2000, monateA: 10, monateB: 4, mutterschutzMonate: 2 }));
+  assert.equal(t.richtung, 'mehr');
+  assert.equal(t.differenz, '+744 €');
+  assert.equal(t.bedingung, 'Wenn der Partner 4 Monate nimmt');
+});
+
+test('Bildtexte Gleichstand: „±0 €", „wie heute", Anrede für Alleinerziehende, Frage in der Du-Form', () => {
+  const t = bildTexte(fuer({ nettoA: 1800, alleinerziehend: true, mutterschutzMonate: 2 }));
+  assert.equal(t.richtung, 'gleich');
+  assert.equal(t.differenz, '±0 €');
+  assert.match(t.vergleich, /^[\d.]+ € wie heute$/);
+  assert.equal(t.wer, 'Für mich hieße das:');
+  assert.equal(t.frage, 'Was wäre es bei dir?');
+  assert.doesNotMatch(t.bedingung, /Partner/);
+});
+
+test('Bildtexte: Partnermonate 0 und Alleinerziehende ohne spätere Absenkung', () => {
+  assert.equal(bildTexte(fuer({ nettoA: 2000, nettoB: 3000, monateA: 12, monateB: 0 })).bedingung, 'Wenn der Partner kein Elterngeld nimmt: 2 Monate verfallen');
+  assert.equal(bildTexte(fuer({ nettoA: 300, alleinerziehend: true })).bedingung, '');
+});
+
+// Längen für X (280, Adresse zählt 23, „€" und „−" doppelt) und Bluesky (300, Adresse ausgeschrieben)
+const SEITE = 'https://elterngeld2027.de/';
+const LANG = `${SEITE}#modus=brutto&einkA=12000&einkB=15000&stklA=3&stklB=5&kirche=1&monA=10&monB=11&ms=0&geschw=1&mehr=2&lesart=0`;
+const fuenfstellig = (() => {
+  const e = { nettoA: 6000, nettoB: 6000, monateA: 3, monateB: 11, mutterschutzMonate: 2 };
+  const v = vergleiche(e);
+  return fuer(e, { ...v, alt: { ...v.alt, summe: 31200 }, neu: { ...v.neu, summe: 18900 } }); // −12.300 €
+})();
+const faelle = [
+  ['Vorgabe', fuer({ nettoA: 1800, nettoB: 2800, monateA: 12, monateB: 2, mutterschutzMonate: 2 }), `${SEITE}`],
+  ['eigene Zahlen', fuer({ nettoA: 1900, nettoB: 3100, monateA: 12, monateB: 2, mutterschutzMonate: 2 }), `${SEITE}#einkA=1900&einkB=3100`],
+  ['Regler 7 Partnermonate', fuer({ nettoA: 2400, nettoB: 3600, monateA: 7, monateB: 7, mutterschutzMonate: 2 }), `${SEITE}#einkA=2400&einkB=3600&monB=7`],
+  ['Regler 12 Partnermonate', fuer({ nettoA: 6000, nettoB: 6000, monateA: 2, monateB: 12, mutterschutzMonate: 2 }), `${SEITE}#einkA=6000&einkB=6000&monB=12`],
+  ['alleinerziehend', fuer({ nettoA: 3000, alleinerziehend: true, mutterschutzMonate: 2 }), `${SEITE}#einkA=3000&allein=1`],
+  ['fünfstellige Differenz, lange Adresse', fuenfstellig, LANG],
+];
+
+test('Teilen-Text für X und Bluesky: sicher unter den Grenzen, mit Zitat, Zahl der Familie, Adresse und Hashtag', () => {
+  for (const [name, a, url] of faelle) {
+    const k = kurztext(a, url);
+    assert.ok(laengeX(k) <= KURZ_GRENZE.x && KURZ_GRENZE.x < 280, `${name}: X ${laengeX(k)}`);
+    assert.ok(laengeBluesky(k) <= KURZ_GRENZE.bluesky && KURZ_GRENZE.bluesky < 300, `${name}: Bluesky ${laengeBluesky(k)}`);
+    assert.ok(k.includes('\u201Epartnerschaftlicher, finanziell attraktiver und einfacher\u201C'), name);
+    assert.ok(k.includes(euroDiff(ganzeDifferenz(a.gezeigt).differenz)), name);
+    assert.ok(k.includes(SEITE) && k.endsWith(' #Elterngeld'), name);
+  }
+  // die Adresse mit den Eingaben bleibt erhalten, solange es geht
+  assert.ok(kurztext(faelle[3][1], faelle[3][2]).includes('#einkA=6000&einkB=6000&monB=12'));
+  assert.ok(kurztext(fuenfstellig, LANG).includes('−12.300 €'));
+});
+
+test('Zählweise: X zählt Adressen als 23 und „€"/„−" doppelt, Bluesky zählt alles einfach', () => {
+  assert.equal(laengeX('ab https://example.org/#sehr-lang-sehr-lang-sehr-lang'), 26);
+  assert.equal(laengeX('−3 €'), 6);
+  assert.equal(laengeX('„ä“'), 3);
+  assert.equal(laengeBluesky('−3 € https://example.org/'), 25);
+});
+
+test('Netzwerk-Links: X und Bluesky bekommen die Kurzfassung, die anderen den vollen Text', () => {
+  const liste = netzwerke('voll', URL, 'kurz');
+  assert.equal(liste.find((n) => n.name === 'X').href, 'https://x.com/intent/post?text=kurz');
+  assert.equal(liste.find((n) => n.name === 'Bluesky').href, 'https://bsky.app/intent/compose?text=kurz');
+  assert.equal(liste.find((n) => n.name === 'WhatsApp').href, 'https://wa.me/?text=voll');
 });

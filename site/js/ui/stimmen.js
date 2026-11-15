@@ -3,10 +3,11 @@
  * Die Stellungnahmen von Ende Oktober und Anfang November beziehen sich auf den Referentenentwurf
  * vom 27.10.2026; die kritisierten Punkte stehen im Kabinettsentwurf vom 12.11.2026 unverändert.
  * Die Zitate werden nicht umformuliert; die typografischen Anführungszeichen setzt die Seite.
- * `leiste`: läuft in der Zitatleiste auf der Startseite mit (sonst nur in der Liste im Hintergrund).
+ * `leiste`: steht in der Zitatreihe auf der Startseite (sonst nur in der Liste im Hintergrund).
  * `kurz`: Kurzname für die Leiste. Darstellung: stimmenansicht.js. Tests: test/stimmen.test.js
  */
-const REFERENT = 'zum Referentenentwurf vom 27.10.2026; im Kabinettsentwurf unverändert';
+/** Bezug der meisten Zitate; die Liste im Hintergrund nennt ihn einmal oben statt an jedem Zitat. */
+export const REFERENT = 'zum Referentenentwurf vom 27.10.2026; im Kabinettsentwurf unverändert';
 const DJB = 'https://www.djb.de/presse/stellungnahmen/detail/st26-37';
 const FAMILIENBUND = 'https://familienbund.org/artikel/eintrag-29261';
 const ZUKUNFTSFORUM = 'https://www.zukunftsforum-familie.de/zff-statement-licht-und-schatten-bei-der-elterngeldreform-gleichstellung-darf-kein-sparprogramm-sein/';

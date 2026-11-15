@@ -47,7 +47,10 @@ test('Schritt 1 nennt als Stand ohne Skript dieselben Schätzwerte wie das Model
   const verlierer = (r) => r.anteilVerlierer;
   const jeFamilie = (r) => -r.jeFamilie;
   assert.equal(steht('vorspann-anteil'), String(Math.round(s.mitte.anteilVerlierer * 10) * 10));
-  assert.equal(steht('vorspann-spanne'), `${prozent(s.von(verlierer))} bis ${prozent(s.bis(verlierer))}`);
+  assert.equal(steht('quellen-spanne-anteil'), `${prozent(s.von(verlierer))} bis ${prozent(s.bis(verlierer))}`);
   assert.equal(steht('plakat-schnitt'), `−${hundert(s.mitte.jeFamilie)} €`);
-  assert.equal(steht('plakat-spanne'), `${hundert(s.von(jeFamilie))} bis ${hundert(s.bis(jeFamilie))} €`);
+  assert.equal(steht('quellen-spanne-betrag'), `${hundert(s.von(jeFamilie))} bis ${hundert(s.bis(jeFamilie))} €`);
+  // Zeile „Wie viele Familien bekommen weniger?“ in der zugeklappten Liste im Hintergrund
+  assert.equal(steht('kern-anteil'), String(Math.round(s.mitte.anteilVerlierer * 10) * 10));
+  assert.equal(steht('kern-betrag'), `${hundert(s.mitte.jeFamilie)} €`);
 });

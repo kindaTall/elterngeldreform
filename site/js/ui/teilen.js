@@ -1,12 +1,18 @@
 /**
- * Ergebnis teilen: Bild (Canvas → PNG, 1080×1350), Web Share API, Links zu Netzwerken.
- * Das Bild enthält nur Rechenwerte und die Aussage des Ministeriums (MINISTERIUM_ZITAT). Netzwerk-Links öffnen die Seite des Netzwerks erst nach Klick;
- * vorher wird nichts an Dritte übertragen. Summen und Differenz stehen in ganzen Euro, die Differenz
- * aus den gerundeten Summen (ganzeDifferenz). Tests: test/teilen.test.js
+ * Ergebnis teilen: Bild (Canvas → PNG, 1080×1350, 4:5), Web Share API, Links zu Netzwerken.
+ * Aufbau des Bildes „Versprechen gegen Ergebnis": oben weiß der wörtliche Satz des Ministeriums
+ * (MINISTERIUM_ZITAT, „finanziell attraktiver" rot unterstrichen, nur bei weniger Geld), darunter die
+ * Quelle; unten ein Farbblock (rot bei weniger, grün bei mehr, dunkel bei gleich) mit der Differenz je
+ * Familie, den beiden Summen und der Bedingung. Die Texte stehen als reine Funktion in bildTexte(),
+ * gezeichnet wird in zeichne(). Auf dem Bild steht immer die feste Adresse ADRESSE.
+ * Es enthält nur Rechenwerte und das Zitat; Netzwerk-Links öffnen die Seite des Netzwerks erst nach Klick,
+ * vorher wird nichts an Dritte übertragen. Summen und Differenz in ganzen Euro, die Differenz aus den
+ * gerundeten Summen (ganzeDifferenz). Tests: test/teilen.test.js
  */
 import { euro, euroDiff, ganzeDifferenz } from './diagramme.js';
 
-const FARBEN = { grund: '#ffffff', tinte: '#101216', grau: '#525964', linie: '#e1e4e9', verlust: '#d0321d', gewinn: '#12805a' };
+const FARBEN = { grund: '#ffffff', tinte: '#101216', grau: '#525964', grau2: '#6b7380', verlust: '#d0321d', gewinn: '#12805a' };
+const ADRESSE = 'elterngeld2027.de';
 
 /**
  * Aussage des Ministeriums, mit der das Bild und der Teilen-Text beginnen (wörtlich).
@@ -18,13 +24,17 @@ export const MINISTERIUM_ZITAT = 'Das Elterngeld soll mit der Reform partnerscha
 /** Der Teil des Zitats, den der Teilen-Text wörtlich übernimmt. */
 const MINISTERIUM_KURZ = 'partnerschaftlicher, finanziell attraktiver und einfacher';
 
-/** Halbsatz zur Bedingung, unter der die gezeigte Zahl gilt: die Partnermonate im Entwurf. */
-function bedingung({ eingabe, gezeigt }) {
+/**
+ * Halbsatz zur Bedingung, unter der die gezeigte Zahl gilt: die Partnermonate im Entwurf.
+ * Teilen-Text: „wenn der Partner 2 Monate nimmt, 2 Monate verfallen"; Bild (bild=true): großgeschrieben, mit Doppelpunkt.
+ */
+function bedingung({ eingabe, gezeigt }, bild = false) {
   if (eingabe.alleinerziehend) return '';
   const p = gezeigt.neu.plan.monateB;
   const n = gezeigt.entfalleneMonate;
   const partner = p === 0 ? 'wenn der Partner kein Elterngeld nimmt' : `wenn der Partner ${p} Monate nimmt`;
-  return n > 0 ? `${partner}, ${n === 1 ? '1 Monat verfällt' : `${n} Monate verfallen`}` : partner;
+  const satz = n > 0 ? `${partner}${bild ? ':' : ','} ${n === 1 ? '1 Monat verfällt' : `${n} Monate verfallen`}` : partner;
+  return bild ? satz.replace(/^./, (z) => z.toUpperCase()) : satz;
 }
 
 /**
@@ -39,18 +49,62 @@ export function teiltext(aktuell, url) {
   return `Das Familienministerium sagt, das Elterngeld solle \u201E${MINISTERIUM_KURZ}\u201C werden. ${wer} hieße das ${euroDiff(g.differenz)} (${euro(g.neu)} statt ${euro(g.alt)})${b ? `, ${b}` : ''}. Was wäre es bei dir? ${url} #Elterngeld #Elterngeldreform`;
 }
 
-export function netzwerke(text, url) {
+/**
+ * Zeichenzahl, wie X sie zählt (twitter-text, Version 3): jede Adresse 23 Zeichen; Zeichen aus
+ * Latein, Interpunktion und Anführungszeichen einfach, alle übrigen doppelt (auch „€" und „−").
+ */
+export function laengeX(text) {
+  const einfach = (c) => c <= 4351 || (c >= 8192 && c <= 8205) || (c >= 8208 && c <= 8223) || (c >= 8242 && c <= 8247);
+  let n = 0;
+  for (const teil of String(text).split(/(https?:\/\/\S+)/)) {
+    if (/^https?:\/\//.test(teil)) n += 23;
+    else for (const z of teil) n += einfach(z.codePointAt(0)) ? 1 : 2;
+  }
+  return n;
+}
+/** Zeichenzahl, wie Bluesky sie zählt: Grapheme, die Adresse ausgeschrieben. */
+export function laengeBluesky(text) {
+  return typeof Intl.Segmenter === 'function' ? [...new Intl.Segmenter('de', { granularity: 'grapheme' }).segment(text)].length : [...text].length;
+}
+/** Höchstlängen für X (280) und Bluesky (300), mit 10 Zeichen Abstand. */
+export const KURZ_GRENZE = Object.freeze({ x: 270, bluesky: 290 });
+
+/**
+ * Kurzfassung des Teilen-Texts für X und Bluesky: Zitat-Kurzform des Ministeriums, die Zahl der
+ * Familie, Adresse, ein Hashtag. Passt sie nicht unter KURZ_GRENZE (lange Adresse mit vielen
+ * Eingaben), fallen der Reihe nach weg: die beiden Summen, die Bedingung, die Eingaben in der Adresse.
+ */
+export function kurztext(aktuell, url) {
+  const { eingabe, gezeigt: v } = aktuell;
+  const wer = eingabe.alleinerziehend ? 'Für mich' : 'Für unsere Familie';
+  const b = bedingung(aktuell);
+  const g = ganzeDifferenz(v);
+  const summen = ` (${euro(g.neu)} statt ${euro(g.alt)})`;
+  const satz = (mitSummen, mitBedingung, adresse) =>
+    `Das Familienministerium sagt, das Elterngeld solle „${MINISTERIUM_KURZ}“ werden. ${wer} hieße das ${euroDiff(g.differenz)}${mitSummen ? summen : ''}${mitBedingung && b ? `, ${b}` : ''}. ${adresse} #Elterngeld`;
+  const passt = (t) => laengeX(t) <= KURZ_GRENZE.x && laengeBluesky(t) <= KURZ_GRENZE.bluesky;
+  const ohneEingaben = url.split('#')[0];
+  const fassungen = [satz(true, true, url), satz(false, true, url), satz(false, false, url), satz(false, false, ohneEingaben)];
+  return fassungen.find(passt) ?? fassungen[fassungen.length - 1];
+}
+
+/**
+ * Netzwerke mit Link und Symbolname (Symbole: symbole.js). X und Bluesky bekommen `kurz`
+ * (kurztext(), wegen ihrer Längengrenze), alle anderen den vollen Text.
+ */
+export function netzwerke(text, url, kurz = text) {
   const t = encodeURIComponent(text);
+  const k = encodeURIComponent(kurz);
   const u = encodeURIComponent(url);
   return [
-    { name: 'WhatsApp', href: `https://wa.me/?text=${t}` },
-    { name: 'Bluesky', href: `https://bsky.app/intent/compose?text=${t}` },
-    { name: 'Threads', href: `https://www.threads.net/intent/post?text=${t}` },
-    { name: 'X', href: `https://x.com/intent/post?text=${t}` },
-    { name: 'LinkedIn', href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}` },
-    { name: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
-    { name: 'Telegram', href: `https://t.me/share/url?url=${u}&text=${t}` },
-    { name: 'E-Mail', href: `mailto:?subject=${encodeURIComponent('Elterngeldreform 2027: Rechner')}&body=${t}` },
+    { name: 'WhatsApp', symbol: 'whatsapp', href: `https://wa.me/?text=${t}` },
+    { name: 'Bluesky', symbol: 'bluesky', href: `https://bsky.app/intent/compose?text=${k}` },
+    { name: 'Threads', symbol: 'threads', href: `https://www.threads.net/intent/post?text=${t}` },
+    { name: 'X', symbol: 'x', href: `https://x.com/intent/post?text=${k}` },
+    { name: 'LinkedIn', symbol: 'linkedin', href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}` },
+    { name: 'Facebook', symbol: 'facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
+    { name: 'Telegram', symbol: 'telegram', href: `https://t.me/share/url?url=${u}&text=${t}` },
+    { name: 'E-Mail', symbol: 'email', href: `mailto:?subject=${encodeURIComponent('Elterngeldreform 2027: Rechner')}&body=${t}` },
   ];
 }
 
@@ -83,98 +137,143 @@ export function umbrechen(text, breite, messe) {
   return zeilen;
 }
 
-export async function zeichne(canvas, aktuell) {
-  const { eingabe, gezeigt: v, seite } = aktuell;
+/**
+ * Alle Texte des Bildes, ohne Canvas. richtung: 'weniger' | 'mehr' | 'gleich' (aus der ganzen Differenz).
+ * Bei Gleichstand „±0 €" und „wie heute"; bei Alleinerziehenden statt der Partnerzeile spaeterWeniger() oder nichts.
+ * @param {{eingabe: object, gezeigt: object}} aktuell siehe main.js
+ */
+export function bildTexte(aktuell) {
+  const { eingabe, gezeigt: v } = aktuell;
   const g = ganzeDifferenz(v);
+  const allein = !!eingabe.alleinerziehend;
+  const richtung = g.differenz < 0 ? 'weniger' : g.differenz > 0 ? 'mehr' : 'gleich';
+  return {
+    richtung,
+    kopf: 'Das Familienministerium sagt:',
+    zitat: `\u201E${MINISTERIUM_ZITAT}\u201C`,
+    quelle: 'bmbfsfj.bund.de, 12.11.2026',
+    wer: allein ? 'Für mich hieße das:' : 'Für unsere Familie hieße das:',
+    differenz: richtung === 'gleich' ? '±0 €' : euroDiff(g.differenz),
+    vergleich: richtung === 'gleich' ? `${euro(g.neu)} wie heute` : `${euro(g.neu)} statt ${euro(g.alt)}`,
+    bedingung: allein ? spaeterWeniger(v) : bedingung(aktuell, true),
+    frage: allein ? 'Was wäre es bei dir?' : 'Was wäre es bei euch?',
+    adresse: ADRESSE,
+    hinweis: 'Modellrechnung zum Gesetzentwurf vom 12.11.2026, ohne Gewähr',
+  };
+}
+
+const schrift = (px, stil = 500) => `${stil} ${px}px "Schibsted Grotesk", system-ui, sans-serif`;
+const GEWICHTE = [500, 600, 700, 750, 800];
+
+/**
+ * Betrag mit abgesetztem Vorzeichen: Vorzeichen, Ziffern und € einzeln gesetzt, damit das Minus nicht
+ * an der Ziffer klebt (Lücke 0,05 em) und die Ziffern eng laufen. Gibt die Breite zurück; zeichnen=false misst nur.
+ */
+function betrag(c, text, x, y, px, farbe, zeichnen = true) {
+  const setze = (p, sperrung) => {
+    c.font = schrift(p, 800);
+    c.fillStyle = farbe;
+    if ('letterSpacing' in c) c.letterSpacing = `${(sperrung * p).toFixed(1)}px`;
+  };
+  const m = /^([−+±]?)(.*?) €$/.exec(text);
+  const vz = m ? m[1] : '', ziffern = m ? m[2] : text;
+  const sperr = -0.03;
+  setze(px, 0);
+  const wVz = vz ? c.measureText(vz).width : 0;
+  setze(px, sperr);
+  const wZ = c.measureText(ziffern).width - sperr * px; // letzte Sperrung nicht mitzählen
+  setze(px, 0);
+  const wE = c.measureText('€').width;
+  const lueckeVz = vz ? 0.05 * px : 0, lueckeE = 0.2 * px;
+  const breite = wVz + lueckeVz + wZ + lueckeE + wE;
+  if (zeichnen) {
+    c.textAlign = 'left';
+    if (vz) { setze(px, 0); c.fillText(vz, x, y); }
+    x += wVz + lueckeVz;
+    setze(px, sperr); c.fillText(ziffern, x, y); x += wZ + lueckeE;
+    setze(px, 0); c.fillText('€', x, y);
+  }
+  if ('letterSpacing' in c) c.letterSpacing = '0px';
+  return breite;
+}
+
+export async function zeichne(canvas, aktuell) {
+  const t = bildTexte(aktuell);
+  // Schrift erst laden, dann zeichnen: ein Canvas löst das Laden nicht von selbst aus
+  await Promise.all(GEWICHTE.map((w) => document.fonts.load(`${w} 40px "Schibsted Grotesk"`)));
   await document.fonts.ready;
   const c = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height, R = 80;
-  const allein = !!eingabe.alleinerziehend;
-  const schrift = (px, stil = 500) => `${stil} ${px}px "Schibsted Grotesk", system-ui, sans-serif`;
-  const eng = (em, px) => { if ('letterSpacing' in c) c.letterSpacing = `${(em * px).toFixed(1)}px`; };
-  const plan = (r) => (allein ? `${r.plan.monateA} Monate` : `Mutter ${r.plan.monateA}, Partner ${r.plan.monateB} Monate`);
+  const W = canvas.width, H = canvas.height, R = 80, B = W - 2 * R;
+  const setze = (px, stil, farbe, sperrung = 0) => {
+    c.font = schrift(px, stil);
+    c.fillStyle = farbe;
+    if ('letterSpacing' in c) c.letterSpacing = `${(sperrung * px).toFixed(1)}px`;
+  };
+  const messe = (s) => c.measureText(s).width;
+  const block = t.richtung === 'weniger' ? FARBEN.verlust : t.richtung === 'mehr' ? FARBEN.gewinn : FARBEN.tinte;
 
+  c.reset?.();
   c.fillStyle = FARBEN.grund;
   c.fillRect(0, 0, W, H);
   c.textBaseline = 'alphabetic';
   c.textAlign = 'left';
 
-  const breit = W - 2 * R;
-  const messe = (t) => c.measureText(t).width;
-  const zeile = (text, px, stil, farbe, y, hoehe) => {
-    c.font = schrift(px, stil);
-    c.fillStyle = farbe;
-    for (const teil of umbrechen(text, breit, messe)) {
-      c.fillText(teil, R, y);
-      y += hoehe;
-    }
-    return y;
-  };
-
-  eng(0, 0);
-  zeile('Elterngeldreform · Entwurf vom 12.11.2026', 30, 600, FARBEN.grau, 118, 0);
-  zeile('Das Familienministerium sagt:', 30, 500, FARBEN.grau, 184, 0);
-  // Zitat, umbrochen; y ist danach die Grundlinie unter der letzten Zeile
-  let y = zeile(`\u201E${MINISTERIUM_ZITAT}\u201C`, 40, 600, FARBEN.tinte, 244, 54);
-
-  y += 40;
-  c.font = schrift(60, 700);
-  eng(-0.025, 60);
-  c.fillStyle = FARBEN.tinte;
-  c.fillText(allein ? 'Für mich hieße das:' : 'Für unsere Familie hieße das:', R, y + 48);
-  y += 48;
-
-  // große Zahl: etwas kleiner bei fünfstelligen Beträgen, nie breiter als der Platz zwischen den Rändern
-  const zahl = euroDiff(g.differenz);
-  let gross = Math.abs(g.differenz) >= 10000 ? 176 : 200;
-  const setzeGross = () => { c.font = schrift(gross, 800); eng(-0.02, gross); };
-  setzeGross();
-  while (messe(zahl) > breit && gross > 80) { gross -= 4; setzeGross(); }
-  c.fillStyle = g.differenz < 0 ? FARBEN.verlust : g.differenz > 0 ? FARBEN.gewinn : FARBEN.tinte;
-  y += 36 + Math.round(gross * 0.72);
-  c.fillText(zahl, R - 10, y);
-
-  eng(0, 0);
-  y = zeile('Elterngeld über die gesamte Bezugszeit', 38, 500, FARBEN.grau, y + 64, 0);
-  const bed = allein ? spaeterWeniger(v) : bedingung(aktuell).replace(/^./, (z) => z.toUpperCase());
-  if (bed) zeile(bed, 32, 500, FARBEN.grau, y + 54, 44);
-
-  // unten, direkt über dem Fußstreifen: Netto, Heute/Entwurf, Quelle des Zitats
-  const unten = [
-    [allein ? `Netto vor der Geburt: ${euro(eingabe.nettoA)}, alleinerziehend` : `Netto vor der Geburt: ${euro(eingabe.nettoA)} und ${euro(eingabe.nettoB)}`, 28],
-    [`Heute ${plan(v.alt)}: ${euro(g.alt)}`, 28],
-    [`Entwurf ${plan(v.neu)}: ${euro(g.neu)}`, 28],
-    ['Zitat: bmbfsfj.bund.de, 12.11.2026 · Modellrechnung, ohne Gewähr', 24],
-  ];
-  const teile = [];
-  for (const [t, px] of unten) {
-    c.font = schrift(px, 500);
-    for (const teil of umbrechen(t, breit, messe)) teile.push([teil, px]);
+  // obere Hälfte: das Zitat, groß, mit hängendem „
+  setze(30, 600, FARBEN.grau);
+  c.fillText(t.kopf, R, 126);
+  setze(62, 700, FARBEN.tinte, -0.015);
+  const markiert = new Set(['finanziell', 'attraktiver']);
+  let y = 214;
+  for (const zeile of umbrechen(t.zitat, B, messe)) {
+    let x = R;
+    zeile.split(' ').forEach((w, i) => {
+      if (i === 0 && w.startsWith('\u201E')) x -= messe('\u201E');
+      const nackt = w.replace(/[\u201E\u201C,.]/g, '');
+      if (t.richtung === 'weniger' && markiert.has(nackt)) {
+        c.fillStyle = FARBEN.verlust;
+        c.fillRect(x, y + 10, messe(w.replace(/[,.\u201C]+$/, '')), 9);
+        c.fillStyle = FARBEN.tinte;
+      }
+      c.fillText(w, x, y);
+      x += messe(w) + messe(' ');
+    });
+    y += 74;
   }
-  const start = H - 120 - 40 - (teile.length - 1) * 38;
-  let yu = start;
-  for (const [t, px] of teile) {
-    c.font = schrift(px, 500);
-    c.fillStyle = FARBEN.grau;
-    c.fillText(t, R, yu);
-    yu += 38;
-  }
-  c.strokeStyle = FARBEN.linie;
-  c.lineWidth = 2;
-  c.beginPath();
-  c.moveTo(R, start - 52);
-  c.lineTo(W - R, start - 52);
-  c.stroke();
+  setze(24, 500, FARBEN.grau2);
+  c.fillText(t.quelle, R, y - 14);
 
-  c.fillStyle = FARBEN.tinte;
-  c.fillRect(0, H - 120, W, 120);
-  c.fillStyle = '#fff';
-  c.font = schrift(32, 500);
-  c.fillText('Selbst nachrechnen:', R, H - 48);
-  c.font = schrift(40, 700);
+  // untere Hälfte: farbiger Block mit dem Ergebnis
+  const top = Math.max(y + 34, 640);
+  c.fillStyle = block;
+  c.fillRect(0, top, W, H - top);
+  setze(50, 700, '#fff', -0.01);
+  c.fillText(t.wer, R, top + 104);
+  let px = 250; // größte Größe, bei der die Differenz zwischen die Ränder passt
+  while (px > 30 && betrag(c, t.differenz, 0, 0, px, '#fff', false) > B) px -= 2;
+  const yz = top + 104 + 34 + px * 0.74;
+  betrag(c, t.differenz, R - px * 0.035, yz, px, '#fff');
+  setze(42, 600, '#fff');
+  c.fillText(t.vergleich, R, yz + 76);
+  if (t.bedingung) {
+    setze(32, 500, 'rgba(255,255,255,0.85)');
+    let yb = yz + 128;
+    for (const zeile of umbrechen(t.bedingung, B, messe)) { c.fillText(zeile, R, yb); yb += 42; }
+  }
+  c.fillStyle = 'rgba(255,255,255,0.35)';
+  c.fillRect(R, H - 194, B, 2);
+  // Fuß: Aufforderung, Adresse rechtsbündig, darunter der Hinweis
+  const yf = H - 120;
+  setze(34, 500, '#fff');
+  c.fillText(t.frage, R, yf);
+  const wF = messe(t.frage);
+  let pa = 44;
+  for (; pa > 20; pa -= 2) { setze(pa, 750, '#fff'); if (messe(t.adresse) <= B - wF - 30) break; }
+  setze(pa, 750, '#fff');
   c.textAlign = 'right';
-  c.fillText(seite, W - R, H - 46);
+  c.fillText(t.adresse, R + B, yf);
   c.textAlign = 'left';
+  setze(24, 500, 'rgba(255,255,255,0.72)');
+  c.fillText(t.hinweis, R, yf + 48);
 }
 
 export function alsBlob(canvas) {

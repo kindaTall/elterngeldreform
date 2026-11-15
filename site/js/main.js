@@ -2,22 +2,25 @@
  * Verdrahtung der Seite: Zustand ↔ Formulare ↔ URL-Fragment ↔ Ausgaben, dazu die Führung in
  * drei Schritten (Kopfleiste, Sprungziele), Reiter, aufklappbare Abschnitte und Einblendungen.
  *
- * Schritt 2 zeigt eine Zahl: dieselbe Aufteilung nach geltendem Recht und nach dem Entwurf
- * (vergleiche() in calc/szenario.js; was der Entwurf nicht zulässt, entfällt). Die Aufteilung
- * ergibt sich aus den Partnermonaten `monB` (0 oder 2 bis 12; Standard 2, wie bei den meisten
- * Familien) und den Monaten der Mutter `monA` (0 = so viele wie möglich; unter „Genauer rechnen").
- * Die Liste „Aber nur, wenn:" zeigt das Ergebnis mit 4 bzw. 2 Partnermonaten zum Vergleich.
+ * Schritt 2 zeigt zwei Balken „Heute" und „Geplant": dieselbe Aufteilung nach geltendem Recht und
+ * nach dem Entwurf (vergleiche() in calc/szenario.js; was der Entwurf nicht zulässt, entfällt),
+ * Geometrie aus balkenmodell() in ui/balken.js. Die Aufteilung ergibt sich aus den Partnermonaten
+ * `monB` (0 oder 2 bis 12; Standard 2, wie bei den meisten Familien) und den Monaten der Mutter
+ * `monA` (0 = so viele wie möglich; unter „Genauer rechnen"). Unter den Eingaben steht eine Zeile
+ * zur Einordnung der Partnermonate (einordnung()).
  * Beträge erscheinen nur je Familie, nie getrennt nach Mutter und Vater; Summen und Differenz
  * stehen in ganzen Euro, die Differenz aus den gerundeten Summen (ganzeDifferenz in ui/diagramme.js).
  * Der Zustand selbst (Standardwerte, URL-Fragment, Eingabe für den Rechenkern, Aufteilung der
  * Monate) liegt ohne DOM in ui/zustand.js.
  */
 import { NEU } from './calc/regeln.js';
-import { spanne, FAMILIEN, PARTNER_MIT_BEZUG, KINDER_MIT_ELTERNGELD, GEBURTEN, JAHRGANG } from './calc/bevoelkerung.js';
-import { STANDARD, PARTNERMONATE, ausHash, alsHash, nettoVon, grundlage, vergleichsmonate, fuerPartnermonate as planVergleich, planhinweis } from './ui/zustand.js';
-import { monatsdiagramm, heatmap, heatmapLegende, differenzbalken, euro, euroDiff, ganzeDifferenz } from './ui/diagramme.js';
+import { spanne, FAMILIEN, PARTNER_MIT_BEZUG, KINDER_MIT_ELTERNGELD, GEBURTEN, JAHRGANG, DAUER } from './calc/bevoelkerung.js';
+import { STANDARD, PARTNERMONATE, ausHash, alsHash, nettoVon, grundlage, fuerPartnermonate as planVergleich, planhinweis } from './ui/zustand.js';
+import { monatsdiagramm, heatmap, heatmapLegende, differenzbalken, euro, euroDiff } from './ui/diagramme.js';
+import { balkenmodell } from './ui/balken.js';
 import { ADRESSATEN, brief, mailto } from './ui/brief.js';
-import { teiltext, netzwerke, zeichne, alsBlob } from './ui/teilen.js';
+import { teiltext, kurztext, netzwerke, zeichne, alsBlob } from './ui/teilen.js';
+import { symbol, symboleEinsetzen } from './ui/symbole.js';
 import { BETREFF, versandweg, meldungstext, sende } from './ui/rueckmeldung.js';
 import { RUECKMELDUNG } from './config.js';
 import { leisteBauen, listeBauen } from './ui/stimmenansicht.js';
@@ -29,6 +32,16 @@ const RUHIG = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let andereOffen = false;
 const zustand = { ...STANDARD };
 let kartenplan = '12-2';
+/**
+ * Eigene Zahlen: true nach der ersten Eingabe oder wenn der Zustand aus der Adresse kam. Bis dahin
+ * zeigt Schritt 2 die Vorgabewerte und sagt das in der Überschrift („Beispiel: …").
+ */
+let eigeneZahlen = false;
+function titelSetzen() {
+  $('titel-beispiel').textContent = `Beispiel: ${euro(STANDARD.einkA)} und ${euro(STANDARD.einkB)} ${STANDARD.modus}`;
+  $('titel-euch').classList.toggle('unsichtbar', !eigeneZahlen);
+  $('titel-beispiel').classList.toggle('unsichtbar', eigeneZahlen);
+}
 
 // ---------- Zustand ↔ URL (Regeln in ui/zustand.js) ----------
 function ausUrl() {
@@ -71,8 +84,6 @@ function formularFuellen() {
     $(`eink${w}`).value = z[`eink${w}`];
     $(`stkl${w}`).value = z[`stkl${w}`];
   }
-  $('um').checked = vergleichsmonate(z.monB).angehakt;
-  $('nur-wenn').classList.toggle('aus', !!z.allein); // Alleinerziehende: keine Bedingungen, der ganze Block samt Überschrift verschwindet
   const andere = andereOffen || ![0, 2, 4].includes(z.monB);
   document.querySelectorAll('[data-monb]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.monb === 'andere' ? andere : !andere && Number(b.dataset.monb) === z.monB)));
   $('monB-regler').classList.toggle('unsichtbar', !andere); // bleibt im Layout, damit nichts springt
@@ -80,7 +91,6 @@ function formularFuellen() {
   $('monB-out').textContent = z.monB === 0 ? 'keine' : `${z.monB} Monate`;
   $('lesart').checked = !!z.lesart;
   $('d-monA').value = z.monA;
-  $('d-monB').value = z.monB;
   $('feld-monA').hidden = !!z.allein;
   $('mutterschutz').checked = !!z.ms;
   $('mutterschutz').disabled = !(nettoVon(z, 'A') > 0); // ohne Einkommen kein Mutterschaftsgeld; der Haken bleibt im Zustand
@@ -88,17 +98,21 @@ function formularFuellen() {
   $('geschwister').checked = !!z.geschw;
   $('mehrlinge').value = z.mehr;
   $('kirche').value = z.kirche;
-  $('gruppeB').hidden = $('s-partner').hidden = !!z.allein;
+  // Alleinerziehend: kein Netto und keine Monate für Partner:in
+  $('gruppeB').hidden = $('s-partner').hidden = $('feld-einkB').hidden = $('partnerwahl').hidden = !!z.allein;
   $('schnell').classList.toggle('allein', !!z.allein);
   document.querySelectorAll('[data-modus]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.modus === z.modus)));
   document.querySelectorAll('[data-nur="brutto"]').forEach((e) => (e.hidden = z.modus !== 'brutto'));
-  document.querySelectorAll('[data-einklabel]').forEach((e) => (e.textContent = z.modus === 'brutto' ? 'Brutto pro Monat vor der Geburt' : 'Netto pro Monat vor der Geburt'));
   document.querySelectorAll('[data-einkwort]').forEach((e) => (e.textContent = z.modus));
 }
 
 function formularVerdrahten() {
   const setze = (k, v) => {
     zustand[k] = v;
+    if (!eigeneZahlen) {
+      eigeneZahlen = true;
+      titelSetzen();
+    }
     formularFuellen();
     rechne();
   };
@@ -114,10 +128,8 @@ function formularVerdrahten() {
     andereOffen = offen;
     setze('monB', p);
   };
-  $('um').addEventListener('change', (e) => partner(e.target.checked ? NEU.reservierteMonate : 2));
   document.querySelectorAll('[data-monb]').forEach((b) => b.addEventListener('click', () => (b.dataset.monb === 'andere' ? partner(zustand.monB, true) : partner(Number(b.dataset.monb)))));
   $('monB').addEventListener('input', (e) => partner(PARTNERMONATE[Number(e.target.value)], true));
-  $('d-monB').addEventListener('change', (e) => partner(Number(e.target.value)));
   $('d-monA').addEventListener('change', (e) => setze('monA', Number(e.target.value)));
   for (const [id, k] of [['mutterschutz', 'ms'], ['allein', 'allein'], ['s-allein', 'allein'], ['geschwister', 'geschw'], ['lesart', 'lesart']]) {
     $(id).addEventListener('change', (e) => setze(k, e.target.checked ? 1 : 0));
@@ -149,14 +161,18 @@ function formularVerdrahten() {
 // ---------- Ausgaben ----------
 let aktuell;
 
-/** Zahl von ihrem bisherigen Wert zum neuen laufen lassen. */
-function zaehle(el, ziel, von = el._wert ?? 0) {
+/**
+ * Zahl von ihrem bisherigen Wert zum neuen laufen lassen. `format` macht aus der Zahl den Text
+ * (Standard: mit Vorzeichen) und wird am Element gemerkt, damit das Einblenden ihn wiederverwendet.
+ */
+function zaehle(el, ziel, format = el._format ?? euroDiff, von = el._wert ?? 0) {
   cancelAnimationFrame(el._lauf);
   clearTimeout(el._sicher);
   el._wert = ziel;
+  el._format = format;
   // In einem verdeckten Fenster laufen keine Bilder: dann sofort den Endwert zeigen
   if (RUHIG || von === ziel || document.hidden) {
-    el.textContent = euroDiff(ziel);
+    el.textContent = format(ziel);
     return;
   }
   const start = performance.now();
@@ -164,83 +180,94 @@ function zaehle(el, ziel, von = el._wert ?? 0) {
   // Sicherung, falls die Animation gedrosselt wird: nie auf einem Zwischenwert stehen bleiben
   el._sicher = setTimeout(() => {
     cancelAnimationFrame(el._lauf);
-    el.textContent = euroDiff(ziel);
+    el.textContent = format(ziel);
   }, dauer + 250);
   const schritt = (jetzt) => {
     const t = Math.max(0, Math.min(1, (jetzt - start) / dauer)); // Bildzeit kann vor dem Start liegen
     const k = 1 - Math.pow(1 - t, 3);
-    el.textContent = euroDiff(t < 1 ? Math.round((von + (ziel - von) * k) / 10) * 10 : ziel);
+    el.textContent = format(t < 1 ? Math.round((von + (ziel - von) * k) / 10) * 10 : ziel);
     if (t < 1) el._lauf = requestAnimationFrame(schritt);
   };
   el._lauf = requestAnimationFrame(schritt);
 }
 
-const prozent = (x) => `${String(Math.abs(x)).replace('.', ',')} %`;
-const faerbe = (el, v) => {
-  el.classList.toggle('verlust', v.differenz < 0);
-  el.classList.toggle('gewinn', v.differenz > 0);
-};
-/** Aufteilung in Worten: „Mutter 12 Monate, Partner:in 2 Monate". */
-const ausgeschrieben = (r, allein) =>
-  allein ? `${r.plan.monateA} Monate` : `Mutter ${r.plan.monateA} Monate, Partner:in ${r.plan.monateB === 0 ? 'kein Elterngeld' : `${r.plan.monateB} Monate`}`;
 const kurz = (r, allein) => (allein ? `${r.plan.monateA} Monate` : `Mutter ${r.plan.monateA}, Partner:in ${r.plan.monateB} Monate`);
+
+/**
+ * Väter nach Bezugsdauer, Geburtsjahrgang 2023: Statistisches Bundesamt, Statistischer Bericht
+ * „Elterngeld – Beendete Leistungsbezüge für im Jahr 2023 geborene Kinder", Tab. 22922-01
+ * (Daten in DAUER, calc/bevoelkerung.js): von 302.135 Vätern mit Elterngeld bezogen 219.273 bis
+ * 2 Monate, 82.862 mehr als 2 Monate, das sind 27,4 %. Kein Elterngeld: bei 53,6 % der 2023
+ * geborenen Kinder bezog der Vater keins (Destatis, Väterbeteiligung; dieselbe Zahl in Schritt 1).
+ */
+const VAETER_UEBER_2 = 1 - DAUER[0].vaeter / DAUER.reduce((s, d) => s + d.vaeter, 0);
+
+/** Eine Zeile zur Einordnung unter den Eingaben: [Satz, Quellenhinweis] oder null. */
+function einordnung(v, allein) {
+  if (allein) return [`Alleinerziehend: ${v.neu.plan.monateA} Monate, im Entwurf davon ${NEU.achtzigMonateAlleinerziehend} mit 80 %.`, 'laut Begründung des Entwurfs'];
+  const p = v.alt.plan.monateB;
+  if (p > 2) return [`Mehr als 2 Monate nehmen heute nur ${Math.round(VAETER_UEBER_2 * 100)} % der Väter mit Elterngeld.`, 'Destatis, Jahrgang 2023'];
+  if (p > 0) return ['Heute nimmt nur knapp die Hälfte der Väter überhaupt Elterngeld.', 'Destatis, Jahrgang 2023'];
+  return null;
+}
+
+const anteil = (x) => `${(x * 100).toFixed(2)}%`;
+const deltaFormat = (x) => (Math.round(x) === 0 ? '±0 €' : euroDiff(x));
+
+/** Zwei Balken aus balkenmodell() (ui/balken.js) auf die Seite bringen; Höhen gleiten per CSS. */
+function zeigeBalken(m) {
+  const balken = (id, b) => {
+    const saeule = $(id);
+    const [mu, pa] = b.segmente;
+    const [partnerTeil, mutterTeil] = saeule.querySelectorAll('.teil');
+    saeule.querySelector('.teile').style.height = anteil(b.hoehe);
+    partnerTeil.style.height = anteil(pa ? pa.anteil : 0);
+    // Zu schmales Partner-Stück: seine Beschriftung steht direkt darunter, mit Pfeil nach oben
+    const eng = !!pa && saeule.clientHeight * b.hoehe * pa.anteil < 34;
+    saeule.classList.toggle('eng', eng);
+    partnerTeil.firstChild.textContent = pa ? `${eng ? '↑ ' : ''}${pa.text}` : '';
+    mutterTeil.firstChild.textContent = mu.text;
+    // Monate der Mutter bleiben sichtbar, auch bei 0 € oder wenig Geld: ihr Teil ist mindestens so hoch
+    // wie seine Beschriftung und staucht dafür den Partner-Teil (die Balkenhöhe bleibt an der Summe).
+    // Reine Mutterschutz-Monate (Mutterschaftsgeld statt Elterngeld) sind schraffiert.
+    mutterTeil.classList.toggle('schutz', !!mu.nurMutterschutz);
+    mutterTeil.style.minHeight = pa && mu.monate > 0 ? `${mutterTeil.firstChild.offsetHeight + 12}px` : '';
+  };
+  balken('saeule-heute', m.heute);
+  balken('saeule-geplant', m.geplant);
+  const stueck = $('stueck');
+  stueck.className = `stueck ${m.stueck.art ?? 'keins'}`;
+  stueck.style.bottom = anteil(m.stueck.von);
+  stueck.style.height = anteil(m.stueck.bis - m.stueck.von);
+  $('saeulen').dataset.vorzeichen = m.vorzeichen;
+  zaehle($('delta-zahl'), m.delta, deltaFormat);
+  $('delta-prozent').textContent = m.prozentText;
+  zaehle($('summe-heute'), m.heute.summe, euro);
+  zaehle($('summe-geplant'), m.geplant.summe, euro);
+  $('verfallen').textContent = m.verfallenText;
+  $('saeulen-text').textContent = m.beschreibung;
+}
 
 function rechne() {
   const e = grundlage(zustand);
   const allein = e.alleinerziehend;
-  const p = zustand.monB;
-  const gezeigt = fuerPartnermonate(e, p);
+  const gezeigt = fuerPartnermonate(e, zustand.monB);
   aktuell = { eingabe: { ...e, ...gezeigt.alt.plan }, gezeigt };
-
-  const ausBrutto = zustand.modus === 'brutto' ? ' (aus eurem Brutto so berechnet wie in den Elterngeldstellen)' : '';
-  $('annahme').textContent = allein
-    ? `Gerechnet für ${euro(e.nettoA)} netto im Monat${ausBrutto}, alleinerziehend.`
-    : `Gerechnet für ${euro(e.nettoA)} und ${euro(e.nettoB)} netto im Monat${ausBrutto}.`;
-
-  // Aufteilung ausgeschrieben: heute und im Entwurf, verfallende Monate in Rot
-  const n = gezeigt.entfalleneMonate;
-  const zeile = (begriff, text, rot) => {
-    const li = document.createElement('li');
-    const b = document.createElement('b');
-    b.textContent = `${begriff}:`;
-    li.append(b, ` ${text}`);
-    if (rot) {
-      const s = document.createElement('span');
-      s.className = 'verfallen';
-      s.textContent = rot;
-      li.append(', ', s);
-    }
-    return li;
-  };
-  $('aufteilung').replaceChildren(
-    zeile('Heute', ausgeschrieben(gezeigt.alt, allein)),
-    zeile('Im Entwurf', ausgeschrieben(gezeigt.neu, allein) + (allein ? `, davon ${NEU.achtzigMonateAlleinerziehend} mit 80 %` : ''), n > 0 ? (n === 1 ? '1 Monat verfällt' : `${n} Monate verfallen`) : ''),
-  );
 
   // Hinweis unter „Genauer rechnen", wenn nach geltendem Recht anders aufgeteilt wird als gewählt
   const hinweis = planhinweis(zustand, e, gezeigt.alt.plan);
   $('planhinweis').textContent = hinweis;
   $('planhinweis').hidden = !hinweis;
 
-  // Die eine große Zahl: Differenz der gerundeten Summen, damit sie zum Satz darunter passt
-  const block = $('ergebnisblock');
-  const g = ganzeDifferenz(gezeigt);
-  faerbe(block, g);
-  block.classList.toggle('lang', Math.abs(g.differenz) >= 10000);
-  zaehle($('ergebnis-zahl'), g.differenz);
-  $('ergebnis-satz').textContent =
-    `${euro(g.neu)} statt ${euro(g.alt)} Elterngeld über die gesamte Bezugszeit` +
-    (g.differenz === 0 || g.prozent === 0 ? '.' : `, ${prozent(g.prozent)} ${g.differenz < 0 ? 'weniger' : 'mehr'}.`);
-
-  // Zum Vergleich: das Ergebnis mit 4 Partnermonaten (ohne Haken) bzw. mit 2 (mit Haken)
-  if (!allein) {
-    const { angehakt, andere } = vergleichsmonate(p);
-    const d = ganzeDifferenz(fuerPartnermonate(e, andere)).differenz;
-    $('zeile-um').classList.toggle('weg', !angehakt);
-    const betrag = document.createElement('b');
-    betrag.textContent = euroDiff(d);
-    betrag.className = d < 0 ? 'minus' : d > 0 ? 'plus' : '';
-    $('preis-um').replaceChildren(`mit ${andere} Monaten:`, document.createElement('br'), betrag);
+  zeigeBalken(balkenmodell(gezeigt, { alleinerziehend: allein }));
+  const zeile = einordnung(gezeigt, allein);
+  if (zeile) {
+    const quelle = document.createElement('a');
+    quelle.href = '#methodik';
+    quelle.textContent = zeile[1];
+    $('einordnung').replaceChildren(`${zeile[0]} `, quelle);
+  } else {
+    $('einordnung').replaceChildren();
   }
 
   verlauf(false);
@@ -274,7 +301,7 @@ function karte() {
     optionen: { mutterschutzVerbraucht80: !!zustand.lesart },
   });
   heatmapLegende($('heatmap-legende'), bereich);
-  $('karte-unter').textContent = `Heute: Mutter ${a} Monate (davon 2 im Mutterschutz, wenn sie Einkommen hat), Partner:in ${b} Monate. Euro über die gesamte Bezugszeit.`;
+  $('karte-unter').textContent = `Mutter ${a} Monate, davon 2 Mutterschutz, wenn sie Einkommen hat; Partner:in ${b} Monate. Summe über die ganze Bezugszeit.`;
 }
 
 function statistik() {
@@ -290,10 +317,14 @@ function statistik() {
   const verl = (r) => r.anteilVerlierer;
   const gew = (r) => r.anteilGewinner;
   const pz = (x) => Math.round(x * 100);
+  const anteil = Math.round(m.anteilVerlierer * 10) * 10;
+  const schnitt = `${hundert(jeFamilie(m))} €`;
+  // Kennzahlen: je Fläche eine Zahl und ein kurzer Satz; die Spanne steht in Klammern
   const kz = [
-    [`−${mrd(s.bis(diff))} bis −${mrd(s.von(diff))} Mrd. €`, 'minus', `weniger Elterngeld für einen Geburtsjahrgang. Das sind etwa ${Math.round(s.von(proz))} bis ${Math.round(s.bis(proz))} % der heutigen Summe.`],
-    [`rund ${Math.round(m.anteilVerlierer * 10) * 10}\u00a0%`, 'minus', `der Familien bekämen weniger als heute (je nach Annahme ${pz(s.von(verl))} bis ${pz(s.bis(verl))} %). Im Durchschnitt aller Familien sind es rund ${hundert(jeFamilie(m))} € weniger über die gesamte Bezugszeit (${hundert(s.von(jeFamilie))} bis ${hundert(s.bis(jeFamilie))} €).`],
-    [`rund ${Math.round(m.anteilGewinner * 10) * 10}\u00a0%`, '', `der Familien bekämen mehr als heute (${pz(s.von(gew))} bis ${pz(s.bis(gew))} %), vor allem wenn die Mutter vor der Geburt kein oder wenig Einkommen hatte.`],
+    [`rund ${anteil} %`, 'minus', `der Familien bekämen weniger (je nach Annahme ${pz(s.von(verl))} bis ${pz(s.bis(verl))} %)`],
+    [`−${schnitt}`, 'minus', `je Familie im Schnitt, über die ganze Bezugszeit (${hundert(s.von(jeFamilie))} bis ${hundert(s.bis(jeFamilie))} €)`],
+    [`rund ${Math.round(m.anteilGewinner * 10) * 10} %`, '', `bekämen mehr (${pz(s.von(gew))} bis ${pz(s.bis(gew))} %), vor allem wenn die Mutter vorher wenig oder nichts verdiente`],
+    [`−${mrd(s.bis(diff))} bis −${mrd(s.von(diff))}`, 'minus', `Mrd. € weniger für einen Geburtsjahrgang, ${Math.round(s.von(proz))} bis ${Math.round(s.bis(proz))} % der heutigen Summe`],
   ];
   $('stat-kennzahlen').replaceChildren(
     ...kz.map(([zahl, klasse, text]) => {
@@ -308,24 +339,37 @@ function statistik() {
       return d;
     }),
   );
-  // Schritt 1 nennt dieselben Zahlen wie der Überschlag, als eigene Schätzung mit Spanne gekennzeichnet.
+  // Schritt 1 und die Zeile im zugeklappten Hintergrund nennen dieselben Zahlen wie der Überschlag,
+  // als eigene Schätzung mit Spanne gekennzeichnet.
   // Die Werte im HTML sind der Stand ohne Skript; test/bevoelkerung.test.js hält sie am Modell.
-  $('plakat-schnitt').textContent = `−${hundert(jeFamilie(m))}\u00a0€`;
-  $('plakat-spanne').textContent = `${hundert(s.von(jeFamilie))} bis ${hundert(s.bis(jeFamilie))}\u00a0€`;
-  $('vorspann-anteil').textContent = Math.round(m.anteilVerlierer * 10) * 10;
-  $('vorspann-spanne').textContent = `${pz(s.von(verl))} bis ${pz(s.bis(verl))}`;
+  $('plakat-schnitt').textContent = `−${schnitt}`;
+  $('kern-betrag').textContent = schnitt;
+  $('quellen-spanne-betrag').textContent = `${hundert(s.von(jeFamilie))} bis ${hundert(s.bis(jeFamilie))} €`;
+  $('vorspann-anteil').textContent = anteil;
+  $('kern-anteil').textContent = anteil;
+  $('quellen-spanne-anteil').textContent = `${pz(s.von(verl))} bis ${pz(s.bis(verl))}`;
   const zeilen = (gruppen) => gruppen.map((g) => ({ label: g.klasse, wert: g.differenz }));
-  differenzbalken($('stat-aufteilung'), zeilen(m.nachAufteilung), 'Änderung je Familie nach Aufteilung');
+  differenzbalken($('stat-aufteilung'), zeilen(m.nachAufteilung), 'Änderung je Familie nach Monaten des Partners');
   differenzbalken($('stat-einkommen'), zeilen(m.nachEinkommen), 'Änderung je Familie nach Netto der Mutter');
-  $('stat-text').textContent =
-    `Grundlage: ${n.format(FAMILIEN)} Familien, in denen die Mutter Elterngeld bezogen hat, und ${n.format(PARTNER_MIT_BEZUG)} Väter mit Elterngeld, für ${n.format(KINDER_MIT_ELTERNGELD)} der ${n.format(GEBURTEN)} im Jahr ${JAHRGANG} geborenen Kinder (Statistisches Bundesamt). ` +
-    `Die Statistik zählt Mütter und Väter getrennt, nicht als Paare. Für die Familienwerte ist deshalb angenommen, dass jeder dieser Väter zu einer dieser Familien gehört und dass Einkommen und Bezugsdauer beider Elternteile nicht zusammenhängen. „Nur ein Elternteil“ umfasst Alleinerziehende und Paare, in denen der Partner kein Elterngeld bezieht. ` +
-    `Einkommen und Bezugsdauer nennt die Statistik nur in Klassen. Die Spanne ergibt sich daraus, wie man die höchsten Einkommen (über 2.770 € netto), ElterngeldPlus und den Anteil der Alleinerziehenden ansetzt; die Balken zeigen eine mittlere Variante. ` +
-    `Gerechnet ist mit der Auslegung, dass die Mutterschutzmonate zwei der vier 80-%-Monate verbrauchen. Nach der anderen Auslegung wären es etwa ${mrd(andere.bis(diff))} bis ${mrd(andere.von(diff))} Mrd. € weniger. ` +
-    `Nach heutigem Recht ergibt der Überschlag ${mrd(m.alt)} Mrd. € für den Jahrgang; der Bund hat 2024 tatsächlich 7,2 Mrd. € für Elterngeld ausgegeben. ` +
-    `Der Gesetzentwurf selbst nennt für 2030 eine Entlastung von 1,36 Mrd. €. Darin sind 140 Mio. € Mehrausgaben für die neue Einkommensermittlung und 25 Mio. € Einsparung beim Partnerschaftsbonus verrechnet; auf die hier gerechneten Regeln entfallen also rund 1,5 Mrd. €. Welche Geburtenzahl und welches Verhalten die Regierung unterstellt, sagt der Entwurf nicht. ` +
-    `Würden Paare wegen der Reform anders aufteilen und der Partner mehr Monate nehmen, fiele das Minus beim Elterngeld kleiner aus; dafür fehlte der Familie in diesen Monaten das meist höhere Gehalt. ` +
-    `Nicht enthalten: Geschwisterbonus, Mehrlinge, Teilzeit im Bezug, Partnerschaftsbonus, Sonderzahlungen.`;
+  // Annahmen des Überschlags als kurze Liste: fettes Stichwort, dann ein bis zwei Sätze
+  const anmerkungen = [
+    ['Grundlage', `${n.format(FAMILIEN)} Familien, in denen die Mutter Elterngeld bezogen hat, und ${n.format(PARTNER_MIT_BEZUG)} Väter mit Elterngeld, für ${n.format(KINDER_MIT_ELTERNGELD)} der ${n.format(GEBURTEN)} im Jahr ${JAHRGANG} geborenen Kinder (Statistisches Bundesamt).`],
+    ['Paare', 'Die Statistik zählt Mütter und Väter getrennt. Angenommen ist, dass jeder dieser Väter zu einer dieser Familien gehört und Einkommen und Bezugsdauer beider Eltern nicht zusammenhängen. „Nur ein Elternteil“ umfasst Alleinerziehende und Paare, in denen der Partner kein Elterngeld bezieht.'],
+    ['Spanne', 'Einkommen und Bezugsdauer nennt die Statistik nur in Klassen. Die Spanne ergibt sich daraus, wie man die höchsten Einkommen (über 2.770 € netto), ElterngeldPlus und den Anteil der Alleinerziehenden ansetzt; Balken und Mittelwerte zeigen eine mittlere Variante.'],
+    ['Auslegung', `Die Mutterschutzmonate verbrauchen zwei der vier 80-%-Monate. Nach der anderen Auslegung wären es etwa ${mrd(andere.bis(diff))} bis ${mrd(andere.von(diff))} Mrd. € weniger.`],
+    ['Abgleich', `Nach heutigem Recht ergibt der Überschlag ${mrd(m.alt)} Mrd. € für den Jahrgang; der Bund hat 2024 tatsächlich 7,2 Mrd. € für Elterngeld ausgegeben. Der Entwurf nennt für 2030 eine Entlastung von 1,36 Mrd. €; darin sind 140 Mio. € Mehrausgaben für die neue Einkommensermittlung und 25 Mio. € Einsparung beim Partnerschaftsbonus verrechnet, auf die hier gerechneten Regeln entfallen also rund 1,5 Mrd. €. Welche Geburtenzahl und welches Verhalten die Regierung unterstellt, sagt der Entwurf nicht.`],
+    ['Verhalten', 'Nähme der Partner wegen der Reform mehr Monate, fiele das Minus beim Elterngeld kleiner aus; dafür fehlte in diesen Monaten das meist höhere Gehalt.'],
+    ['Nicht enthalten', 'Geschwisterbonus, Mehrlinge, Teilzeit im Bezug, Partnerschaftsbonus, Sonderzahlungen.'],
+  ];
+  $('stat-text').replaceChildren(
+    ...anmerkungen.map(([stichwort, text]) => {
+      const li = document.createElement('li');
+      const b = document.createElement('strong');
+      b.textContent = `${stichwort}:`;
+      li.append(b, ` ${text}`);
+      return li;
+    }),
+  );
 }
 
 // ---------- Brief ----------
@@ -382,9 +426,11 @@ function briefVerdrahten() {
     bereich.collapse(false);
     e.currentTarget.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertFromPaste' }));
   });
-  const status = (t) => {
+  let statusWarten;
+  const status = (t, dauer = 6000) => {
     $('b-status').textContent = t;
-    setTimeout(() => ($('b-status').textContent = ''), 6000);
+    clearTimeout(statusWarten);
+    statusWarten = setTimeout(() => ($('b-status').textContent = ''), dauer);
   };
   const text = () => $('brieftext').innerText.trim();
   $('b-kopieren').addEventListener('click', async () => {
@@ -395,17 +441,19 @@ function briefVerdrahten() {
       status('Kopieren nicht möglich. Bitte den Text von Hand markieren und kopieren.');
     }
   });
+  // Der Brief kommt in den Link, wenn er nicht zu lang ist, und immer auch in die Zwischenablage.
+  // Die Meldung bleibt eine Minute stehen: sie muss auch nach der Rückkehr aus der Mail-App noch stimmen.
   $('b-mail').addEventListener('click', async () => {
     const d = briefDaten();
     const m = mailto({ ...d, text: text() });
-    if (!m.mitText) {
-      try {
-        await navigator.clipboard.writeText(text());
-        status('Der Brief ist zu lang für einen E-Mail-Link. Er liegt in der Zwischenablage: im E-Mail-Programm einfügen.');
-      } catch {
-        status('Bitte den Brieftext kopieren und im E-Mail-Programm einfügen.');
-      }
+    let kopiert = true;
+    try {
+      await navigator.clipboard.writeText(text());
+    } catch {
+      kopiert = false;
     }
+    if (m.mitText) status(kopiert ? 'Der Brief steht in der E-Mail und in der Zwischenablage.' : 'Der Brief steht in der E-Mail.', 60000);
+    else status(kopiert ? 'Der Brief ist zu lang für einen E-Mail-Link und liegt in der Zwischenablage: in die E-Mail einfügen.' : 'Bitte den Brieftext mit „Text kopieren“ kopieren und in die E-Mail einfügen.', 60000);
     location.href = m.href;
   });
   $('b-pdf').addEventListener('click', () => {
@@ -431,22 +479,42 @@ function teilenAktualisieren() {
   const text = teiltext(aktuell, url);
   $('t-text').textContent = text;
   $('t-netzwerke').replaceChildren(
-    ...netzwerke(text, url).map((n) => {
+    ...netzwerke(text, url, kurztext(aktuell, url)).map((n) => {
       const a = document.createElement('a');
-      a.className = 'knopf';
+      a.className = 'kachel';
       a.href = n.href;
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
-      a.textContent = n.name;
+      const name = document.createElement('span');
+      name.textContent = n.name;
+      const sym = document.createElement('span');
+      sym.className = 'sym';
+      sym.append(symbol(n.symbol));
+      a.append(sym, name);
       return a;
     }),
   );
-  zeichne($('teilbild'), { ...aktuell, seite: location.host || 'elterngeld-rechner' });
+  zeichne($('teilbild'), aktuell);
 }
 function teilenVerdrahten() {
+  // Rückmeldungen stehen in der Zeile unter dem Raster (feste Höhe, siehe style.css) …
+  let statusWarten;
   const status = (t) => {
     $('t-status').textContent = t;
-    setTimeout(() => ($('t-status').textContent = ''), 5000);
+    clearTimeout(statusWarten);
+    statusWarten = setTimeout(() => ($('t-status').textContent = ''), 5000);
+  };
+  // … und für „Text kopieren“ (am Handy weit weg vom Raster) zusätzlich auf dem Knopf selbst; seine Breite bleibt fest
+  const amKnopf = (knopf, t) => {
+    const beschriftung = [...knopf.childNodes].find((k) => k.nodeType === Node.TEXT_NODE && k.textContent.trim());
+    knopf._text ??= beschriftung.textContent;
+    knopf.style.minWidth = `${knopf.offsetWidth}px`;
+    beschriftung.textContent = t;
+    clearTimeout(knopf._warten);
+    knopf._warten = setTimeout(() => {
+      beschriftung.textContent = knopf._text;
+      knopf.style.minWidth = '';
+    }, 2500);
   };
   const datei = async () => new File([await alsBlob($('teilbild'))], 'elterngeldreform-ergebnis.png', { type: 'image/png' });
   $('t-bild').addEventListener('click', async () => {
@@ -461,9 +529,20 @@ function teilenVerdrahten() {
       await navigator.clipboard.writeText(teilUrl());
       status('Link kopiert.');
     } catch {
-      status('Kopieren nicht möglich. Der Link steht im Text unter den Knöpfen.');
+      status('Kopieren nicht möglich. Der Link steht im Text darüber.');
     }
   });
+  $('t-kopieren').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText($('t-text').textContent);
+      amKnopf($('t-kopieren'), 'Kopiert');
+    } catch {
+      amKnopf($('t-kopieren'), 'Nicht möglich');
+      status('Kopieren nicht möglich. Markiere den Text und kopiere ihn von Hand.');
+    }
+  });
+  // Das Teilen-Menü des Geräts gibt es nicht überall; ohne es bleibt der Knopf weg (Text und Link kopiert „Text kopieren“)
+  $('t-teilen').hidden = !navigator.share;
   $('t-teilen').addEventListener('click', async () => {
     const url = teilUrl();
     const text = teiltext(aktuell, url);
@@ -593,14 +672,32 @@ function fuehrungVerdrahten() {
   document.fonts.ready.then(markiere);
   markiere();
 
-  // Reiter in Schritt 3
+  // Reiter in Schritt 3 (Reihenfolge: Petition, Teilen, Brief; Petition ist beim Laden gewählt).
+  // Pfeiltasten, Pos1 und Ende wechseln wie bei Reitern üblich; nur der gewählte Reiter ist per Tab erreichbar.
   const reiter = [...document.querySelectorAll('[data-reiter]')];
-  reiter.forEach((b) =>
+  const waehle = (b, fokus = false) => {
+    reiter.forEach((x) => {
+      x.setAttribute('aria-selected', String(x === b));
+      x.tabIndex = x === b ? 0 : -1;
+      $(`feld-${x.dataset.reiter}`).hidden = x !== b;
+    });
+    if (fokus) b.focus();
+  };
+  reiter.forEach((b, i) => {
+    b.addEventListener('click', () => waehle(b));
+    b.addEventListener('keydown', (e) => {
+      const ziel = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: reiter.length - 1 }[e.key];
+      if (ziel === undefined) return;
+      e.preventDefault();
+      waehle(reiter[(ziel + reiter.length) % reiter.length], true);
+    });
+  });
+  waehle(reiter[0]);
+  // Zeile „Danach:" unter jedem Feld: anderen Reiter wählen und zum Anfang von Schritt 3
+  document.querySelectorAll('[data-danach]').forEach((b) =>
     b.addEventListener('click', () => {
-      reiter.forEach((x) => {
-        x.setAttribute('aria-selected', String(x === b));
-        $(`feld-${x.dataset.reiter}`).hidden = x !== b;
-      });
+      waehle(reiter.find((x) => x.dataset.reiter === b.dataset.danach));
+      geheZu('handeln');
     }),
   );
 
@@ -612,14 +709,14 @@ function fuehrungVerdrahten() {
       statistik();
     }),
   );
-  // Klappen unter dem Ergebnis: Monatsverlauf und genauere Eingaben
+  // Klappe unter dem Ergebnis: genauere Eingaben samt Monatsverlauf
   document.querySelectorAll('[data-klappe]').forEach((b) =>
     b.addEventListener('click', () => {
       const feld = $(b.dataset.klappe);
       feld.hidden = !feld.hidden;
       b.setAttribute('aria-expanded', String(!feld.hidden));
       if (feld.hidden) return;
-      if (b.dataset.klappe === 'verlauf') verlauf(true);
+      if (b.dataset.klappe === 'genauer') verlauf(true); // erst jetzt hat das Diagramm seine Breite
       // nur scrollen, wenn die Klappe sonst unter dem Fensterrand läge
       if (feld.getBoundingClientRect().top > innerHeight - 60) feld.scrollIntoView({ behavior: RUHIG ? 'auto' : 'smooth', block: 'nearest' });
     }),
@@ -635,12 +732,11 @@ function fuehrungVerdrahten() {
   const zeige = () => {
     offen = offen.filter((el) => {
       const r = el.getBoundingClientRect();
-      if (r.top > innerHeight * 0.94 || r.width === 0) return true;
+      // display: contents (Rechner-Spalte am Handy) hat keinen eigenen Kasten: gilt als sichtbar
+      if (r.top > innerHeight * 0.94 || (r.width === 0 && getComputedStyle(el).display !== 'contents')) return true;
       el.classList.add('da');
-      if (el.classList.contains('fall')) {
-        const zahl = el.querySelector('.differenz');
-        zaehle(zahl, zahl._wert ?? 0, 0);
-      }
+      // Balken in Schritt 2: Zahlen laufen beim ersten Einblenden von 0 hoch (die Höhen wachsen per CSS)
+      if (el.id === 'saeulen') el.querySelectorAll('#delta-zahl, #summe-heute, #summe-geplant').forEach((z) => zaehle(z, z._wert ?? 0, undefined, 0));
       return false;
     });
     if (offen.length === 0) {
@@ -659,22 +755,30 @@ function fuehrungVerdrahten() {
 // Impressum). Das Sprungziel vorab merken: rechne() ersetzt das Fragment durch die Eingaben.
 const sprungziel = (hash) => (hash.includes('=') ? '' : hash.slice(1));
 const startziel = sprungziel(location.hash);
+// Geteilter Link: Zustand in der Adresse, also eigene Zahlen; die Seite springt gleich zum Ergebnis
+const geteilt = location.hash.includes('=');
+eigeneZahlen = geteilt;
+titelSetzen();
 ausUrl();
 formularFuellen();
 formularVerdrahten();
 briefVerdrahten();
 teilenVerdrahten();
 rueckmeldungVerdrahten();
+symboleEinsetzen();
 stimmenBauen();
 statistik();
 rechne();
 fuehrungVerdrahten();
 if (startziel) geheZu(startziel, true);
+else if (geteilt) geheZu('ergebnis', true);
 // Meldung an js/vorab.js: Start gelungen, die Einblendungen laufen (sonst nimmt vorab.js sie zurück)
 document.documentElement.dataset.bereit = '1';
 
 window.addEventListener('hashchange', () => {
   if (!location.hash.includes('=')) return geheZu(sprungziel(location.hash));
+  eigeneZahlen = true;
+  titelSetzen();
   ausUrl();
   formularFuellen();
   rechne();

@@ -138,9 +138,21 @@ export function brief({ eingabe, vergleich, an, mdbName = '', name = '', ort = '
   return { betreff, text, email: adressat.email };
 }
 
-/** mailto:-Adresse; der Text kommt nur in den Link, wenn er kurz genug für alle Mailprogramme ist. */
+/**
+ * Höchstlänge des kodierten mailto:-Links mit Text. Der Standardbrief hat kodiert rund 2.300 bis
+ * 2.500 Zeichen (Umlaute zählen sechsfach, Leerzeichen dreifach); die frühere Grenze von 1.900 ließ
+ * ihn praktisch nie in den Link. Mail auf iOS und macOS, Gmail und Outlook auf Android und iOS,
+ * Thunderbird und neue Outlook-Versionen übernehmen Links mit mehreren tausend Zeichen; ältere
+ * Desktop-Programme unter Windows kürzen sehr lange Links teils ab. 8.000 lässt dem Standardbrief
+ * und eigenen Ergänzungen gut das Dreifache an Platz und bleibt deutlich unter den Grenzen der
+ * Browser. Weil ein Programm trotzdem kürzen kann, legt main.js den Text immer zusätzlich in die
+ * Zwischenablage.
+ */
+export const MAILTO_GRENZE = 8000;
+
+/** mailto:-Adresse; der Text kommt in den Link, solange der Link nicht länger als MAILTO_GRENZE ist. */
 export function mailto({ betreff, text, email = '' }) {
   const kopf = `mailto:${email}?subject=${encodeURIComponent(betreff)}`;
   const voll = `${kopf}&body=${encodeURIComponent(text)}`;
-  return voll.length <= 1900 ? { href: voll, mitText: true } : { href: kopf, mitText: false };
+  return voll.length <= MAILTO_GRENZE ? { href: voll, mitText: true } : { href: kopf, mitText: false };
 }

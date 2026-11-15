@@ -1,5 +1,6 @@
 /* Gestaltung: weißer Grund, eine Schrift (Schibsted Grotesk, selbst gehostet), Schwarz und Grau.
-   Farbe steht nur für weniger (rot) und mehr (grün). Die Seite führt in drei Schritten
+   Farbe steht nur für weniger (rot) und mehr (grün); einzige Ausnahme sind die zwei Balken im
+   Rechner (Heute stahlblau). Die Seite führt in drei Schritten
    (Problem → Ergebnis → Handeln); Elemente blenden beim Scrollen leicht ein, Karten haben einen
    weichen Schatten. Keine Verläufe. Bewegung ist bei "prefers-reduced-motion" abgeschaltet.
    Keine Tabellenziffern: die Schrift macht damit auch Punkt und Komma breit ("1 . 800"). */
@@ -95,25 +96,29 @@ h3 { font-weight: 650; font-size: 16px; line-height: 1.35; margin: 0 0 8px; }
 /* Schritt 1: Aufhänger links, schwarzer Rechner-Einstieg rechts am Fensterrand */
 .erster { border-top: 0; overflow: clip; }
 .buehne { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 0 20px; }
-.stand { font-size: 14.5px; color: var(--tinte-2); margin: 0 0 16px; }
-/* Überschrift und Vorspann wachsen mit der Fensterhöhe, damit Schritt 1 samt Schätzhinweisen und Quellen auf eine Seite passt */
-.buehne-links h1 { font-size: clamp(38px, min(5.2vw, 6.6vh), 72px); max-width: 22ch; margin-bottom: clamp(12px, 2vh, 24px); }
-.vorspann { font-size: clamp(17px, min(1.6vw, 2.4vh), 20px); line-height: 1.5; max-width: 54ch; margin: 0; }
+.stand { font-size: 15.5px; color: var(--tinte-2); margin: 0 0 16px; }
+/* Überschrift, Vorspann und Zahlen wachsen mit der Fensterhöhe, damit Schritt 1 samt Zitatreihe auf eine Seite passt */
+.buehne-links h1 { font-size: clamp(38px, min(5.6vw, 7.4vh), 78px); max-width: 22ch; margin-bottom: clamp(12px, 2vh, 24px); }
+.vorspann { font-size: clamp(17px, min(1.7vw, 2.8vh), 23px); line-height: 1.5; max-width: 54ch; margin: 0; }
 .plakat-titel { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; margin: clamp(14px, 2.4vh, 28px) 0 0; padding-top: 14px; border-top: 1px solid var(--linie); max-width: 760px; }
 .plakate { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 16px 36px; max-width: 760px; }
 .plakate li:first-child p { max-width: 24ch; }
 .plakate li + li { border-left: 1px solid var(--linie); padding-left: 36px; }
-.plakate strong { font-size: 16px; font-weight: 700; color: var(--verlust); }
+.plakate strong { font-size: 17px; font-weight: 700; color: var(--verlust); }
 .wechsel.minus b { color: var(--verlust); }
-.wechsel { display: flex; align-items: baseline; gap: 0.2em; font-weight: 800; font-size: clamp(34px, 3.6vw, 54px); line-height: 1; letter-spacing: -0.04em; white-space: nowrap; }
+.wechsel { display: flex; align-items: baseline; gap: 0.2em; font-weight: 800; font-size: clamp(36px, min(4.2vw, 7vh), 64px); line-height: 1; letter-spacing: -0.04em; white-space: nowrap; }
 .wechsel b { font-weight: 800; display: inline-block; opacity: 0; transform: translateY(0.25em); transition: opacity 0.5s ease, transform 0.6s var(--weich); transition-delay: calc(var(--i, 0) * 70ms + 650ms); }
 .da .wechsel b, html:not(.js) .wechsel b { opacity: 1; transform: none; }
-.plakate p { font-size: 14px; line-height: 1.4; color: var(--tinte-2); margin: 6px 0 0; }
-.buehne-links .quelle { margin: 12px 0 0; }
+.plakate p { font-size: 17px; line-height: 1.4; color: var(--tinte-2); margin: 8px 0 0; }
+.quellenlink { font-size: 15px; margin: clamp(12px, 2vh, 22px) 0 0; }
+.einkwort { text-transform: capitalize; }
 /* Links im ersten Bild führen zu Quelle und eigener Rechnung: deutlich unterstrichen, nicht blass */
 #problem a { text-decoration-color: currentColor; }
-.vorbehalt { margin: 0 0 32px; padding: 14px 16px; max-width: 84ch; background: var(--flaeche); border-radius: var(--r-klein); }
-.vorbehalt strong { color: var(--tinte); font-weight: 650; }
+.quellenstart { scroll-margin-top: 28px; margin: 0 0 36px; padding: 18px 20px 6px; background: var(--flaeche); border-radius: var(--r-klein); max-width: 84ch; }
+.quellenstart h3 { font-size: 17px; margin: 0 0 10px; }
+.quellenstart ul { margin: 0; padding-left: 18px; color: var(--tinte-2); font-size: 15.5px; }
+.quellenstart li { margin-bottom: 12px; }
+.quellenstart strong { color: var(--tinte); font-weight: 650; }
 
 .dunkel { background: #0c0e11; color: #fff; }
 .dunkel a { color: #fff; text-decoration-color: #5a626c; }
@@ -122,7 +127,7 @@ h3 { font-weight: 650; font-size: 16px; line-height: 1.35; margin: 0 0 8px; }
 .js .einschub[data-zeig].da { transform: none; }
 .einschub h2 { font-size: clamp(28px, 3.4vw, 46px); margin: 0 0 12px; max-width: none; }
 .einschub > p { color: #b9c0ca; font-size: clamp(17px, 1.5vw, 19px); margin: 0 0 28px; max-width: 30ch; }
-.einschub > p.klein { font-size: 13.5px; color: #8b93a0; margin: 22px 0 0; max-width: none; }
+.einschub > p.klein { font-size: 14.5px; color: #8b93a0; margin: 22px 0 0; max-width: none; }
 #schnell { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: end; max-width: 520px; }
 #schnell.allein .grossfeld { grid-column: 1 / -1; }
 #schnell .knopf { grid-column: 1 / -1; }
@@ -150,36 +155,35 @@ h3 { font-weight: 650; font-size: 16px; line-height: 1.35; margin: 0 0 8px; }
   .schritt > .huelle { width: 100%; }
   .schritt h2 { max-width: none; }
   .erster { flex-direction: column; align-items: stretch; padding: 0; }
-  .stimmenband { flex: none; height: 60px; }
+  .stimmenband { flex: none; }
   .buehne { flex: 1; min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(400px, 43vw); gap: clamp(32px, 5vw, 88px); padding: 0; align-items: stretch; }
   .buehne-links { align-self: center; padding: 0 0 0 max(20px, calc((100vw - var(--breit)) / 2 + 20px)); }
   .stand { margin-bottom: 10px; }
   /* klebt am rechten Fensterrand: nur die inneren Ecken sind rund */
-  .einschub { border-radius: 36px 0 0 36px; margin: clamp(16px, 3.5vh, 36px) 0; padding-block: clamp(20px, 4.5vh, 64px); padding-right: max(32px, 6vw); }
+  .einschub { border-radius: 36px 0 0 36px; margin: clamp(14px, 2.6vh, 36px) 0; padding-block: clamp(18px, 3.6vh, 64px); padding-right: max(32px, 6vw); }
   .js .einschub[data-zeig] { transform: translateX(72px); }
 }
 
-/* Zitatleiste unten in Schritt 1: Etikett steht fest, die Zitate laufen von rechts nach links durch.
-   Die Spur enthält die Zitate zweimal; sie wandert um ihre halbe Breite = nahtloser Umlauf. */
+/* Zitatleiste unten in Schritt 1: ruhige, stehende Reihe. Etikett links, je Zitat ein Block fester Breite
+   (Zitat in 2–3 Zeilen, darunter klein und grau der Absender). Passt die Reihe nicht, scrollt sie waagerecht
+   (dünne Leiste, am Handy wischbar); sie bewegt sich nie von selbst. */
 .stimmenband { border-top: 1px solid var(--linie); background: var(--grund); display: flex; align-items: center; min-width: 0; }
-.stimmen-etikett { flex: none; font-size: 13.5px; color: var(--tinte-3); padding: 0 24px 0 max(20px, calc((100vw - var(--breit)) / 2 + 20px)); white-space: nowrap; text-decoration-color: var(--linie-2); }
-.stimmen-fenster { flex: 1; min-width: 0; overflow: clip; }
-.stimmen-spur { display: flex; width: max-content; animation: stimmen-lauf 75s linear infinite; will-change: transform; }
-.stimmenband:hover .stimmen-spur, .stimmenband:focus-within .stimmen-spur { animation-play-state: paused; }
-.stimmen-gruppe { display: flex; flex: none; list-style: none; margin: 0; padding: 0; }
-.stimmen-gruppe li { flex: none; white-space: nowrap; padding-right: 72px; line-height: 60px; font-size: 15.5px; }
-.stimmen-text { font-weight: 600; }
-.stimmen-gruppe a { color: var(--tinte-3); margin-left: 10px; font-size: 14px; }
-@keyframes stimmen-lauf { to { transform: translateX(-50%); } }
-@media (prefers-reduced-motion: reduce) {
-  .stimmen-fenster { overflow-x: auto; }
-  .stimmen-spur { animation: none; }
-  .stimmen-gruppe[aria-hidden] { display: none; }
-}
+.stimmen-etikett { flex: none; font-size: 14px; font-weight: 600; color: var(--tinte-2); padding: 0 28px 0 max(20px, calc((100vw - var(--breit)) / 2 + 20px)); white-space: nowrap; text-decoration-color: var(--linie-2); }
+.stimmen-fenster { flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: var(--linie-2) transparent; padding: 14px 0 10px; }
+.stimmen-fenster::-webkit-scrollbar { height: 6px; }
+.stimmen-fenster::-webkit-scrollbar-thumb { background: var(--linie-2); border-radius: 3px; }
+.stimmen-spur { width: max-content; }
+.stimmen-gruppe { display: flex; gap: 40px; list-style: none; margin: 0; padding: 0 20px 0 0; }
+.stimmen-gruppe li { flex: none; width: 280px; display: flex; flex-direction: column; gap: 6px; }
+.stimmen-text { font-size: 14px; line-height: 1.38; font-weight: 550; color: var(--tinte); }
+.stimmen-gruppe a { font-size: 13px; line-height: 1.3; color: var(--tinte-3); text-decoration: none; }
+.stimmen-gruppe a:hover { color: var(--tinte); text-decoration: underline; }
 @media (max-width: 899px), (max-height: 599px) {
-  .stimmenband { flex-direction: column; align-items: stretch; padding-top: 10px; margin-top: 8px; }
-  .stimmen-etikett { padding: 0 20px 2px; }
-  .stimmen-gruppe li { line-height: 48px; }
+  .stimmenband { flex-direction: column; align-items: stretch; padding-top: 14px; margin-top: 8px; }
+  .stimmen-etikett { padding: 0 20px 0; }
+  .stimmen-fenster { padding: 12px 20px 12px; scroll-snap-type: x proximity; scroll-padding-inline: 20px; }
+  .stimmen-gruppe { gap: 28px; }
+  .stimmen-gruppe li { width: 240px; scroll-snap-align: start; }
 }
 .stimmenliste { list-style: none; margin: 0; padding: 0; }
 .stimmenliste li { padding: 16px 0; border-top: 1px solid var(--linie); }
@@ -235,78 +239,120 @@ input[type='range'] { width: 100%; height: 28px; margin: 0; accent-color: var(--
 .knopf.pfeil.runter:hover::after { transform: translateY(2px) rotate(135deg); }
 .status { font-size: 14px; color: var(--gewinn); min-height: 1.5em; margin: 10px 0 0; }
 
-/* Schritt 2: Ergebnis */
-#ergebnis { border-top: 0; }
-.fall { background: #fff; border: 1px solid var(--linie); border-radius: 20px; padding: clamp(20px, 2.4vw, 30px); box-shadow: var(--schatten); }
-.fall h3 { font-size: 19px; letter-spacing: -0.01em; margin: 0; }
-.fall .differenz { font-weight: 800; font-size: clamp(46px, 6vw, 80px); line-height: 1; letter-spacing: -0.02em; margin: 14px 0 10px -0.03em; white-space: nowrap; transition: color 0.3s; }
-.fall.verlust .differenz { color: var(--verlust); }
-.fall.gewinn .differenz { color: var(--gewinn); }
-.fall .satz { margin: 0; font-size: 15.5px; }
-
-/* Schritt 2: eine große Zahl für die gewählte Aufteilung, daneben die Bedingungen („Aber nur,
-   wenn:"). Die Zeile zu den Partnermonaten zeigt rechts das Ergebnis mit 4 bzw. 2 Monaten.
-   Feste Plätze, damit beim Umschalten nichts springt: Zahl mit fester Höhe, Satz mit Platz für
-   zwei Zeilen, Preisspalte fester Breite, Regler-Zeile immer im Layout (nur unsichtbar). */
-.fall.ergebnisblock { --zahl: clamp(60px, min(11.5vw, 20vh), 160px); border: 0; border-radius: 0; box-shadow: none; padding: 0; background: none; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: 20px 48px; align-items: start; }
-.ergebnisblock .differenz { font-size: var(--zahl); height: var(--zahl); line-height: var(--zahl); letter-spacing: -0.03em; margin: 0 0 10px -0.04em; }
-.ergebnisblock.lang .differenz { font-size: calc(var(--zahl) * 0.85); }
-.ergebnisblock .satz { font-size: 17px; max-width: 46ch; min-height: 3.1em; }
+/* Schritt 2: links zwei Balken „Heute" (grau) und „Geplant" (schwarz, was bleibt) auf einer
+   Grundlinie, rechts die Eingaben. Geometrie aus balkenmodell() in js/ui/balken.js; main.js setzt
+   nur Höhen in Prozent, das Gleiten kommt von hier. Über dem rechten Balken das fehlende Stück
+   (hellrot, gestrichelt) bis zur Höhe des linken, bzw. das zusätzliche Stück (hellgrün) über dem
+   linken; darüber im Kopfraum das Delta. In jedem Balken zwei Tönungen: unten Mutter, oben
+   Partner:in. Feste Höhen (Fläche, Kopfraum, Fuß mit Platz für „ohne Elterngeld", Zeile zur
+   Einordnung, Regler-Zeile), damit beim Ändern der Werte nichts springt. */
+#ergebnis { border-top: 0; --saeule: clamp(250px, 44svh, 340px); --delta: clamp(40px, min(11vw, 7.5vh), 68px); --kopfraum: calc(var(--delta) + 38px); }
 .unsichtbar { visibility: hidden; }
-/* Alleinerziehende haben keine Bedingungen: der ganze Block samt Überschrift verschwindet. Neben
-   der Zahl bleibt sein Platz stehen, damit nichts springt; einspaltig fällt er ganz weg. */
-.bedingungen-liste.aus { visibility: hidden; }
-@media (max-width: 899px) { .bedingungen-liste.aus { display: none; } }
-.bedingungen-liste h3 { font-size: 19px; font-weight: 750; letter-spacing: -0.01em; margin: 0 0 6px; }
-.bedingung { display: grid; grid-template-columns: 24px minmax(0, 1fr) 112px; gap: 2px 12px; align-items: start; padding: 9px 0; border-top: 1px solid var(--linie); cursor: pointer; transition: color 0.2s; }
-.bedingung.fest { cursor: default; }
-.bedingung input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--tinte); cursor: inherit; }
-.bedingung b { display: block; font-size: 15.5px; font-weight: 650; line-height: 1.3; }
-.bedingung small { display: block; font-size: 13px; line-height: 1.35; color: var(--tinte-3); margin-top: 2px; }
-.bedingung .preis { font-size: 13px; line-height: 1.3; color: var(--tinte-3); text-align: right; padding-top: 2px; }
-.bedingung .preis b { font-size: 16px; font-weight: 750; color: var(--tinte); white-space: nowrap; }
-.bedingung .preis b.minus { color: var(--verlust); }
-.bedingung .preis b.plus { color: var(--gewinn); }
-.bedingung.weg .b-text b { color: var(--tinte-3); text-decoration: line-through; text-decoration-color: var(--linie-2); }
-.partnerwahl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 0 0 9px 36px; font-size: 14px; color: var(--tinte-2); animation: auf 0.3s var(--weich) both; }
+/* „Beispiel: …" und „Das heißt es für euch" liegen übereinander: die Höhe richtet sich nach der längeren */
+.ergebnis-titel { display: grid; }
+.ergebnis-titel > span { grid-area: 1 / 1; }
+.nur-vorlesen { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.rechner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: 28px clamp(32px, 6vw, 96px); align-items: start; }
+.saeulen { margin: 0; max-width: 540px; }
+.saeulen-flaeche, .saeulen-fuss { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(18px, 4vw, 48px); }
+.saeulen-flaeche { height: var(--saeule); padding-top: var(--kopfraum); border-bottom: 2px solid var(--tinte); }
+.saeule { position: relative; }
+.teile, .stueck { position: absolute; left: 0; right: 0; bottom: 0; transition: height 0.6s var(--weich), bottom 0.6s var(--weich); }
+.teile { display: flex; flex-direction: column; border-radius: 6px 6px 0 0; overflow: hidden; }
+.teil { display: block; position: relative; flex: none; overflow: hidden; transition: height 0.6s var(--weich); }
+.teil.mutter { flex: 1 1 auto; }
+.teil span { position: absolute; left: 10px; right: 8px; bottom: 7px; font-size: 13px; font-style: normal; font-weight: 600; line-height: 1.3; }
+.eng .partner { overflow: visible; z-index: 1; }
+.eng .partner span { bottom: auto; top: calc(100% + 6px); }
+.heute.eng .partner span { color: #fff; }
+/* Farben der Balken (Vorgabe des Betreibers): Heute stahlblau; Geplant rot, wenn die Familie
+   weniger bekommt, grün, wenn sie mehr bekommt, bei Gleichstand tintenschwarz. Was fehlt, ist
+   nur gestrichelt umrandet; was dazukommt, liegt hellgrün obenauf. */
+.heute .mutter { background: #5b7690; color: #fff; }
+.heute .partner { background: #a9bccd; box-shadow: inset 0 -1px #fff; }
+.geplant .teil { color: #fff; }
+.geplant .mutter { background: var(--neu); }
+.geplant .partner { background: #3b4049; box-shadow: inset 0 -1px #fff; }
+[data-vorzeichen='minus'] .geplant .mutter { background: #c42c18; }
+[data-vorzeichen='minus'] .geplant .partner { background: #9c2010; }
+[data-vorzeichen='plus'] .geplant .mutter { background: #12805a; }
+[data-vorzeichen='plus'] .geplant .partner { background: #0c5f43; }
+/* Der Mutter-Teil hat eine Mindesthöhe (main.js); der Partner-Teil gibt dafür nach. Reine
+   Mutterschutz-Monate (Mutterschaftsgeld, kein Elterngeld) als heller schraffierter Streifen. */
+.teil.partner { flex: 0 1 auto; }
+.saeule .teil.mutter.schutz { background: repeating-linear-gradient(45deg, #fff 0 4px, #c3c8d0 4px 5px); color: var(--tinte); box-shadow: inset 0 0 0 1px var(--linie-2); }
+.stueck { z-index: 1; border-radius: 6px 6px 0 0; }
+.stueck.fehlt { border: 2px dashed var(--verlust); border-bottom: 0; }
+.stueck.mehr { background: #9fdcc0; }
+.delta { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; line-height: 1; white-space: nowrap; transition: color 0.3s; }
+.delta b { font-size: var(--delta); font-weight: 800; letter-spacing: -0.04em; }
+.delta span { font-size: 16px; font-weight: 700; margin-top: 6px; min-height: 16px; }
+[data-vorzeichen='minus'] .delta { color: var(--verlust); }
+[data-vorzeichen='plus'] .delta { color: var(--gewinn); }
+.saeulen-fuss { padding-top: 10px; min-height: 92px; }
+.saeulen-fuss div { display: flex; flex-direction: column; }
+.saeulen-fuss span { font-size: 14px; font-weight: 600; color: var(--tinte-2); }
+.saeulen-fuss b { font-size: clamp(22px, 2.3vw, 30px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
+.saeulen-fuss em { font-style: normal; font-size: 14px; font-weight: 650; line-height: 1.3; color: var(--verlust); margin-top: 3px; }
+/* erstes Einblenden: die Balken wachsen von der Grundlinie */
+.js .saeulen:not(.da) .teile, .js .saeulen:not(.da) .stueck { height: 0 !important; bottom: 0 !important; }
+
+.rechner-eingaben { padding: 20px 22px; }
+.netto-paar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 16px; }
+.netto-paar .feld { grid-template-columns: minmax(0, 1fr); gap: 4px; margin-bottom: 8px; }
+.netto-paar label { font-weight: 600; color: var(--tinte); }
+.mit-einheit { position: relative; display: block; }
+.feld .mit-einheit .zahlfeld { width: 100%; text-align: left; font-size: 20px; font-weight: 700; padding: 7px 34px 7px 12px; }
+.mit-einheit i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-style: normal; color: var(--tinte-3); pointer-events: none; }
+.rechner-eingaben .haken { margin: 0 0 14px; }
+.partnerwahl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 15px; font-weight: 600; }
 .partnerwahl .umschalter { margin: 0; }
-.partnerwahl .umschalter button { font-size: 13.5px; padding: 5px 13px; }
+.partnerwahl .umschalter button { padding: 5px 14px; }
 .regler { flex: 1 0 100%; display: grid; grid-template-columns: minmax(0, 1fr) 76px; gap: 12px; align-items: center; animation: auf 0.3s var(--weich) both; }
-.regler output { font-size: 14px; font-weight: 650; color: var(--tinte); text-align: right; }
-@media (max-width: 1100px) { .fall.ergebnisblock { grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: 20px 32px; } }
-@media (max-width: 899px) { .fall.ergebnisblock { grid-template-columns: minmax(0, 1fr); } }
-
-
-.verlauf-kopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px 24px; }
-.verlauf-kopf h3 { margin-bottom: 2px; }
-.verlauf .diagramm { margin-top: 16px; max-width: 760px; }
+.regler output { font-size: 14px; font-weight: 650; text-align: right; }
+.einordnung { margin: 10px 0 0; padding-top: 12px; border-top: 1px solid var(--linie-2); font-size: 15px; line-height: 1.4; min-height: calc(2.8em + 13px); }
+.einordnung:empty { border-top-color: transparent; }
+.einordnung a { font-size: 12.5px; color: var(--tinte-3); white-space: nowrap; }
+.knopf.leise { border-color: transparent; background: none; color: var(--tinte-2); }
+.knopf.leise:hover { border-color: var(--linie-2); }
+.knopf.leise[aria-expanded='true'] { color: var(--tinte); border-color: var(--linie-2); }
+.gewaehr { margin: 10px 0 0; font-size: 13px; color: var(--tinte-3); }
+@media (max-width: 899px) {
+  .rechner { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
+  /* Handy: „Jetzt handeln" direkt unter den Balken, danach die Eingaben, „Genauer rechnen" und der Hinweis.
+     Derselbe Knopf wie am Desktop: die rechte Spalte löst sich auf, ihre Teile ordnen sich ins Raster. */
+  .rechner-rechts, .rechner .weiter { display: contents; }
+  .rechner .weiter > .knopf.haupt { order: 1; justify-self: start; margin-top: 6px; }
+  .rechner-eingaben { order: 2; margin-top: 28px; }
+  .rechner .weiter > .knopf.leise { order: 3; justify-self: start; margin-top: 12px; }
+  .rechner .gewaehr { order: 4; }
+}
+@media (max-width: 520px) { .saeulen-fuss { min-height: 104px; } } /* „ohne Elterngeld" bricht hier um */
+@media (max-width: 420px) { .rechner-eingaben { padding: 16px; } .feld .mit-einheit .zahlfeld { font-size: 18px; } }
+/* Desktop: Balkenfläche füllt die Bildschirmseite, abzüglich Überschrift (58px), Fuß (92px) und 4px Luft */
+@media (min-width: 900px) and (min-height: 600px) {
+  #ergebnis { --saeule: calc(var(--seite) - var(--oben) - clamp(20px, 4vh, 44px) - 154px); }
+}
 
 .spalten { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 48px; }
 @media (max-width: 760px) { .spalten { grid-template-columns: minmax(0, 1fr); } }
 .eingaben .planhinweis { margin: -6px 0 14px; color: var(--tinte); }
 
-.kennzahlen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; padding: 28px 0 40px; border-top: 1px solid var(--linie); }
+.kennzahlen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; padding: 24px 0 40px; border-top: 1px solid var(--linie); }
 .kennzahl .zahl { font-weight: 750; font-size: clamp(27px, 2.9vw, 32px); line-height: 1.08; letter-spacing: -0.035em; }
 .kennzahl .zahl.minus { color: var(--verlust); }
 .kennzahl p { margin: 12px 0 0; font-size: 14.5px; color: var(--tinte-2); line-height: 1.45; }
-@media (max-width: 760px) { .kennzahlen { grid-template-columns: minmax(0, 1fr); gap: 28px; } }
-.weiter { margin-top: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; }
-.weiter .klein { margin-left: 10px; }
-#ergebnis .einleitung { margin-bottom: 6px; }
-.aufteilung { list-style: none; margin: 0 0 12px; padding: 0; font-size: 15.5px; line-height: 1.45; color: var(--tinte-2); min-height: 2.9em; }
-@media (min-width: 900px) { .aufteilung li { white-space: nowrap; } }
-.aufteilung b { font-weight: 650; color: var(--tinte); }
-.aufteilung .verfallen { color: var(--verlust); font-weight: 650; }
+@media (max-width: 900px) { .kennzahlen { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 24px; } }
+.weiter { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
 .klappe { margin-top: 28px; animation: auf 0.35s var(--weich) both; }
-.klappe .diagramm { margin-top: 16px; max-width: 760px; }
-.weiter .klein { color: var(--tinte-3); }
+.klappe .verlauf { margin-top: 32px; }
+.klappe .diagramm { margin-top: 12px; max-width: 760px; }
 
 /* Diagramme */
 .diagramm { margin: 28px 0 0; }
-.zwei > .diagramm, .kaufkraft > .diagramm { margin-top: 0; }
+.zwei > .diagramm, .seitlich > .diagramm { margin-top: 0; }
 .diagramm h3 { margin-bottom: 2px; }
 .unter { font-size: 14px; color: var(--tinte-2); margin: 0 0 14px; }
-.verlauf-kopf .unter { margin: 0; }
 .diagramm svg { display: block; width: 100%; height: auto; overflow: visible; }
 .legende { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13.5px; color: var(--tinte-2); margin: 10px 0 0; padding: 0; list-style: none; }
 .legende li { display: flex; align-items: center; gap: 7px; }
@@ -396,8 +442,27 @@ svg .null { fill: var(--verlust); font-weight: 750; }
 .teilen { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 48px; align-items: start; }
 @media (max-width: 760px) { .teilen { grid-template-columns: minmax(0, 1fr); gap: 28px; } }
 .teilen canvas { width: 100%; height: auto; border: 1px solid var(--linie); border-radius: var(--r); box-shadow: var(--schatten); display: block; }
-.teilen .knoepfe:first-child { margin-top: 0; }
-.teiltext { max-width: 60ch; overflow-wrap: anywhere; } /* der Link mit den Eingaben hat keine Leerzeichen und liefe auf dem Handy sonst über den Rand */
+.teilen-rechts { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+/* Kopiertext wie ein herausgestelltes Zeitungszitat: kräftige Linie links, größere Schrift; der Link mit den Eingaben hat keine Leerzeichen und bricht überall um */
+.zitat { margin: 0; padding: 2px 0 2px 24px; border-left: 5px solid var(--tinte); }
+.zitat p { margin: 0; font-size: clamp(17px, 1.45vw, 20px); line-height: 1.5; font-weight: 550; letter-spacing: -0.005em; overflow-wrap: anywhere; }
+.zitatfuss { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding-left: 29px; }
+.zitatfuss .knopf { padding: 9px 14px; font-size: 14.5px; }
+.zitatfuss .status { flex: 1 1 160px; margin: 0 0 0 4px; min-height: 0; }
+.sym { display: inline-flex; flex: none; }
+.sym svg { display: block; width: 24px; height: 24px; }
+.knopf .sym svg { width: 18px; height: 18px; margin-right: 8px; }
+/* gleich große Kacheln: Symbol über dem Namen */
+.raster { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.raster-inhalt { display: contents; }
+.kachel { font: inherit; font-size: 14px; font-weight: 600; line-height: 1.2; text-align: center; color: var(--tinte); background: #fff; border: 1px solid var(--linie-2); border-radius: var(--r-klein); padding: 12px 6px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; text-decoration: none; cursor: pointer; transition: transform 0.15s, box-shadow 0.2s, border-color 0.15s; }
+.kachel:hover { border-color: var(--tinte); transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(16, 18, 22, 0.45); }
+.kachel:active { transform: scale(0.98); box-shadow: none; }
+@media (max-width: 760px) {
+  .raster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kachel { flex-direction: row; justify-content: flex-start; text-align: left; padding: 12px 14px; gap: 12px; }
+  .zitatfuss { padding-left: 0; }
+}
 
 /* Hintergrund: aufklappbare Abschnitte */
 .akkordeon { border-top: 1px solid var(--linie); }
@@ -408,9 +473,19 @@ svg .null { fill: var(--verlust); font-weight: 750; }
 .akkordeon details[open] > summary::after { transform: translateY(-30%) rotate(225deg); }
 .akkordeon summary:hover { padding-left: 6px; }
 .akkordeon .inhalt { padding: 6px 0 40px; animation: auf 0.35s var(--weich) both; }
-.akkordeon .inhalt > .einleitung { font-size: 16.5px; margin-bottom: 24px; }
+/* Zugeklappt liest sich die Liste wie ein Inhaltsverzeichnis: Frage, darunter die Antwort in einer Zeile */
+.akkordeon summary .frage, .akkordeon summary .kern { display: block; }
+.akkordeon summary .kern { margin-top: 3px; font-size: 15px; font-weight: 450; letter-spacing: 0; line-height: 1.4; color: var(--tinte-2); }
+/* Jeder Bereich beginnt mit einer Aussage, danach der Beleg */
+.aussage { font-size: clamp(17px, 1.6vw, 20px); font-weight: 600; line-height: 1.4; letter-spacing: -0.01em; max-width: 56ch; margin: 0 0 24px; }
+.akkordeon h3.abschnitt { margin: 32px 0 8px; }
+.aussage + .vorab { margin: -12px 0 24px; max-width: 62ch; }
+.akkordeon .inhalt > p:not([class]) { color: var(--tinte-2); max-width: 62ch; }
 .schmal { max-width: 660px; }
-.stat-text { max-width: 84ch; margin: 32px 0 0; }
+.mittel { max-width: 880px; }
+.anmerkungen { list-style: none; margin: 0; padding: 0; max-width: 84ch; font-size: 14px; line-height: 1.5; color: var(--tinte-2); }
+.anmerkungen li { margin-bottom: 8px; }
+.anmerkungen strong, .fliesstext li strong { color: var(--tinte); font-weight: 650; }
 
 table { border-collapse: collapse; width: 100%; font-size: 15px; }
 th, td { text-align: left; padding: 11px 14px 11px 0; border-bottom: 1px solid var(--linie); vertical-align: top; line-height: 1.4; }
@@ -426,9 +501,11 @@ td .besser { color: var(--gewinn); font-weight: 650; }
   th:first-child { width: 40%; }
 }
 
-.kaufkraft { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 56px; align-items: start; }
-.kaufkraft .einleitung { margin-bottom: 0; font-size: 16px; }
-@media (max-width: 900px) { .kaufkraft { grid-template-columns: minmax(0, 1fr); gap: 24px; } }
+/* Aussage links, Diagramm rechts (Kaufkraft, Karte); schmal untereinander */
+.seitlich { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 56px; align-items: start; }
+.seitlich > .aussage { margin-bottom: 0; }
+.seitlich .unter { margin-top: 4px; }
+@media (max-width: 900px) { .seitlich { grid-template-columns: minmax(0, 1fr); gap: 24px; } }
 .kk-zeile { display: grid; grid-template-columns: 136px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 14px; color: var(--tinte-2); margin: 7px 0; }
 .kk-spur { display: flex; align-items: center; gap: 8px; }
 .kk-spur i { display: block; height: 18px; flex: none; border-radius: 2px; }

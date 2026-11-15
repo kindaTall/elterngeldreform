@@ -12,6 +12,9 @@ Statische Kampagnenseite: Vergleich Elterngeld geltendes Recht vs. Gesetzentwurf
 - Sicherheits-Header: `site/.htaccess` (Apache) und CSP-Meta in den drei HTML-Seiten, beide müssen gleich lauten
 - Rechenkern: `site/js/calc/` — Regeln und Quellen in `regeln.js`, Annahmen in den Dateiköpfen von `szenario.js`, `bevoelkerung.js`, `netto.js`
 - Oberfläche: `site/js/main.js`, `site/js/ui/`
+- Rechner in Schritt 2: zwei Balken „Heute/Geplant“, Modell ohne DOM in `site/js/ui/balken.js` (Farben: Kommentar bei den Balken-Regeln in `style.css`)
+- Teilen-Bild (1080×1350) zeichnet `zeichne` in `site/js/ui/teilen.js`; `site/og.png` hat denselben Aufbau im Querformat
+- Symbole der Teilen-Knöpfe: `site/js/ui/symbole.js` (Marken aus Simple Icons, CC0, Quelle im Dateikopf; eigene neutrale Symbole)
 - Schrift liegt in `site/fonts/` (Schibsted Grotesk aus `@fontsource-variable/*`), keine externen Anfragen beim Laden
 - Geldbeträge und Differenzen immer je Familie/Paar zeigen, nie getrennt nach Mutter und Vater (Rechner, Statistik, Brief, Teilen)
 - Aufbau der Seite: drei Schritte (Problem → Ergebnis → Handeln), danach aufklappbarer Hintergrund; der Rechner vergleicht dieselbe Aufteilung der Monate nach geltendem Recht und nach dem Entwurf (Partnermonate in Schritt 2, Monate der Mutter unter „Genauer rechnen“)
