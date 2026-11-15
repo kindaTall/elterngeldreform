@@ -140,6 +140,14 @@ h3 { font-weight: 650; font-size: 16px; line-height: 1.35; margin: 0 0 8px; }
 .mit-euro i { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 20px; color: #8b93a0; pointer-events: none; }
 #schnell .haken { grid-column: 1 / -1; color: #b9c0ca; margin: 4px 0 0; }
 #schnell .haken input { accent-color: #fff; }
+/* Handy: Schritt 1 steht sofort da. Sonst wartet der erste Bildschirm, bis main.js samt aller Module
+   geladen ist und .da setzt (bei langsamer Verbindung mehrere Sekunden nur die Kopfzeile). */
+@media (max-width: 899px) {
+  .js #problem [data-zeig], .js #problem .wechsel b { opacity: 1; transform: none; transition: none; }
+  /* Sprungziel des schwebenden Knopfs: die Überschrift im Kasten steht frei unter dem klebenden Kopf,
+     auch wenn der Kasten beim Sprung noch um 28px versetzt eingeblendet wird */
+  #start { scroll-margin-top: 16px; }
+}
 @media (max-width: 560px) {
   .plakate { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .plakate li + li { border-left: 0; padding-left: 0; border-top: 1px solid var(--linie); padding-top: 18px; }
@@ -167,9 +175,10 @@ h3 { font-weight: 650; font-size: 16px; line-height: 1.35; margin: 0 0 8px; }
 /* Zitatleiste unten in Schritt 1: ruhige, stehende Reihe. Etikett links, je Zitat ein Block fester Breite
    (Zitat in 2–3 Zeilen, darunter klein und grau der Absender). Passt die Reihe nicht, scrollt sie waagerecht
    (dünne Leiste, am Handy wischbar); sie bewegt sich nie von selbst. */
-.stimmenband { border-top: 1px solid var(--linie); background: var(--grund); display: flex; align-items: center; min-width: 0; }
-.stimmen-etikett { flex: none; font-size: 14px; font-weight: 600; color: var(--tinte-2); padding: 0 28px 0 max(20px, calc((100vw - var(--breit)) / 2 + 20px)); white-space: nowrap; text-decoration-color: var(--linie-2); }
-.stimmen-fenster { flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: var(--linie-2) transparent; padding: 14px 0 10px; }
+/* Das Etikett steht als kleine Zeile über der Reihe, linksbündig mit dem Seiteninhalt; die Zitate haben darunter die volle Breite. */
+.stimmenband { border-top: 1px solid var(--linie); background: var(--grund); display: flex; flex-direction: column; align-items: stretch; min-width: 0; }
+.stimmen-etikett { flex: none; align-self: flex-start; font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--tinte-2); margin: 10px 0 0 max(20px, calc((100vw - var(--breit)) / 2 + 20px)); white-space: nowrap; text-decoration-color: var(--linie-2); }
+.stimmen-fenster { flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: var(--linie-2) transparent; padding: 8px 0 8px max(20px, calc((100vw - var(--breit)) / 2 + 20px)); }
 .stimmen-fenster::-webkit-scrollbar { height: 6px; }
 .stimmen-fenster::-webkit-scrollbar-thumb { background: var(--linie-2); border-radius: 3px; }
 .stimmen-spur { width: max-content; }
@@ -178,9 +187,11 @@ h3 { font-weight: 650; font-size: 16px; line-height: 1.35; margin: 0 0 8px; }
 .stimmen-text { font-size: 14px; line-height: 1.38; font-weight: 550; color: var(--tinte); }
 .stimmen-gruppe a { font-size: 13px; line-height: 1.3; color: var(--tinte-3); text-decoration: none; }
 .stimmen-gruppe a:hover { color: var(--tinte); text-decoration: underline; }
+/* Handy: Reihe ausgeblendet (die Stimmen stehen vollständig im Hintergrund unter #stimmen), sie verlängert sonst den Weg zum Ergebnis */
+@media (max-width: 899px) { .stimmenband { display: none; } }
 @media (max-width: 899px), (max-height: 599px) {
-  .stimmenband { flex-direction: column; align-items: stretch; padding-top: 14px; margin-top: 8px; }
-  .stimmen-etikett { padding: 0 20px 0; }
+  .stimmenband { padding-top: 14px; margin-top: 8px; }
+  .stimmen-etikett { margin: 0 20px; }
   .stimmen-fenster { padding: 12px 20px 12px; scroll-snap-type: x proximity; scroll-padding-inline: 20px; }
   .stimmen-gruppe { gap: 28px; }
   .stimmen-gruppe li { width: 240px; scroll-snap-align: start; }
@@ -408,6 +419,19 @@ svg .null { fill: var(--verlust); font-weight: 750; }
   }
   #handeln .teilen canvas { width: auto; max-width: 100%; max-height: calc(var(--seite) - 224px - var(--oben)); }
   #handeln .teilen { grid-template-columns: auto minmax(0, 1fr); }
+  #handeln .teilen-rechts > .status { height: 1.5em; margin: -6px 0 0; } /* breite Spalte: eine Zeile reicht */
+  /* „Danach:" nur am Handy: am Desktop hielte Schritt 3 sonst nicht genau eine Bildschirmseite */
+  #handeln .danach { display: none; }
+  /* Abgeordnetensuche am Desktop als Knopf neben dem Namensfeld, die Anleitung als eine Zeile darunter:
+     so bleibt das Formular niedrig genug für eine Bildschirmseite */
+  #b-mdb-feld { grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; }
+  #b-mdb-feld label { grid-column: 1 / -1; }
+  #b-mdb-feld input { height: 44px; }
+  #b-mdb-feld .suchzeile { display: contents; }
+  #b-mdb-feld .suchzeile b { display: flex; align-items: center; height: 44px; padding: 0 12px; border: 1px solid var(--linie-2); border-radius: var(--r-klein); background: #fff; white-space: nowrap; }
+  #b-mdb-feld .suchzeile b:hover { border-color: var(--tinte); }
+  #b-mdb-feld .suchzeile .klein { grid-column: 1 / -1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .brief .eingaben { padding-block: 11px; }
 }
 .reiter button { font: inherit; text-align: left; color: var(--tinte); display: grid; gap: 2px; padding: 16px 18px; border: 1px solid var(--linie); border-radius: var(--r); background: #fff; cursor: pointer; transition: transform 0.2s var(--weich), box-shadow 0.2s, background 0.2s, border-color 0.2s, color 0.2s; }
 .reiter button b { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
@@ -425,6 +449,21 @@ svg .null { fill: var(--verlust); font-weight: 750; }
 
 .brief { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 48px; align-items: start; }
 @media (max-width: 900px) { .brief { grid-template-columns: minmax(0, 1fr); gap: 32px; } }
+/* Abgeordnetensuche: ganze Zeile tippbar (mindestens 44px), mit kurzer Anleitung */
+.suchzeile { display: grid; gap: 1px; min-height: 44px; align-content: center; margin-top: 4px; padding: 5px 10px; border: 1px solid var(--linie-2); border-radius: var(--r-klein); background: #fff; text-decoration: none; line-height: 1.3; }
+.suchzeile b { font-size: 14px; font-weight: 650; text-decoration: underline; text-decoration-color: var(--linie-2); text-underline-offset: 3px; }
+.suchzeile:hover { border-color: var(--tinte); }
+.suchzeile:hover b { text-decoration-color: currentColor; }
+.brief .eingaben .suchzeile .klein { font-size: 12.5px; line-height: 1.35; }
+/* Handy: Knöpfe und Meldungen direkt unter dem Formular, vor dem langen Brief */
+@media (max-width: 899px) {
+  .brief-rechts { display: flex; flex-direction: column; }
+  .brief-rechts .knoepfe { order: -2; margin: 0; }
+  .brief-rechts .meldungen { order: -1; margin: 6px 0 10px; }
+}
+/* Zeile „Danach:" unter jedem Feld in Schritt 3 */
+.danach { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; margin: 18px 0 0; font-size: 15px; color: var(--tinte-2); }
+.danach .textknopf { min-height: 44px; }
 /* Hinweis unter dem Blatt und seinen Knöpfen, sobald der Brief von Hand geändert ist */
 .geaendert { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 12px; margin: 4px 0 0; font-size: 13px; line-height: 18px; color: var(--tinte-2); }
 .geaendert.unsichtbar { display: none; }
@@ -432,12 +471,13 @@ svg .null { fill: var(--verlust); font-weight: 750; }
 .textknopf:hover { text-decoration-color: currentColor; }
 .blatt { background: #fff; border: 1px solid var(--linie); border-radius: var(--r); box-shadow: var(--schatten); padding: clamp(20px, 4vw, 44px); font-size: 16px; line-height: 1.55; white-space: pre-wrap; min-height: 420px; }
 
-.petition { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px 48px; align-items: center; background: var(--flaeche); border-radius: 20px; padding: clamp(24px, 4vw, 44px); }
-.petition h3 { font-weight: 750; font-size: clamp(22px, 2.6vw, 30px); line-height: 1.15; letter-spacing: -0.025em; margin: 0 0 12px; }
+/* Überschrift, gleich darunter der Knopf (mit Hinweis auf den neuen Tab), dann der kurze Text */
+.petition { background: var(--flaeche); border-radius: 20px; padding: clamp(24px, 4vw, 44px); }
+.petition h3 { font-weight: 750; font-size: clamp(22px, 2.6vw, 30px); line-height: 1.15; letter-spacing: -0.025em; margin: 0 0 16px; }
+.petition-knopf { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 18px; }
+.petition-knopf .klein { margin: 0; }
 .petition p { color: var(--tinte-2); max-width: 62ch; margin: 0; }
 .petition p + p { margin-top: 10px; }
-.petition .knopf { justify-self: start; }
-@media (max-width: 760px) { .petition { grid-template-columns: minmax(0, 1fr); } }
 
 .teilen { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 48px; align-items: start; }
 @media (max-width: 760px) { .teilen { grid-template-columns: minmax(0, 1fr); gap: 28px; } }
@@ -448,7 +488,8 @@ svg .null { fill: var(--verlust); font-weight: 750; }
 .zitat p { margin: 0; font-size: clamp(17px, 1.45vw, 20px); line-height: 1.5; font-weight: 550; letter-spacing: -0.005em; overflow-wrap: anywhere; }
 .zitatfuss { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding-left: 29px; }
 .zitatfuss .knopf { padding: 9px 14px; font-size: 14.5px; }
-.zitatfuss .status { flex: 1 1 160px; margin: 0 0 0 4px; min-height: 0; }
+/* Rückmeldung direkt unter dem Raster: Höhe fest für zwei Zeilen, damit nichts springt */
+.teilen-rechts > .status { height: 3em; margin: -6px 0 0; overflow: hidden; }
 .sym { display: inline-flex; flex: none; }
 .sym svg { display: block; width: 24px; height: 24px; }
 .knopf .sym svg { width: 18px; height: 18px; margin-right: 8px; }
@@ -462,6 +503,17 @@ svg .null { fill: var(--verlust); font-weight: 750; }
   .raster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .kachel { flex-direction: row; justify-content: flex-start; text-align: left; padding: 12px 14px; gap: 12px; }
   .zitatfuss { padding-left: 0; }
+}
+/* Handy: zuerst „Teilen …" und das Raster samt Rückmeldezeile, dann Zitat mit „Text kopieren", zuletzt das Bild */
+@media (max-width: 899px) {
+  .teilen { display: flex; flex-direction: column; gap: 16px; }
+  .teilen-rechts, .zitatfuss { display: contents; }
+  #t-teilen { order: 1; align-self: flex-start; }
+  .teilen .raster { order: 2; }
+  .teilen-rechts > .status { order: 3; }
+  .teilen .zitat { order: 4; }
+  #t-kopieren { order: 5; align-self: flex-start; }
+  .teilen canvas { order: 6; }
 }
 
 /* Hintergrund: aufklappbare Abschnitte */
@@ -546,6 +598,13 @@ td .besser { color: var(--gewinn); font-weight: 650; }
   .einleitung { font-size: 17px; }
 }
 
+/* Handy: alle Felder mindestens 16px Schrift (sonst vergrößert iOS beim Antippen die Seite), Häkchen-Zeilen mindestens 44px hoch */
+@media (max-width: 899px) {
+  input[type='text'], input[type='email'], input[type='number'], select, textarea, .brief .eingaben input[type='text'], .brief .eingaben select { font-size: 16px; }
+  .haken { min-height: 44px; }
+  .forderungen .haken, .rechner-eingaben .haken, #schnell .haken { align-items: center; font-size: 15px; }
+  .forderungen .haken input, .rechner-eingaben .haken input, #schnell .haken input { margin: 0; }
+}
 /* iOS-Safari zoomt beim Antippen in Felder mit Schrift unter 16px hinein (trifft nur iOS, dort gibt es -webkit-touch-callout) */
 @supports (-webkit-touch-callout: none) {
   input[type='text'], input[type='email'], .feld .zahlfeld, select, textarea, .brief .eingaben input[type='text'], .brief .eingaben select { font-size: 16px; }
