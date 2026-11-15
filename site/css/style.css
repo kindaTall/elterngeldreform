@@ -510,7 +510,9 @@ svg .null { fill: var(--verlust); font-weight: 750; }
   .reiter button b { font-size: 15.5px; font-weight: 650; }
   .reiter button > span { display: none; }
   .reiter button:hover { transform: none; box-shadow: none; color: var(--tinte); }
-  .reiter button[aria-selected='true'] { box-shadow: none; }
+  /* Farbe hier noch einmal: auf Touch-Geräten bleibt :hover nach dem Tippen hängen und würde
+     die gewählte Fläche sonst dunkel auf dunkel beschriften */
+  .reiter button[aria-selected='true'] { box-shadow: none; color: #fff; }
   #handeln .hinweis { margin: 0 0 10px; font-size: 12.5px; line-height: 1.4; text-wrap: balance; }
 }
 
@@ -614,6 +616,9 @@ svg .null { fill: var(--verlust); font-weight: 750; }
   #t-netzwerke { order: 5; grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
   #t-netzwerke .kachel { min-height: 44px; padding: 0; }
   #t-netzwerke .kachel-name { display: none; }
+  /* Hat das Gerät ein Teilen-Menü (main.js setzt .nativ), reicht am Handy der Knopf „Teilen …“:
+     die Netzwerk-Symbole entfallen, Kopieren und Speichern bleiben daneben */
+  #feld-teilen.nativ #t-netzwerke { display: none; }
   .teilen-rechts > .status { order: 6; grid-column: 1 / -1; height: 2.7em; margin: 0; font-size: 13px; line-height: 1.35; }
   .zitatklappe { order: 7; grid-column: 1 / -1; }
   .zitatklappe .zitat { margin: 4px 0 6px; padding-left: 16px; border-left-width: 4px; }

@@ -648,6 +648,7 @@ function teilenVerdrahten() {
   });
   // Das Teilen-Menü des Geräts gibt es nicht überall; ohne es bleibt der Knopf weg (Text und Link kopiert „Text kopieren“)
   $('t-teilen').hidden = !navigator.share;
+  $('feld-teilen').classList.toggle('nativ', !!navigator.share); // Handy: dann ohne Netzwerk-Symbole (style.css)
   $('t-teilen').addEventListener('click', async () => {
     const text = teiltext(aktuell);
     try {
