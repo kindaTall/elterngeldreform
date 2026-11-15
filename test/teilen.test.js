@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { vergleiche, vergleicheVoll } from '../site/js/calc/szenario.js';
 import { euro, euroDiff, ganzeDifferenz } from '../site/js/ui/diagramme.js';
-import { teiltext, netzwerke, spaeterWeniger, umbrechen } from '../site/js/ui/teilen.js';
+import { MINISTERIUM_ZITAT, teiltext, netzwerke, spaeterWeniger, umbrechen } from '../site/js/ui/teilen.js';
 
 const URL = 'https://example.org/#einkA=2000';
 const fuer = (eingabe, v = eingabe.alleinerziehend ? vergleicheVoll(eingabe) : vergleiche(eingabe)) => ({ eingabe, gezeigt: v });
@@ -47,32 +47,39 @@ test('ganzeDifferenz: für jedes Netto passen Summen und Differenz zusammen', ()
 
 test('Teilen-Text Paar: Differenz, beide Summen, Partnermonate und verfallende Monate', () => {
   const t = teiltext(fuer({ nettoA: 1800, nettoB: 2800, monateA: 12, monateB: 2, mutterschutzMonate: 2 }), URL);
-  assert.equal(t, `Elterngeldreform 2027: Für unsere Familie hieße das −3.220 € Elterngeld (12.080 € statt 15.300 €), wenn der Partner 2 Monate nimmt, 2 Monate verfallen. Was wäre es bei dir? ${URL} #Elterngeld #Elterngeldreform`);
+  assert.equal(t, `Das Familienministerium sagt, das Elterngeld solle „partnerschaftlicher, finanziell attraktiver und einfacher“ werden. Für unsere Familie hieße das −3.220 € (12.080 € statt 15.300 €), wenn der Partner 2 Monate nimmt, 2 Monate verfallen. Was wäre es bei dir? ${URL} #Elterngeld #Elterngeldreform`);
+});
+
+test('Teilen-Text beginnt mit dem Ministeriumszitat; das Zitat im Bild enthält die zitierten Worte', () => {
+  const t = teiltext(fuer({ nettoA: 1800, nettoB: 2800, monateA: 12, monateB: 2, mutterschutzMonate: 2 }), URL);
+  assert.ok(t.startsWith('Das Familienministerium sagt, das Elterngeld solle „partnerschaftlicher, finanziell attraktiver und einfacher“ werden. '));
+  assert.ok(MINISTERIUM_ZITAT.includes('partnerschaftlicher, finanziell attraktiver und einfacher'));
+  assert.doesNotMatch(t, /Bundesregierung/);
 });
 
 test('Teilen-Text Paar mit 4 Partnermonaten: kein Monat verfällt', () => {
   const t = teiltext(fuer({ nettoA: 1800, nettoB: 2500, monateA: 10, monateB: 4 }), URL);
-  assert.ok(t.includes('hieße das +560 € Elterngeld'));
+  assert.ok(t.includes('hieße das +560 € ('));
   assert.ok(t.includes(', wenn der Partner 4 Monate nimmt. Was wäre es bei dir?'));
   assert.doesNotMatch(t, /verf/);
 });
 
 test('Teilen-Text mit 0 Partnermonaten: „kein Elterngeld", 2 Monate verfallen', () => {
   const t = teiltext(fuer({ nettoA: 2000, nettoB: 3000, monateA: 12, monateB: 0 }), URL);
-  assert.ok(t.includes('hieße das −3.200 € Elterngeld (12.400 € statt 15.600 €), wenn der Partner kein Elterngeld nimmt, 2 Monate verfallen.'));
+  assert.ok(t.includes('hieße das −3.200 € (12.400 € statt 15.600 €), wenn der Partner kein Elterngeld nimmt, 2 Monate verfallen.'));
 });
 
 test('Teilen-Text alleinerziehend: eigene Anrede, keine Bedingung', () => {
   // 3.000 € netto, 2 Monate Mutterschutz: heute 12 × 1.800 €, im Entwurf 6 × 1.900 € + 6 × 1.500 €
   const t = teiltext(fuer({ nettoA: 3000, alleinerziehend: true, mutterschutzMonate: 2 }), URL);
-  assert.ok(t.includes('Für mich als alleinerziehenden Elternteil hieße das −1.200 € Elterngeld (20.400 € statt 21.600 €). Was wäre es bei dir?'));
+  assert.ok(t.includes('Für mich hieße das −1.200 € (20.400 € statt 21.600 €). Was wäre es bei dir?'));
   assert.doesNotMatch(t, /Partner/);
 });
 
 test('Teilen-Text bei Differenz 0: „0 €" ohne Vorzeichen', () => {
   // 2.000 € netto, alleinerziehend: 12 × 1.300 € = 6 × 1.600 € + 6 × 1.000 €
   const t = teiltext(fuer({ nettoA: 2000, alleinerziehend: true, mutterschutzMonate: 2 }), URL);
-  assert.ok(t.includes('hieße das 0 € Elterngeld (15.600 € statt 15.600 €).'));
+  assert.ok(t.includes('hieße das 0 € (15.600 € statt 15.600 €).'));
 });
 
 test('Teilen-Text: Summen und Differenz passen auch bei krummen Beträgen zusammen', () => {
@@ -80,7 +87,7 @@ test('Teilen-Text: Summen und Differenz passen auch bei krummen Beträgen zusamm
   const v = vergleiche(eingabe);
   const t = teiltext(fuer(eingabe, v), URL);
   const zahl = (s) => Number(s.replace(/\./g, '').replace('−', '-').replace('+', ''));
-  const [, d, neu, alt] = t.match(/hieße das (\S+) € Elterngeld \((\S+) € statt (\S+) €\)/);
+  const [, d, neu, alt] = t.match(/hieße das (\S+) € \((\S+) € statt (\S+) €\)/);
   assert.equal(zahl(neu) - zahl(alt), zahl(d));
   assert.equal(zahl(alt), Math.round(v.alt.summe));
 });

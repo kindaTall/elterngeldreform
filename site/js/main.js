@@ -20,6 +20,7 @@ import { ADRESSATEN, brief, mailto } from './ui/brief.js';
 import { teiltext, netzwerke, zeichne, alsBlob } from './ui/teilen.js';
 import { BETREFF, versandweg, meldungstext, sende } from './ui/rueckmeldung.js';
 import { RUECKMELDUNG } from './config.js';
+import { leisteBauen, listeBauen } from './ui/stimmenansicht.js';
 
 const $ = (id) => document.getElementById(id);
 const SEITE = location.origin + location.pathname;
@@ -540,6 +541,12 @@ function rueckmeldungVerdrahten() {
   });
 }
 
+// ---------- Stimmen: Zitatleiste (Schritt 1) und Liste im Hintergrund ----------
+function stimmenBauen() {
+  leisteBauen($('stimmen-spur'));
+  listeBauen($('stimmenliste'));
+}
+
 // ---------- Führung: Schritte, Sprungziele, Reiter, Einblendungen ----------
 /**
  * Zu einem Abschnitt gleiten, ohne das URL-Fragment zu ändern (dort stehen die Eingaben); ein
@@ -658,6 +665,7 @@ formularVerdrahten();
 briefVerdrahten();
 teilenVerdrahten();
 rueckmeldungVerdrahten();
+stimmenBauen();
 statistik();
 rechne();
 fuehrungVerdrahten();

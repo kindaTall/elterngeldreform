@@ -97,7 +97,7 @@ h3 { font-weight: 650; font-size: 16px; line-height: 1.35; margin: 0 0 8px; }
 .buehne { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 0 20px; }
 .stand { font-size: 14.5px; color: var(--tinte-2); margin: 0 0 16px; }
 /* Überschrift und Vorspann wachsen mit der Fensterhöhe, damit Schritt 1 samt Schätzhinweisen und Quellen auf eine Seite passt */
-.buehne-links h1 { font-size: clamp(38px, min(5.2vw, 6.6vh), 72px); max-width: 13ch; margin-bottom: clamp(12px, 2vh, 24px); }
+.buehne-links h1 { font-size: clamp(38px, min(5.2vw, 6.6vh), 72px); max-width: 22ch; margin-bottom: clamp(12px, 2vh, 24px); }
 .vorspann { font-size: clamp(17px, min(1.6vw, 2.4vh), 20px); line-height: 1.5; max-width: 54ch; margin: 0; }
 .plakat-titel { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; margin: clamp(14px, 2.4vh, 28px) 0 0; padding-top: 14px; border-top: 1px solid var(--linie); max-width: 760px; }
 .plakate { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 16px 36px; max-width: 760px; }
@@ -149,14 +149,45 @@ h3 { font-weight: 650; font-size: 16px; line-height: 1.35; margin: 0 0 8px; }
   #ergebnis, #handeln { --oben: clamp(24px, calc(14vh - 60px), 120px); align-items: flex-start; padding-top: var(--oben); }
   .schritt > .huelle { width: 100%; }
   .schritt h2 { max-width: none; }
-  .erster { align-items: stretch; padding: 0; }
-  .buehne { flex: 1; grid-template-columns: minmax(0, 1fr) minmax(400px, 43vw); gap: clamp(32px, 5vw, 88px); padding: 0; align-items: stretch; }
-  .buehne-links { align-self: center; padding: 8px 0 8px max(20px, calc((100vw - var(--breit)) / 2 + 20px)); }
+  .erster { flex-direction: column; align-items: stretch; padding: 0; }
+  .stimmenband { flex: none; height: 60px; }
+  .buehne { flex: 1; min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(400px, 43vw); gap: clamp(32px, 5vw, 88px); padding: 0; align-items: stretch; }
+  .buehne-links { align-self: center; padding: 0 0 0 max(20px, calc((100vw - var(--breit)) / 2 + 20px)); }
   .stand { margin-bottom: 10px; }
   /* klebt am rechten Fensterrand: nur die inneren Ecken sind rund */
-  .einschub { border-radius: 36px 0 0 36px; margin: clamp(16px, 3.5vh, 36px) 0; padding-right: max(32px, 6vw); }
+  .einschub { border-radius: 36px 0 0 36px; margin: clamp(16px, 3.5vh, 36px) 0; padding-block: clamp(20px, 4.5vh, 64px); padding-right: max(32px, 6vw); }
   .js .einschub[data-zeig] { transform: translateX(72px); }
 }
+
+/* Zitatleiste unten in Schritt 1: Etikett steht fest, die Zitate laufen von rechts nach links durch.
+   Die Spur enthält die Zitate zweimal; sie wandert um ihre halbe Breite = nahtloser Umlauf. */
+.stimmenband { border-top: 1px solid var(--linie); background: var(--grund); display: flex; align-items: center; min-width: 0; }
+.stimmen-etikett { flex: none; font-size: 13.5px; color: var(--tinte-3); padding: 0 24px 0 max(20px, calc((100vw - var(--breit)) / 2 + 20px)); white-space: nowrap; text-decoration-color: var(--linie-2); }
+.stimmen-fenster { flex: 1; min-width: 0; overflow: clip; }
+.stimmen-spur { display: flex; width: max-content; animation: stimmen-lauf 75s linear infinite; will-change: transform; }
+.stimmenband:hover .stimmen-spur, .stimmenband:focus-within .stimmen-spur { animation-play-state: paused; }
+.stimmen-gruppe { display: flex; flex: none; list-style: none; margin: 0; padding: 0; }
+.stimmen-gruppe li { flex: none; white-space: nowrap; padding-right: 72px; line-height: 60px; font-size: 15.5px; }
+.stimmen-text { font-weight: 600; }
+.stimmen-gruppe a { color: var(--tinte-3); margin-left: 10px; font-size: 14px; }
+@keyframes stimmen-lauf { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .stimmen-fenster { overflow-x: auto; }
+  .stimmen-spur { animation: none; }
+  .stimmen-gruppe[aria-hidden] { display: none; }
+}
+@media (max-width: 899px), (max-height: 599px) {
+  .stimmenband { flex-direction: column; align-items: stretch; padding-top: 10px; margin-top: 8px; }
+  .stimmen-etikett { padding: 0 20px 2px; }
+  .stimmen-gruppe li { line-height: 48px; }
+}
+.stimmenliste { list-style: none; margin: 0; padding: 0; }
+.stimmenliste li { padding: 16px 0; border-top: 1px solid var(--linie); }
+.stimmenliste li:first-child { border-top: 0; padding-top: 0; }
+.stimmenliste p { margin: 0; }
+.stimmen-zitat { font-weight: 600; font-size: 17px; line-height: 1.4; }
+.stimmen-wer { font-size: 14px; color: var(--tinte-2); margin-top: 4px !important; }
+.stimmen-bezug { font-size: 13px; color: var(--tinte-3); margin-top: 2px !important; }
 
 /* Formulare */
 .eingaben { background: var(--flaeche); border-radius: var(--r); padding: 24px; }
