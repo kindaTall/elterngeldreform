@@ -21,6 +21,7 @@ Statische Kampagnenseite: Vergleich Elterngeld geltendes Recht vs. Gesetzentwurf
 - Gestaltung: Regeln im Kopf von `site/css/style.css` (weiß, eine Schrift, Farbe nur für mehr/weniger, dezente Bewegung)
 - Hosting: Hetzner Webhosting S, Domain elterngeld2027.de
 - Veröffentlichen: GitHub Actions → `veroeffentlichen.yml` von Hand starten (`gh workflow run veroeffentlichen.yml`), lädt `site/` per SFTP zu Hetzner; Zugang über Repository-Variablen `SFTP_HOST`, `SFTP_USER` und Secret `SFTP_PASSWORD`; angehefteter Host-Schlüssel in `.github/known_hosts`
+- Suchmaschinen: `site/google*.html` und `site/BingSiteAuth.xml` (falls vorhanden) bestätigen die Inhaberschaft in Search Console bzw. Bing Webmaster Tools und dürfen nicht gelöscht werden; `site/sitemap.xml` ist dort eingereicht
 - Platzhalter: `.offen` markiert Stellen, die vor einer Veröffentlichung zu klären sind (derzeit keine)
 - Anschrift des Betreibers: nicht im Repo; Platzhalter `{{ANSCHRIFT_STRASSE}}`/`{{ANSCHRIFT_ORT}}` in Impressum und Datenschutz, ersetzt beim Veröffentlichen aus den Secrets `IMPRESSUM_STRASSE`/`IMPRESSUM_ORT`
 - Vorschaubild `site/og.png` (1200×630) nach Designänderungen neu erzeugen
