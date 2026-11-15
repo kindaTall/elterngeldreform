@@ -324,7 +324,21 @@ const gleichesFeld = (a, b) => !!a && !!b && a.i === b.i && a.j === b.j;
 function feldZeigen() {
   const f = schwebt ?? gewaehlt;
   kartenraster?.markiere(f);
-  $('feld-text').textContent = f && kartenraster ? `Gewähltes Feld: ${feldText(kartenraster.felder[f.i][f.j])}` : 'Gewähltes Feld: Feld überfahren, antippen oder mit den Pfeiltasten wählen.';
+  // Kleiner Block wie „Euer Ergebnis": Kopfzeile mit eckigem Zeichen (so ist das Feld auf der Karte
+  // umrandet), Einkommen des Felds, Ergebnis je Familie groß in Rot oder Grün
+  const teil = (klasse, text) => Object.assign(document.createElement('span'), { className: klasse, textContent: text });
+  const kopf = teil('feld-kopf', 'Gewähltes Feld');
+  kopf.prepend(teil('eck', ''));
+  if (f && kartenraster) {
+    const feld = kartenraster.felder[f.i][f.j];
+    const zahl = teil(`feld-zahl ${feld.differenz < 0 ? 'minus' : feld.differenz > 0 ? 'plus' : ''}`, euroDiff(feld.differenz));
+    const sichtbar = [kopf, teil('feld-eingabe', `Mutter ${euro(feld.nettoA)} netto · Partner:in ${euro(feld.nettoB)} netto`), zahl];
+    sichtbar.forEach((el) => el.setAttribute('aria-hidden', 'true'));
+    // Vorleseprogramme bekommen denselben Inhalt als einen Satz
+    $('feld-text').replaceChildren(...sichtbar, teil('nur-vorlesen', `Gewähltes Feld: ${feldText(feld)}`));
+  } else {
+    $('feld-text').replaceChildren(kopf, teil('feld-eingabe', 'Feld überfahren, antippen oder mit den Pfeiltasten wählen.'));
+  }
   $('feld-weg').classList.toggle('unsichtbar', !gewaehlt);
 }
 
