@@ -153,6 +153,17 @@ h3 { font-weight: 650; font-size: 16px; line-height: 1.35; margin: 0 0 8px; }
   .plakate li + li { border-left: 0; padding-left: 0; border-top: 1px solid var(--linie); padding-top: 18px; }
 }
 
+/* Handy: Schritt 1 beginnt dicht unter dem Kopf; Schritt 2 und 3 füllen mindestens die sichtbare Höhe,
+   damit beim Ankommen nicht schon der nächste Schritt hineinragt (keine feste Höhe, kein Einrasten).
+   Lange Texte haben am Handy eine Kurzform: .langform nur am Desktop, .kurzform nur am Handy. */
+@media (max-width: 899px) {
+  .erster { padding-top: 16px; }
+  #ergebnis, #handeln { min-height: var(--seite); padding: 14px 0 28px; }
+  #handeln { overflow-x: clip; } /* der neue Reiter gleitet von rechts herein, ohne seitlich zu scrollen */
+  .langform { display: none; }
+}
+@media (min-width: 900px) { .kurzform { display: none; } }
+
 /* Ab Desktop-Größe ist jeder Schritt eine ganze Bildschirmseite, an der das Scrollen einrastet */
 @media (min-width: 900px) and (min-height: 600px) {
   /* sanftes Einrasten nur an den drei Schritten; darunter scrollt die Seite frei */
@@ -256,7 +267,9 @@ input[type='range'] { width: 100%; height: 28px; margin: 0; accent-color: var(--
    (hellrot, gestrichelt) bis zur Höhe des linken, bzw. das zusätzliche Stück (hellgrün) über dem
    linken; darüber im Kopfraum das Delta. In jedem Balken zwei Tönungen: unten Mutter, oben
    Partner:in. Feste Höhen (Fläche, Kopfraum, Fuß mit Platz für „ohne Elterngeld", Zeile zur
-   Einordnung, Regler-Zeile), damit beim Ändern der Werte nichts springt. */
+   Einordnung, Regler-Zeile), damit beim Ändern der Werte nichts springt.
+   main.js setzt nur Anteile als Variablen (--l, --von, --anteil, --min); hier werden sie zu Höhen,
+   am Handy (unten, „Schritt 2 am Handy") zu Breiten quer liegender Balken. */
 #ergebnis { border-top: 0; --saeule: clamp(250px, 44svh, 340px); --delta: clamp(40px, min(11vw, 7.5vh), 68px); --kopfraum: calc(var(--delta) + 38px); }
 .unsichtbar { visibility: hidden; }
 /* „Beispiel: …" und „Das heißt es für euch" liegen übereinander: die Höhe richtet sich nach der längeren */
@@ -268,10 +281,12 @@ input[type='range'] { width: 100%; height: 28px; margin: 0; accent-color: var(--
 .saeulen-flaeche, .saeulen-fuss { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(18px, 4vw, 48px); }
 .saeulen-flaeche { height: var(--saeule); padding-top: var(--kopfraum); border-bottom: 2px solid var(--tinte); }
 .saeule { position: relative; }
-.teile, .stueck { position: absolute; left: 0; right: 0; bottom: 0; transition: height 0.6s var(--weich), bottom 0.6s var(--weich); }
+.teile, .stueck { position: absolute; left: 0; right: 0; bottom: 0; transition: height 0.6s var(--weich), bottom 0.6s var(--weich), width 0.6s var(--weich), left 0.6s var(--weich); }
+.teile { height: var(--l, 0); }
+.stueck { bottom: var(--von, 0); height: var(--l, 0); }
 .teile { display: flex; flex-direction: column; border-radius: 6px 6px 0 0; overflow: hidden; }
-.teil { display: block; position: relative; flex: none; overflow: hidden; transition: height 0.6s var(--weich); }
-.teil.mutter { flex: 1 1 auto; }
+.teil { display: block; position: relative; flex: none; overflow: hidden; transition: height 0.6s var(--weich), width 0.6s var(--weich); }
+.teil.mutter { flex: 1 1 auto; min-height: var(--min, 0); }
 .teil span { position: absolute; left: 10px; right: 8px; bottom: 7px; font-size: 13px; font-style: normal; font-weight: 600; line-height: 1.3; }
 .eng .partner { overflow: visible; z-index: 1; }
 .eng .partner span { bottom: auto; top: calc(100% + 6px); }
@@ -290,7 +305,7 @@ input[type='range'] { width: 100%; height: 28px; margin: 0; accent-color: var(--
 [data-vorzeichen='plus'] .geplant .partner { background: #0c5f43; }
 /* Der Mutter-Teil hat eine Mindesthöhe (main.js); der Partner-Teil gibt dafür nach. Reine
    Mutterschutz-Monate (Mutterschaftsgeld, kein Elterngeld) als heller schraffierter Streifen. */
-.teil.partner { flex: 0 1 auto; }
+.teil.partner { flex: 0 1 auto; height: var(--anteil, 0); }
 .saeule .teil.mutter.schutz { background: repeating-linear-gradient(45deg, #fff 0 4px, #c3c8d0 4px 5px); color: var(--tinte); box-shadow: inset 0 0 0 1px var(--linie-2); }
 .stueck { z-index: 1; border-radius: 6px 6px 0 0; }
 .stueck.fehlt { border: 2px dashed var(--verlust); border-bottom: 0; }
@@ -306,7 +321,7 @@ input[type='range'] { width: 100%; height: 28px; margin: 0; accent-color: var(--
 .saeulen-fuss b { font-size: clamp(22px, 2.3vw, 30px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
 .saeulen-fuss em { font-style: normal; font-size: 14px; font-weight: 650; line-height: 1.3; color: var(--verlust); margin-top: 3px; }
 /* erstes Einblenden: die Balken wachsen von der Grundlinie */
-.js .saeulen:not(.da) .teile, .js .saeulen:not(.da) .stueck { height: 0 !important; bottom: 0 !important; }
+.js .saeulen:not(.da) .teile, .js .saeulen:not(.da) .stueck { --l: 0% !important; --von: 0% !important; }
 
 .rechner-eingaben { padding: 20px 22px; }
 .netto-paar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 16px; }
@@ -328,18 +343,63 @@ input[type='range'] { width: 100%; height: 28px; margin: 0; accent-color: var(--
 .knopf.leise:hover { border-color: var(--linie-2); }
 .knopf.leise[aria-expanded='true'] { color: var(--tinte); border-color: var(--linie-2); }
 .gewaehr { margin: 10px 0 0; font-size: 13px; color: var(--tinte-3); }
+/* Schritt 2 am Handy: der ganze Schritt (Zahl, Balken, Eingaben, „Jetzt handeln") passt auf einen
+   Bildschirm. Dieselben Elemente, anders gesetzt: die Balken liegen quer untereinander (Heute oben,
+   Geplant darunter, Länge im Verhältnis der Summen), Beschriftung „Heute 15.300 €" darüber, die
+   Differenz rechts über dem fehlenden Stück. Die Tönungen Mutter/Partner:in stehen im Balken, wenn
+   sie hineinpassen, sonst klein in der Zeile darunter (main.js, zeigeBalken: Klasse .eng). Die
+   Netto-Felder stehen ohne Regler nebeneinander; der Regler für „andere" klappt nur bei Bedarf auf. */
 @media (max-width: 899px) {
-  .rechner { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
-  /* Handy: „Jetzt handeln" direkt unter den Balken, danach die Eingaben, „Genauer rechnen" und der Hinweis.
-     Derselbe Knopf wie am Desktop: die rechte Spalte löst sich auf, ihre Teile ordnen sich ins Raster. */
+  #ergebnis { --delta: min(34px, 8.9vw); }
+  #ergebnis h2 { font-size: min(22px, 5vw); line-height: 1.2; letter-spacing: -0.02em; white-space: nowrap; margin: 0 0 10px; max-width: none; }
+  .rechner { grid-template-columns: minmax(0, 1fr) auto; gap: 12px 8px; align-items: center; }
   .rechner-rechts, .rechner .weiter { display: contents; }
-  .rechner .weiter > .knopf.haupt { order: 1; justify-self: start; margin-top: 6px; }
-  .rechner-eingaben { order: 2; margin-top: 28px; }
-  .rechner .weiter > .knopf.leise { order: 3; justify-self: start; margin-top: 12px; }
-  .rechner .gewaehr { order: 4; }
+  .saeulen, .rechner-eingaben, .rechner .gewaehr { grid-column: 1 / -1; }
+  .rechner-eingaben { order: 1; }
+  .rechner .weiter > .knopf.haupt { order: 2; padding: 14px 20px; white-space: nowrap; }
+  .rechner .weiter > .knopf.leise { order: 3; min-height: 44px; padding-inline: 10px; text-decoration: underline; text-decoration-color: var(--linie-2); text-underline-offset: 3px; }
+  .rechner .gewaehr { order: 4; margin: 0; }
+
+  .saeulen { display: grid; grid-template-columns: minmax(0, 1fr); max-width: none; }
+  .saeulen-flaeche, .saeulen-fuss { display: contents; }
+  .saeulen-fuss div { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 8px; }
+  .saeulen-fuss div:first-child { grid-row: 1; }
+  .saeulen-fuss div:last-child { grid-row: 3; min-height: 54px; align-content: flex-end; padding-right: calc(var(--delta) * 3.8); } /* rechts steht die Differenz */
+  .saeulen-fuss b { font-size: 21px; }
+  .saeulen-fuss em { flex-basis: 100%; font-size: 13px; margin: 0; }
+  .saeule { height: 40px; margin: 4px 0 21px; } /* darunter Platz für die Zeile mit den Tönungen */
+  #saeule-heute { grid-row: 2; }
+  #saeule-geplant { grid-row: 4; margin-bottom: 19px; }
+  .teile { position: static; display: flex; flex-direction: row-reverse; height: 100%; width: var(--l, 0); border-radius: 0 6px 6px 0; }
+  .teil { position: static; height: auto; }
+  .saeule .teil.partner { height: auto; width: var(--anteil, 0); box-shadow: inset 1px 0 #fff; }
+  .teil.mutter { min-height: 0; min-width: var(--min, 0); }
+  .teil span { left: 10px; right: auto; bottom: auto; top: 50%; transform: translateY(-50%); font-size: 12.5px; white-space: nowrap; }
+  .teil.partner span { left: auto; right: calc(100% - var(--l, 0%) + 8px); }
+  .saeule.eng .partner { z-index: auto; } /* sonst läge der Teil (Flex-Element) über dem hellgrünen Stück */
+  .saeulen .saeule.eng .teil span { top: calc(100% + 3px); transform: none; color: var(--tinte-2); font-weight: 600; }
+  .saeulen .saeule.eng .teil.mutter span { left: 0; }
+  .saeulen .saeule.eng .teil.partner span { right: calc(100% - var(--l, 0%)); transform: translateX(var(--schub, 0)); }
+  .stueck { top: 0; bottom: 0; left: var(--von, 0); right: auto; height: auto; width: var(--l, 0); border-radius: 0 6px 6px 0; }
+  .stueck.fehlt { border: 2px dashed var(--verlust); border-left: 0; }
+  .delta { bottom: calc(100% + 4px); left: auto; right: 0; transform: none; align-items: flex-end; }
+  .delta span { font-size: 14px; margin-top: 3px; }
+
+  .rechner .rechner-eingaben { padding: 12px 14px; }
+  .netto-paar { gap: 0 12px; }
+  .netto-paar .feld { margin-bottom: 4px; gap: 3px; }
+  .netto-paar label { font-size: 13.5px; line-height: 1.3; }
+  .netto-paar input[type='range'] { display: none; }
+  .feld .mit-einheit .zahlfeld { height: 44px; font-size: 19px; padding: 0 30px 0 12px; }
+  .rechner-eingaben .haken { margin: 0; }
+  .partnerwahl { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+  .partnerwahl .umschalter { display: grid; grid-template-columns: 1fr 1fr 1fr 1.6fr; }
+  .partnerwahl .umschalter button { min-height: 44px; padding: 0 6px; font-size: 15px; }
+  .regler.unsichtbar { display: none; }
+  .regler { margin-top: 4px; }
+  .einordnung { margin-top: 8px; padding-top: 8px; font-size: 13px; line-height: 1.35; min-height: calc(2.7em + 9px); }
+  .einordnung a { font-size: 12px; }
 }
-@media (max-width: 520px) { .saeulen-fuss { min-height: 104px; } } /* „ohne Elterngeld" bricht hier um */
-@media (max-width: 420px) { .rechner-eingaben { padding: 16px; } .feld .mit-einheit .zahlfeld { font-size: 18px; } }
 /* Desktop: Balkenfläche füllt die Bildschirmseite, abzüglich Überschrift (58px), Fuß (92px) und 4px Luft */
 @media (min-width: 900px) and (min-height: 600px) {
   #ergebnis { --saeule: calc(var(--seite) - var(--oben) - clamp(20px, 4vh, 44px) - 154px); }
@@ -435,16 +495,23 @@ svg .null { fill: var(--verlust); font-weight: 750; }
 }
 .reiter button { font: inherit; text-align: left; color: var(--tinte); display: grid; gap: 2px; padding: 16px 18px; border: 1px solid var(--linie); border-radius: var(--r); background: #fff; cursor: pointer; transition: transform 0.2s var(--weich), box-shadow 0.2s, background 0.2s, border-color 0.2s, color 0.2s; }
 .reiter button b { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
-.reiter button span { font-size: 13.5px; color: var(--tinte-2); transition: color 0.2s; }
+.reiter button > span { font-size: 13.5px; color: var(--tinte-2); transition: color 0.2s; }
 .reiter button:hover { transform: translateY(-2px); box-shadow: var(--schatten); border-color: var(--linie-2); }
 .reiter button[aria-selected='true'] { background: var(--tinte); border-color: var(--tinte); color: #fff; box-shadow: var(--schatten); }
-.reiter button[aria-selected='true'] span { color: #b9c0ca; }
+.reiter button[aria-selected='true'] > span { color: #b9c0ca; }
 .reiterfeld { animation: rein 0.45s var(--weich) both; }
 @keyframes rein { from { opacity: 0; transform: translateX(28px); } }
 @keyframes auf { from { opacity: 0; transform: translateY(-8px); } }
-@media (max-width: 700px) {
-  .reiter { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .reiter button { padding: 12px 16px; }
+/* Handy: die drei Reiter als schmale Umschaltleiste in einer Zeile, ohne Untertitel */
+@media (max-width: 899px) {
+  #handeln h2 { font-size: min(24px, 6vw); line-height: 1.2; white-space: nowrap; margin: 0 0 12px; }
+  .reiter { gap: 3px; padding: 3px; margin: 0 0 12px; background: var(--flaeche-2); border-radius: 12px; }
+  .reiter button { height: 44px; padding: 0 4px; place-items: center; text-align: center; border: 0; border-radius: 9px; background: transparent; color: var(--tinte-2); }
+  .reiter button b { font-size: 15.5px; font-weight: 650; }
+  .reiter button > span { display: none; }
+  .reiter button:hover { transform: none; box-shadow: none; color: var(--tinte); }
+  .reiter button[aria-selected='true'] { box-shadow: none; }
+  #handeln .hinweis { margin: 0 0 10px; font-size: 12.5px; line-height: 1.4; text-wrap: balance; }
 }
 
 .brief { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 48px; align-items: start; }
@@ -455,12 +522,34 @@ svg .null { fill: var(--verlust); font-weight: 750; }
 .suchzeile:hover { border-color: var(--tinte); }
 .suchzeile:hover b { text-decoration-color: currentColor; }
 .brief .eingaben .suchzeile .klein { font-size: 12.5px; line-height: 1.35; }
-/* Handy: Knöpfe und Meldungen direkt unter dem Formular, vor dem langen Brief */
+/* Handy: dichtes Formular (Situation und Forderungen unter „Anpassen"), direkt darunter „E-Mail öffnen"
+   und „Text kopieren", dann der Brief als Vorschau von einigen Zeilen; „Brief ansehen und bearbeiten"
+   zeigt ihn ganz (main.js). PDF und Datei stehen unter dem Brief. */
 @media (max-width: 899px) {
-  .brief-rechts { display: flex; flex-direction: column; }
-  .brief-rechts .knoepfe { order: -2; margin: 0; }
-  .brief-rechts .meldungen { order: -1; margin: 6px 0 10px; }
+  .brief { gap: 10px; }
+  .brief .eingaben { padding: 10px 14px 4px; }
+  .brief .feld { margin-bottom: 8px; }
+  .brief .eingaben input[type='text'], .brief .eingaben select { min-height: 44px; }
+  .handyklappe > summary { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14.5px; font-weight: 650; cursor: pointer; list-style: none; }
+  .handyklappe > summary::-webkit-details-marker { display: none; }
+  .handyklappe > summary::before { content: ''; width: 7px; height: 7px; border-right: 2px solid; border-bottom: 2px solid; transform: translateY(-2px) rotate(45deg); transition: transform 0.2s var(--weich); flex: none; margin-left: 2px; }
+  .handyklappe[open] > summary::before { transform: translateY(1px) rotate(225deg); }
+  .anpassen[open] > summary { margin-bottom: 4px; }
+  .anpassen[open] { padding-bottom: 8px; }
+  .brief-rechts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .brief-rechts .knoepfe { display: contents; }
+  .brief-rechts .knopf { flex: 1 1 40%; min-height: 44px; }
+  #b-mail { order: 1; }
+  #b-kopieren { order: 2; }
+  .brief-rechts .meldungen { order: 3; flex: 1 1 100%; margin: 0; }
+  .brief-rechts .meldungen .status { margin: 0; min-height: 0; }
+  .brief-rechts .blatt { order: 4; flex: 1 1 100%; min-height: 0; max-height: calc(7 * 1.5em + 28px); overflow: hidden; padding: 14px 16px; font-size: 15px; line-height: 1.5; box-shadow: none; }
+  .brief-rechts .blatt.offen { max-height: none; }
+  #b-ganz { order: 5; flex: 1 1 100%; min-height: 44px; text-align: left; }
+  #b-pdf { order: 6; }
+  #b-txt { order: 7; }
 }
+@media (min-width: 900px) { .handyklappe > summary { display: none; } }
 /* Zeile „Danach:" unter jedem Feld in Schritt 3 */
 .danach { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; margin: 18px 0 0; font-size: 15px; color: var(--tinte-2); }
 .danach .textknopf { min-height: 44px; }
@@ -478,9 +567,18 @@ svg .null { fill: var(--verlust); font-weight: 750; }
 .petition-knopf .klein { margin: 0; }
 .petition p { color: var(--tinte-2); max-width: 62ch; margin: 0; }
 .petition p + p { margin-top: 10px; }
+/* Handy: Petition samt rechtlichem Hinweis und „Danach:“ auf einem Bildschirm */
+@media (max-width: 899px) {
+  .danach { margin: 8px 0 0; font-size: 14px; }
+  .petition { padding: 16px 18px; border-radius: var(--r); }
+  .petition h3 { font-size: 22px; margin-bottom: 12px; }
+  .petition-knopf { margin-bottom: 12px; }
+  .petition .knopf.gross { padding: 14px 22px; }
+  .petition p { font-size: 15px; line-height: 1.5; }
+  .petition p.klein { font-size: 13px; }
+}
 
 .teilen { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 48px; align-items: start; }
-@media (max-width: 760px) { .teilen { grid-template-columns: minmax(0, 1fr); gap: 28px; } }
 .teilen canvas { width: 100%; height: auto; border: 1px solid var(--linie); border-radius: var(--r); box-shadow: var(--schatten); display: block; }
 .teilen-rechts { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 /* Kopiertext wie ein herausgestelltes Zeitungszitat: kräftige Linie links, größere Schrift; der Link mit den Eingaben hat keine Leerzeichen und bricht überall um */
@@ -499,21 +597,27 @@ svg .null { fill: var(--verlust); font-weight: 750; }
 .kachel { font: inherit; font-size: 14px; font-weight: 600; line-height: 1.2; text-align: center; color: var(--tinte); background: #fff; border: 1px solid var(--linie-2); border-radius: var(--r-klein); padding: 12px 6px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; text-decoration: none; cursor: pointer; transition: transform 0.15s, box-shadow 0.2s, border-color 0.15s; }
 .kachel:hover { border-color: var(--tinte); transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(16, 18, 22, 0.45); }
 .kachel:active { transform: scale(0.98); box-shadow: none; }
-@media (max-width: 760px) {
-  .raster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .kachel { flex-direction: row; justify-content: flex-start; text-align: left; padding: 12px 14px; gap: 12px; }
-  .zitatfuss { padding-left: 0; }
-}
-/* Handy: zuerst „Teilen …" und das Raster samt Rückmeldezeile, dann Zitat mit „Text kopieren", zuletzt das Bild */
+/* Handy: Teilen auf einem Bildschirm. Links das Bild (4:5, ganz), rechts untereinander „Teilen …" (nur
+   mit Teilen-Menü des Geräts), „Bild speichern", „Text kopieren", „Link kopieren"; darunter die
+   Netzwerke als reine Symbol-Knöpfe (Name in aria-label und title), die Rückmeldezeile mit fester Höhe
+   und der Kopiertext eingeklappt unter „Text ansehen". */
 @media (max-width: 899px) {
-  .teilen { display: flex; flex-direction: column; gap: 16px; }
-  .teilen-rechts, .zitatfuss { display: contents; }
-  #t-teilen { order: 1; align-self: flex-start; }
-  .teilen .raster { order: 2; }
-  .teilen-rechts > .status { order: 3; }
-  .teilen .zitat { order: 4; }
-  #t-kopieren { order: 5; align-self: flex-start; }
-  .teilen canvas { order: 6; }
+  .teilen { display: grid; grid-template-columns: 45% minmax(0, 1fr); gap: 8px 12px; align-items: start; }
+  .teilen-rechts, .zitatfuss, .raster { display: contents; }
+  .teilen canvas { grid-column: 1; grid-row: 1 / span 4; border-radius: var(--r-klein); box-shadow: none; }
+  #t-teilen, #t-bild, #t-kopieren, #t-link { grid-column: 2; min-height: 44px; padding: 0 12px; flex-direction: row; justify-content: flex-start; gap: 0; text-align: left; font-size: 14.5px; font-weight: 600; white-space: nowrap; }
+  #t-teilen { order: 1; }
+  #t-bild { order: 2; }
+  #t-kopieren { order: 3; }
+  #t-link { order: 4; }
+  #t-bild .sym svg, #t-link .sym svg { width: 18px; height: 18px; margin-right: 8px; }
+  #t-netzwerke { order: 5; grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
+  #t-netzwerke .kachel { min-height: 44px; padding: 0; }
+  #t-netzwerke .kachel-name { display: none; }
+  .teilen-rechts > .status { order: 6; grid-column: 1 / -1; height: 2.7em; margin: 0; font-size: 13px; line-height: 1.35; }
+  .zitatklappe { order: 7; grid-column: 1 / -1; }
+  .zitatklappe .zitat { margin: 4px 0 6px; padding-left: 16px; border-left-width: 4px; }
+  .zitatklappe .zitat p { font-size: 15.5px; }
 }
 
 /* Hintergrund: aufklappbare Abschnitte */

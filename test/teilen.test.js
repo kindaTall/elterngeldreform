@@ -5,9 +5,9 @@ import assert from 'node:assert/strict';
 import { vergleiche, vergleicheVoll } from '../site/js/calc/szenario.js';
 import { euro, euroDiff, ganzeDifferenz } from '../site/js/ui/diagramme.js';
 import { SYMBOLE } from '../site/js/ui/symbole.js';
-import { MINISTERIUM_ZITAT, teiltext, kurztext, laengeX, laengeBluesky, KURZ_GRENZE, netzwerke, spaeterWeniger, umbrechen, bildTexte } from '../site/js/ui/teilen.js';
+import { MINISTERIUM_ZITAT, TEILADRESSE, teiltext, kurztext, laengeX, laengeBluesky, KURZ_GRENZE, netzwerke, spaeterWeniger, umbrechen, bildTexte } from '../site/js/ui/teilen.js';
 
-const URL = 'https://example.org/#einkA=2000';
+const URL = 'https://elterngeld2027.de/';
 const fuer = (eingabe, v = eingabe.alleinerziehend ? vergleicheVoll(eingabe) : vergleiche(eingabe)) => ({ eingabe, gezeigt: v });
 
 test('euro: ganze Euro mit Tausenderpunkt und echtem Minuszeichen', () => {
@@ -47,58 +47,76 @@ test('ganzeDifferenz: für jedes Netto passen Summen und Differenz zusammen', ()
 });
 
 test('Teilen-Text Paar: Differenz, beide Summen, Partnermonate und verfallende Monate', () => {
-  const t = teiltext(fuer({ nettoA: 1800, nettoB: 2800, monateA: 12, monateB: 2, mutterschutzMonate: 2 }), URL);
+  const t = teiltext(fuer({ nettoA: 1800, nettoB: 2800, monateA: 12, monateB: 2, mutterschutzMonate: 2 }));
   assert.equal(t, `Das Familienministerium sagt, das Elterngeld solle „partnerschaftlicher, finanziell attraktiver und einfacher“ werden. Für unsere Familie hieße das −3.220 € (12.080 € statt 15.300 €), wenn der Partner 2 Monate nimmt, 2 Monate verfallen. Was wäre es bei dir? ${URL} #Elterngeld #Elterngeldreform`);
 });
 
 test('Teilen-Text beginnt mit dem Ministeriumszitat; das Zitat im Bild enthält die zitierten Worte', () => {
-  const t = teiltext(fuer({ nettoA: 1800, nettoB: 2800, monateA: 12, monateB: 2, mutterschutzMonate: 2 }), URL);
+  const t = teiltext(fuer({ nettoA: 1800, nettoB: 2800, monateA: 12, monateB: 2, mutterschutzMonate: 2 }));
   assert.ok(t.startsWith('Das Familienministerium sagt, das Elterngeld solle „partnerschaftlicher, finanziell attraktiver und einfacher“ werden. '));
   assert.ok(MINISTERIUM_ZITAT.includes('partnerschaftlicher, finanziell attraktiver und einfacher'));
   assert.doesNotMatch(t, /Bundesregierung/);
 });
 
 test('Teilen-Text Paar mit 4 Partnermonaten: kein Monat verfällt', () => {
-  const t = teiltext(fuer({ nettoA: 1800, nettoB: 2500, monateA: 10, monateB: 4 }), URL);
+  const t = teiltext(fuer({ nettoA: 1800, nettoB: 2500, monateA: 10, monateB: 4 }));
   assert.ok(t.includes('hieße das +560 € ('));
   assert.ok(t.includes(', wenn der Partner 4 Monate nimmt. Was wäre es bei dir?'));
   assert.doesNotMatch(t, /verf/);
 });
 
 test('Teilen-Text mit 0 Partnermonaten: „kein Elterngeld", 2 Monate verfallen', () => {
-  const t = teiltext(fuer({ nettoA: 2000, nettoB: 3000, monateA: 12, monateB: 0 }), URL);
+  const t = teiltext(fuer({ nettoA: 2000, nettoB: 3000, monateA: 12, monateB: 0 }));
   assert.ok(t.includes('hieße das −3.200 € (12.400 € statt 15.600 €), wenn der Partner kein Elterngeld nimmt, 2 Monate verfallen.'));
 });
 
 test('Teilen-Text alleinerziehend: eigene Anrede, keine Bedingung', () => {
   // 3.000 € netto, 2 Monate Mutterschutz: heute 12 × 1.800 €, im Entwurf 6 × 1.900 € + 6 × 1.500 €
-  const t = teiltext(fuer({ nettoA: 3000, alleinerziehend: true, mutterschutzMonate: 2 }), URL);
+  const t = teiltext(fuer({ nettoA: 3000, alleinerziehend: true, mutterschutzMonate: 2 }));
   assert.ok(t.includes('Für mich hieße das −1.200 € (20.400 € statt 21.600 €). Was wäre es bei dir?'));
   assert.doesNotMatch(t, /Partner/);
 });
 
 test('Teilen-Text bei Differenz 0: „0 €" ohne Vorzeichen', () => {
   // 2.000 € netto, alleinerziehend: 12 × 1.300 € = 6 × 1.600 € + 6 × 1.000 €
-  const t = teiltext(fuer({ nettoA: 2000, alleinerziehend: true, mutterschutzMonate: 2 }), URL);
+  const t = teiltext(fuer({ nettoA: 2000, alleinerziehend: true, mutterschutzMonate: 2 }));
   assert.ok(t.includes('hieße das 0 € (15.600 € statt 15.600 €).'));
 });
 
 test('Teilen-Text: Summen und Differenz passen auch bei krummen Beträgen zusammen', () => {
   const eingabe = { nettoA: 1101, nettoB: 2001, monateA: 12, monateB: 2, mutterschutzMonate: 2 };
   const v = vergleiche(eingabe);
-  const t = teiltext(fuer(eingabe, v), URL);
+  const t = teiltext(fuer(eingabe, v));
   const zahl = (s) => Number(s.replace(/\./g, '').replace('−', '-').replace('+', ''));
   const [, d, neu, alt] = t.match(/hieße das (\S+) € \((\S+) € statt (\S+) €\)/);
   assert.equal(zahl(neu) - zahl(alt), zahl(d));
   assert.equal(zahl(alt), Math.round(v.alt.summe));
 });
 
+test('Geteilt wird die schlichte Adresse ohne Eingaben; Text und Bild nennen kein Einkommen', () => {
+  assert.equal(TEILADRESSE, URL);
+  for (const e of [
+    { nettoA: 1900, nettoB: 3100, monateA: 12, monateB: 2, mutterschutzMonate: 2 },
+    { nettoA: 2450, nettoB: 3650, monateA: 7, monateB: 7, mutterschutzMonate: 2 },
+    { nettoA: 3150, alleinerziehend: true, mutterschutzMonate: 2 },
+  ]) {
+    const a = fuer(e);
+    const texte = [teiltext(a), kurztext(a), ...Object.values(bildTexte(a)), ...netzwerke(teiltext(a), kurztext(a)).map((n) => decodeURIComponent(n.href))];
+    for (const t of texte) {
+      assert.doesNotMatch(t, /#\w+=|einkA|einkB/, t);
+      for (const netto of [e.nettoA, e.nettoB].filter(Boolean)) assert.ok(!t.includes(euro(netto)) && !t.includes(String(netto)), `${netto} in ${t}`);
+    }
+    assert.ok(teiltext(a).includes(` ${URL} `) && kurztext(a).includes(` ${URL} `));
+  }
+});
+
 test('Netzwerk-Links tragen Text und Adresse kodiert', () => {
-  const liste = netzwerke('Text mit Leerzeichen & Zeichen', URL);
+  const liste = netzwerke('Text mit Leerzeichen & Zeichen');
   assert.ok(liste.length >= 6);
   for (const n of liste) assert.doesNotMatch(n.href, / /);
   for (const n of liste) assert.ok(SYMBOLE[n.symbol], `Symbol für ${n.name}`);
   assert.equal(liste.find((n) => n.name === 'WhatsApp').href, 'https://wa.me/?text=Text%20mit%20Leerzeichen%20%26%20Zeichen');
+  assert.equal(liste.find((n) => n.name === 'Facebook').href, `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(URL)}`);
 });
 
 test('Bild für Alleinerziehende: Zeile zum 9. Bezugsmonat nur, wenn der Betrag dann niedriger ist', () => {
@@ -133,7 +151,7 @@ test('Bildtexte Standardfall: Zitat, Differenz je Familie, Summen und Bedingung 
   assert.equal(t.vergleich, '12.080 € statt 15.300 €');
   assert.equal(t.bedingung, 'Wenn der Partner 2 Monate nimmt: 2 Monate verfallen');
   assert.equal(t.adresse, 'elterngeld2027.de');
-  assert.ok(teiltext(a, URL).includes(`${t.differenz} (${t.vergleich})`));
+  assert.ok(teiltext(a).includes(`${t.differenz} (${t.vergleich})`));
 });
 
 test('Bildtexte Plus: positive Richtung, ohne verfallende Monate keine Verfallszeile', () => {
@@ -159,34 +177,32 @@ test('Bildtexte: Partnermonate 0 und Alleinerziehende ohne spätere Absenkung', 
 });
 
 // Längen für X (280, Adresse zählt 23, „€" und „−" doppelt) und Bluesky (300, Adresse ausgeschrieben)
-const SEITE = 'https://elterngeld2027.de/';
-const LANG = `${SEITE}#modus=brutto&einkA=12000&einkB=15000&stklA=3&stklB=5&kirche=1&monA=10&monB=11&ms=0&geschw=1&mehr=2&lesart=0`;
 const fuenfstellig = (() => {
   const e = { nettoA: 6000, nettoB: 6000, monateA: 3, monateB: 11, mutterschutzMonate: 2 };
   const v = vergleiche(e);
   return fuer(e, { ...v, alt: { ...v.alt, summe: 31200 }, neu: { ...v.neu, summe: 18900 } }); // −12.300 €
 })();
 const faelle = [
-  ['Vorgabe', fuer({ nettoA: 1800, nettoB: 2800, monateA: 12, monateB: 2, mutterschutzMonate: 2 }), `${SEITE}`],
-  ['eigene Zahlen', fuer({ nettoA: 1900, nettoB: 3100, monateA: 12, monateB: 2, mutterschutzMonate: 2 }), `${SEITE}#einkA=1900&einkB=3100`],
-  ['Regler 7 Partnermonate', fuer({ nettoA: 2400, nettoB: 3600, monateA: 7, monateB: 7, mutterschutzMonate: 2 }), `${SEITE}#einkA=2400&einkB=3600&monB=7`],
-  ['Regler 12 Partnermonate', fuer({ nettoA: 6000, nettoB: 6000, monateA: 2, monateB: 12, mutterschutzMonate: 2 }), `${SEITE}#einkA=6000&einkB=6000&monB=12`],
-  ['alleinerziehend', fuer({ nettoA: 3000, alleinerziehend: true, mutterschutzMonate: 2 }), `${SEITE}#einkA=3000&allein=1`],
-  ['fünfstellige Differenz, lange Adresse', fuenfstellig, LANG],
+  ['Vorgabe', fuer({ nettoA: 1800, nettoB: 2800, monateA: 12, monateB: 2, mutterschutzMonate: 2 })],
+  ['eigene Zahlen', fuer({ nettoA: 1900, nettoB: 3100, monateA: 12, monateB: 2, mutterschutzMonate: 2 })],
+  ['Regler 7 Partnermonate', fuer({ nettoA: 2400, nettoB: 3600, monateA: 7, monateB: 7, mutterschutzMonate: 2 })],
+  ['Regler 12 Partnermonate', fuer({ nettoA: 6000, nettoB: 6000, monateA: 2, monateB: 12, mutterschutzMonate: 2 })],
+  ['alleinerziehend', fuer({ nettoA: 3000, alleinerziehend: true, mutterschutzMonate: 2 })],
+  ['fünfstellige Differenz', fuenfstellig],
 ];
 
 test('Teilen-Text für X und Bluesky: sicher unter den Grenzen, mit Zitat, Zahl der Familie, Adresse und Hashtag', () => {
-  for (const [name, a, url] of faelle) {
-    const k = kurztext(a, url);
+  for (const [name, a] of faelle) {
+    const k = kurztext(a);
     assert.ok(laengeX(k) <= KURZ_GRENZE.x && KURZ_GRENZE.x < 280, `${name}: X ${laengeX(k)}`);
     assert.ok(laengeBluesky(k) <= KURZ_GRENZE.bluesky && KURZ_GRENZE.bluesky < 300, `${name}: Bluesky ${laengeBluesky(k)}`);
     assert.ok(k.includes('\u201Epartnerschaftlicher, finanziell attraktiver und einfacher\u201C'), name);
     assert.ok(k.includes(euroDiff(ganzeDifferenz(a.gezeigt).differenz)), name);
-    assert.ok(k.includes(SEITE) && k.endsWith(' #Elterngeld'), name);
+    assert.ok(k.includes(` ${URL} `) && k.endsWith(' #Elterngeld'), name);
   }
-  // die Adresse mit den Eingaben bleibt erhalten, solange es geht
-  assert.ok(kurztext(faelle[3][1], faelle[3][2]).includes('#einkA=6000&einkB=6000&monB=12'));
-  assert.ok(kurztext(fuenfstellig, LANG).includes('−12.300 €'));
+  // im Normalfall bleibt die Bedingung drin
+  assert.ok(kurztext(faelle[0][1]).includes('−3.220 €, wenn der Partner 2 Monate nimmt, 2 Monate verfallen.'));
+  assert.ok(kurztext(fuenfstellig).includes('−12.300 €'));
 });
 
 test('Zählweise: X zählt Adressen als 23 und „€"/„−" doppelt, Bluesky zählt alles einfach', () => {
@@ -197,7 +213,7 @@ test('Zählweise: X zählt Adressen als 23 und „€"/„−" doppelt, Bluesky 
 });
 
 test('Netzwerk-Links: X und Bluesky bekommen die Kurzfassung, die anderen den vollen Text', () => {
-  const liste = netzwerke('voll', URL, 'kurz');
+  const liste = netzwerke('voll', 'kurz');
   assert.equal(liste.find((n) => n.name === 'X').href, 'https://x.com/intent/post?text=kurz');
   assert.equal(liste.find((n) => n.name === 'Bluesky').href, 'https://bsky.app/intent/compose?text=kurz');
   assert.equal(liste.find((n) => n.name === 'WhatsApp').href, 'https://wa.me/?text=voll');

@@ -5,6 +5,9 @@
  * Quelle; unten ein Farbblock (rot bei weniger, grün bei mehr, dunkel bei gleich) mit der Differenz je
  * Familie, den beiden Summen und der Bedingung. Die Texte stehen als reine Funktion in bildTexte(),
  * gezeichnet wird in zeichne(). Auf dem Bild steht immer die feste Adresse ADRESSE.
+ * Geteilt wird immer die schlichte Adresse TEILADRESSE, nie der Zustand des Rechners: Text und Bild
+ * nennen das Ergebnis der Familie (Differenz, Summen, Bedingung), aber kein Einkommen; wer den Link
+ * öffnet, sieht den Rechner mit den Vorgabewerten.
  * Es enthält nur Rechenwerte und das Zitat; Netzwerk-Links öffnen die Seite des Netzwerks erst nach Klick,
  * vorher wird nichts an Dritte übertragen. Summen und Differenz in ganzen Euro, die Differenz aus den
  * gerundeten Summen (ganzeDifferenz). Tests: test/teilen.test.js
@@ -13,6 +16,8 @@ import { euro, euroDiff, ganzeDifferenz } from './diagramme.js';
 
 const FARBEN = { grund: '#ffffff', tinte: '#101216', grau: '#525964', grau2: '#6b7380', verlust: '#d0321d', gewinn: '#12805a' };
 const ADRESSE = 'elterngeld2027.de';
+/** Adresse in Teilen-Text, Netzwerk-Links, „Link kopieren" und Teilen-Menü: ohne Eingaben. */
+export const TEILADRESSE = 'https://elterngeld2027.de/';
 
 /**
  * Aussage des Ministeriums, mit der das Bild und der Teilen-Text beginnen (wörtlich).
@@ -41,12 +46,12 @@ function bedingung({ eingabe, gezeigt }, bild = false) {
  * Eine Zahl je Familie: das in Schritt 2 gezeigte Ergebnis samt seiner Bedingung.
  * @param {{eingabe: object, gezeigt: object}} aktuell siehe main.js
  */
-export function teiltext(aktuell, url) {
+export function teiltext(aktuell) {
   const { eingabe, gezeigt: v } = aktuell;
   const wer = eingabe.alleinerziehend ? 'Für mich' : 'Für unsere Familie';
   const b = bedingung(aktuell);
   const g = ganzeDifferenz(v);
-  return `Das Familienministerium sagt, das Elterngeld solle \u201E${MINISTERIUM_KURZ}\u201C werden. ${wer} hieße das ${euroDiff(g.differenz)} (${euro(g.neu)} statt ${euro(g.alt)})${b ? `, ${b}` : ''}. Was wäre es bei dir? ${url} #Elterngeld #Elterngeldreform`;
+  return `Das Familienministerium sagt, das Elterngeld solle \u201E${MINISTERIUM_KURZ}\u201C werden. ${wer} hieße das ${euroDiff(g.differenz)} (${euro(g.neu)} statt ${euro(g.alt)})${b ? `, ${b}` : ''}. Was wäre es bei dir? ${TEILADRESSE} #Elterngeld #Elterngeldreform`;
 }
 
 /**
@@ -71,20 +76,19 @@ export const KURZ_GRENZE = Object.freeze({ x: 270, bluesky: 290 });
 
 /**
  * Kurzfassung des Teilen-Texts für X und Bluesky: Zitat-Kurzform des Ministeriums, die Zahl der
- * Familie, Adresse, ein Hashtag. Passt sie nicht unter KURZ_GRENZE (lange Adresse mit vielen
- * Eingaben), fallen der Reihe nach weg: die beiden Summen, die Bedingung, die Eingaben in der Adresse.
+ * Familie, Adresse, ein Hashtag. Passt sie nicht unter KURZ_GRENZE (fünfstellige Beträge, lange
+ * Bedingung), fallen der Reihe nach weg: die beiden Summen, die Bedingung.
  */
-export function kurztext(aktuell, url) {
+export function kurztext(aktuell) {
   const { eingabe, gezeigt: v } = aktuell;
   const wer = eingabe.alleinerziehend ? 'Für mich' : 'Für unsere Familie';
   const b = bedingung(aktuell);
   const g = ganzeDifferenz(v);
   const summen = ` (${euro(g.neu)} statt ${euro(g.alt)})`;
-  const satz = (mitSummen, mitBedingung, adresse) =>
-    `Das Familienministerium sagt, das Elterngeld solle „${MINISTERIUM_KURZ}“ werden. ${wer} hieße das ${euroDiff(g.differenz)}${mitSummen ? summen : ''}${mitBedingung && b ? `, ${b}` : ''}. ${adresse} #Elterngeld`;
+  const satz = (mitSummen, mitBedingung) =>
+    `Das Familienministerium sagt, das Elterngeld solle „${MINISTERIUM_KURZ}“ werden. ${wer} hieße das ${euroDiff(g.differenz)}${mitSummen ? summen : ''}${mitBedingung && b ? `, ${b}` : ''}. ${TEILADRESSE} #Elterngeld`;
   const passt = (t) => laengeX(t) <= KURZ_GRENZE.x && laengeBluesky(t) <= KURZ_GRENZE.bluesky;
-  const ohneEingaben = url.split('#')[0];
-  const fassungen = [satz(true, true, url), satz(false, true, url), satz(false, false, url), satz(false, false, ohneEingaben)];
+  const fassungen = [satz(true, true), satz(false, true), satz(false, false)];
   return fassungen.find(passt) ?? fassungen[fassungen.length - 1];
 }
 
@@ -92,10 +96,10 @@ export function kurztext(aktuell, url) {
  * Netzwerke mit Link und Symbolname (Symbole: symbole.js). X und Bluesky bekommen `kurz`
  * (kurztext(), wegen ihrer Längengrenze), alle anderen den vollen Text.
  */
-export function netzwerke(text, url, kurz = text) {
+export function netzwerke(text, kurz = text) {
   const t = encodeURIComponent(text);
   const k = encodeURIComponent(kurz);
-  const u = encodeURIComponent(url);
+  const u = encodeURIComponent(TEILADRESSE);
   return [
     { name: 'WhatsApp', symbol: 'whatsapp', href: `https://wa.me/?text=${t}` },
     { name: 'Bluesky', symbol: 'bluesky', href: `https://bsky.app/intent/compose?text=${k}` },

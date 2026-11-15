@@ -18,6 +18,8 @@ Statische Kampagnenseite: Vergleich Elterngeld geltendes Recht vs. Gesetzentwurf
 - Schrift liegt in `site/fonts/` (Schibsted Grotesk aus `@fontsource-variable/*`), keine externen Anfragen beim Laden
 - Geldbeträge und Differenzen immer je Familie/Paar zeigen, nie getrennt nach Mutter und Vater (Rechner, Statistik, Brief, Teilen)
 - Aufbau der Seite: drei Schritte (Problem → Ergebnis → Handeln), danach aufklappbarer Hintergrund; der Rechner vergleicht dieselbe Aufteilung der Monate nach geltendem Recht und nach dem Entwurf (Partnermonate in Schritt 2, Monate der Mutter unter „Genauer rechnen“)
+- Handy (unter 900 px): Schritt 2 und 3 je auf einen Bildschirm (quere Balken, Umschaltleiste, Teilen mit Bildvorschau); `.langform`/`.kurzform` und `details.handyklappe` (am Desktop offen) steuern die Kurzfassung
+- Teilen ohne Einkommen: geteilt wird immer `TEILADRESSE` (`site/js/ui/teilen.js`), die Adresszeile trägt keine Eingaben; nur die Fehlermeldung hängt sie auf Wunsch an
 - Gestaltung: Regeln im Kopf von `site/css/style.css` (weiß, eine Schrift, Farbe nur für mehr/weniger, dezente Bewegung)
 - Hosting: Hetzner Webhosting S, Domain elterngeld2027.de
 - Veröffentlichen: GitHub Actions → `veroeffentlichen.yml` von Hand starten (`gh workflow run veroeffentlichen.yml`), lädt `site/` per SFTP zu Hetzner; Zugang über Repository-Variablen `SFTP_HOST`, `SFTP_USER` und Secret `SFTP_PASSWORD`; angehefteter Host-Schlüssel in `.github/known_hosts`

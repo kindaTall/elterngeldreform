@@ -12,6 +12,10 @@
  * stehen in ganzen Euro, die Differenz aus den gerundeten Summen (ganzeDifferenz in ui/diagramme.js).
  * Der Zustand selbst (Standardwerte, URL-Fragment, Eingabe für den Rechenkern, Aufteilung der
  * Monate) liegt ohne DOM in ui/zustand.js.
+ * Die Adresszeile trägt keine Eingaben: Ein eingehendes Fragment mit Zustand (älterer geteilter Link,
+ * #monB=12) wird gelesen und danach aus der Adresszeile entfernt; geteilt wird immer die schlichte
+ * Adresse (TEILADRESSE in ui/teilen.js). Nur die Fehlermeldung hängt auf Wunsch einen Link mit den
+ * Eingaben an (eingabenUrl()).
  */
 import { NEU } from './calc/regeln.js';
 import { spanne, FAMILIEN, PARTNER_MIT_BEZUG, KINDER_MIT_ELTERNGELD, GEBURTEN, JAHRGANG, DAUER } from './calc/bevoelkerung.js';
@@ -21,7 +25,7 @@ import { balkenmodell } from './ui/balken.js';
 import { RASTER } from './ui/diagramme.js';
 import { eigenesFeld, feldText, naechstesFeld, ergebnisKarte, planZeile } from './ui/karte.js';
 import { ADRESSATEN, brief, mailto } from './ui/brief.js';
-import { teiltext, kurztext, netzwerke, zeichne, alsBlob } from './ui/teilen.js';
+import { TEILADRESSE, teiltext, kurztext, netzwerke, zeichne, alsBlob } from './ui/teilen.js';
 import { symbol, symboleEinsetzen } from './ui/symbole.js';
 import { BETREFF, versandweg, meldungstext, sende } from './ui/rueckmeldung.js';
 import { RUECKMELDUNG } from './config.js';
@@ -45,29 +49,22 @@ function titelSetzen() {
   $('titel-beispiel').classList.toggle('unsichtbar', eigeneZahlen);
 }
 
-// ---------- Zustand ↔ URL (Regeln in ui/zustand.js) ----------
+// ---------- Zustand aus der URL (Regeln in ui/zustand.js) ----------
 function ausUrl() {
   Object.assign(zustand, ausHash(location.hash));
 }
-/** Adresse mit den Eingaben: für die Adresszeile und für alles, was weitergegeben wird. */
-function teilUrl() {
+/** Raute mit Eingaben aus der Adresszeile nehmen, damit sie nicht versehentlich weitergegeben wird. */
+function adresseLeeren() {
+  try {
+    history.replaceState(null, '', location.pathname + location.search);
+  } catch {
+    // die Adresse bleibt stehen, gerechnet wird trotzdem
+  }
+}
+/** Adresse mit den Eingaben, nur für die Fehlermeldung („Meine Rechner-Eingaben mitschicken"). */
+function eingabenUrl() {
   const s = alsHash(zustand);
   return s ? `${SEITE}#${s}` : SEITE;
-}
-let urlWarten;
-/**
- * Adresszeile nachführen, 250 ms nach der letzten Eingabe: Safari lehnt replaceState nach 100
- * Aufrufen in kurzer Zeit mit einem SecurityError ab (Regler ziehen, Zahl tippen).
- */
-function urlNachfuehren() {
-  clearTimeout(urlWarten);
-  urlWarten = setTimeout(() => {
-    try {
-      history.replaceState(null, '', teilUrl().replace(SEITE, '') || location.pathname);
-    } catch {
-      // die Adresse bleibt stehen, gerechnet wird trotzdem
-    }
-  }, 250);
 }
 /** Dieselbe Aufteilung nach beiden Regelwerken mit p Partnermonaten, siehe fuerPartnermonate() in ui/zustand.js. */
 const fuerPartnermonate = (e, p) => planVergleich(zustand, e, p);
@@ -216,31 +213,55 @@ function einordnung(v, allein) {
 const anteil = (x) => `${(x * 100).toFixed(2)}%`;
 const deltaFormat = (x) => (Math.round(x) === 0 ? '±0 €' : euroDiff(x));
 
-/** Zwei Balken aus balkenmodell() (ui/balken.js) auf die Seite bringen; Höhen gleiten per CSS. */
+/**
+ * Zwei Balken aus balkenmodell() (ui/balken.js) auf die Seite bringen. Gesetzt werden nur Anteile als
+ * CSS-Variablen (--l Länge des Balkens bzw. des Stücks, --von Beginn des Stücks, --anteil Partner-Teil,
+ * --min Mindestlänge des Mutter-Teils in px, --schub für die Beschriftung unter queren Balken); das
+ * CSS liest sie am Desktop als Höhen (senkrechte Balken) und am Handy als Breiten (quere Balken),
+ * das Gleiten kommt ebenfalls von dort. Welche Ausrichtung gilt, sagt das CSS selbst (flex-direction
+ * von .teile), damit Skript und Stil nicht auseinanderlaufen.
+ */
 function zeigeBalken(m) {
   const balken = (id, b) => {
     const saeule = $(id);
+    const teile = saeule.querySelector('.teile');
+    const quer = getComputedStyle(teile).flexDirection.startsWith('row');
     const [mu, pa] = b.segmente;
     const [partnerTeil, mutterTeil] = saeule.querySelectorAll('.teil');
-    saeule.querySelector('.teile').style.height = anteil(b.hoehe);
-    partnerTeil.style.height = anteil(pa ? pa.anteil : 0);
-    // Zu schmales Partner-Stück: seine Beschriftung steht direkt darunter, mit Pfeil nach oben
+    teile.style.setProperty('--l', anteil(b.hoehe));
+    partnerTeil.style.setProperty('--anteil', anteil(pa ? pa.anteil : 0));
+    // Reine Mutterschutz-Monate (Mutterschaftsgeld statt Elterngeld) sind schraffiert.
+    mutterTeil.classList.toggle('schutz', !!mu.nurMutterschutz);
+    mutterTeil.firstChild.textContent = mu.text;
+    if (quer) {
+      // Quer: Beschriftungen stehen im Balken, wenn beide hineinpassen, sonst in der Zeile darunter
+      // (Mutter links, Partner:in rechtsbündig am Balkenende, notfalls nach rechts geschoben)
+      // reine Mutterschutz-Monate kürzer benannt, damit beide Beschriftungen in eine Zeile passen
+      if (mu.nurMutterschutz) mutterTeil.firstChild.textContent = `Mutterschutz · ${mu.monate === 1 ? '1 Monat' : `${mu.monate} Monate`}`;
+      partnerTeil.firstChild.textContent = pa ? pa.text : '';
+      const lang = saeule.clientWidth * b.hoehe;
+      const wMu = mutterTeil.firstChild.offsetWidth, wPa = pa ? partnerTeil.firstChild.offsetWidth : 0;
+      const passt = lang * (1 - (pa ? pa.anteil : 0)) >= wMu + 20 && (!pa || lang * pa.anteil >= wPa + 20);
+      saeule.classList.toggle('eng', !passt);
+      saeule.style.setProperty('--schub', `${Math.max(0, Math.min(wMu + 14 + wPa - lang, saeule.clientWidth - lang))}px`); // nie über den Rand
+      // ein Mutter-Teil mit Monaten bleibt als schmaler Abschnitt erkennbar
+      mutterTeil.style.setProperty('--min', pa && mu.monate > 0 ? '12px' : '0px');
+      return;
+    }
+    // Senkrecht: zu niedriges Partner-Stück, seine Beschriftung steht direkt darunter, mit Pfeil nach oben
     const eng = !!pa && saeule.clientHeight * b.hoehe * pa.anteil < 34;
     saeule.classList.toggle('eng', eng);
     partnerTeil.firstChild.textContent = pa ? `${eng ? '↑ ' : ''}${pa.text}` : '';
-    mutterTeil.firstChild.textContent = mu.text;
     // Monate der Mutter bleiben sichtbar, auch bei 0 € oder wenig Geld: ihr Teil ist mindestens so hoch
     // wie seine Beschriftung und staucht dafür den Partner-Teil (die Balkenhöhe bleibt an der Summe).
-    // Reine Mutterschutz-Monate (Mutterschaftsgeld statt Elterngeld) sind schraffiert.
-    mutterTeil.classList.toggle('schutz', !!mu.nurMutterschutz);
-    mutterTeil.style.minHeight = pa && mu.monate > 0 ? `${mutterTeil.firstChild.offsetHeight + 12}px` : '';
+    mutterTeil.style.setProperty('--min', pa && mu.monate > 0 ? `${mutterTeil.firstChild.offsetHeight + 12}px` : '0px');
   };
   balken('saeule-heute', m.heute);
   balken('saeule-geplant', m.geplant);
   const stueck = $('stueck');
   stueck.className = `stueck ${m.stueck.art ?? 'keins'}`;
-  stueck.style.bottom = anteil(m.stueck.von);
-  stueck.style.height = anteil(m.stueck.bis - m.stueck.von);
+  stueck.style.setProperty('--von', anteil(m.stueck.von));
+  stueck.style.setProperty('--l', anteil(m.stueck.bis - m.stueck.von));
   $('saeulen').dataset.vorzeichen = m.vorzeichen;
   zaehle($('delta-zahl'), m.delta, deltaFormat);
   $('delta-prozent').textContent = m.prozentText;
@@ -276,7 +297,6 @@ function rechne() {
   karte();
   briefAktualisieren();
   teilenAktualisieren();
-  urlNachfuehren();
 }
 
 function verlauf(bewegt) {
@@ -557,17 +577,20 @@ function briefVerdrahten() {
 // ---------- Teilen ----------
 function teilenAktualisieren() {
   if (!aktuell) return;
-  const url = teilUrl();
-  const text = teiltext(aktuell, url);
+  const text = teiltext(aktuell);
   $('t-text').textContent = text;
   $('t-netzwerke').replaceChildren(
-    ...netzwerke(text, url, kurztext(aktuell, url)).map((n) => {
+    ...netzwerke(text, kurztext(aktuell)).map((n) => {
       const a = document.createElement('a');
       a.className = 'kachel';
       a.href = n.href;
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
+      // am Handy nur das Symbol: der Name steht dann in aria-label und title
+      a.title = n.name;
+      a.setAttribute('aria-label', n.name);
       const name = document.createElement('span');
+      name.className = 'kachel-name';
       name.textContent = n.name;
       const sym = document.createElement('span');
       sym.className = 'sym';
@@ -608,7 +631,7 @@ function teilenVerdrahten() {
   });
   $('t-link').addEventListener('click', async () => {
     try {
-      await navigator.clipboard.writeText(teilUrl());
+      await navigator.clipboard.writeText(TEILADRESSE);
       status('Link kopiert.');
     } catch {
       status('Kopieren nicht möglich. Der Link steht im Zitattext.');
@@ -626,12 +649,11 @@ function teilenVerdrahten() {
   // Das Teilen-Menü des Geräts gibt es nicht überall; ohne es bleibt der Knopf weg (Text und Link kopiert „Text kopieren“)
   $('t-teilen').hidden = !navigator.share;
   $('t-teilen').addEventListener('click', async () => {
-    const url = teilUrl();
-    const text = teiltext(aktuell, url);
+    const text = teiltext(aktuell);
     try {
       const f = await datei();
       if (navigator.canShare?.({ files: [f] })) await navigator.share({ files: [f], text });
-      else if (navigator.share) await navigator.share({ text, url });
+      else if (navigator.share) await navigator.share({ text, url: TEILADRESSE });
       else {
         await navigator.clipboard.writeText(text);
         status('Text und Link kopiert. Das Bild kannst du über „Bild speichern“ laden.');
@@ -654,7 +676,7 @@ function rueckmeldungVerdrahten() {
     art: $('r-art').value,
     nachricht: $('r-text').value,
     kontakt: $('r-kontakt').value,
-    url: $('r-eingaben').checked ? teilUrl() : '',
+    url: $('r-eingaben').checked ? eingabenUrl() : '',
   });
   const kopiere = async (danach) => {
     try {
@@ -804,6 +826,21 @@ function fuehrungVerdrahten() {
     }),
   );
 
+  // Handy-Klappen (Kopiertext beim Teilen, „Anpassen" im Brief): am Desktop immer offen, die Zeile
+  // zum Aufklappen ist dort ausgeblendet; am Handy zugeklappt
+  const desktop = matchMedia('(min-width: 900px)');
+  const klappen = () => document.querySelectorAll('details.handyklappe').forEach((d) => (d.open = desktop.matches));
+  desktop.addEventListener('change', klappen);
+  klappen();
+  // Brief am Handy: zuerst einige Zeilen, ganz und bearbeitbar nach „Brief ansehen und bearbeiten"
+  const blattAuf = (auf) => {
+    $('brieftext').classList.toggle('offen', auf);
+    $('b-ganz').setAttribute('aria-expanded', String(auf));
+    $('b-ganz').textContent = auf ? 'Brief einklappen' : 'Brief ansehen und bearbeiten';
+  };
+  $('b-ganz').addEventListener('click', () => blattAuf(!$('brieftext').classList.contains('offen')));
+  $('brieftext').addEventListener('focus', () => blattAuf(true));
+
   // Einblenden beim Scrollen. Geprüft wird bei jedem Scrollen und zusätzlich im Takt, damit auch
   // in einem verdeckten oder gedrosselten Fenster nichts unsichtbar bleibt.
   let offen = [...document.querySelectorAll('[data-zeig]')];
@@ -833,8 +870,8 @@ function fuehrungVerdrahten() {
 }
 
 // ---------- Start ----------
-// Das Fragment trägt entweder die Eingaben (#einkA=…) oder ein Sprungziel (#methodik, etwa aus dem
-// Impressum). Das Sprungziel vorab merken: rechne() ersetzt das Fragment durch die Eingaben.
+// Das Fragment trägt entweder die Eingaben (#einkA=…, älterer geteilter Link) oder ein Sprungziel
+// (#methodik, etwa aus dem Impressum). Eingaben werden übernommen und danach aus der Adresse entfernt.
 const sprungziel = (hash) => (hash.includes('=') ? '' : hash.slice(1));
 const startziel = sprungziel(location.hash);
 // Geteilter Link: Zustand in der Adresse, also eigene Zahlen; die Seite springt gleich zum Ergebnis
@@ -843,6 +880,7 @@ if (geteilt) history.scrollRestoration = 'manual'; // sonst setzt der Browser be
 eigeneZahlen = geteilt;
 titelSetzen();
 ausUrl();
+if (geteilt) adresseLeeren();
 formularFuellen();
 formularVerdrahten();
 karteVerdrahten();
@@ -864,8 +902,10 @@ window.addEventListener('hashchange', () => {
   eigeneZahlen = true;
   titelSetzen();
   ausUrl();
+  adresseLeeren();
   formularFuellen();
   rechne();
+  geheZu('ergebnis');
 });
 
 // Diagramme werden in der Breite ihres Behälters gezeichnet: bei neuer Fensterbreite neu zeichnen

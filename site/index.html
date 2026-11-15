@@ -199,11 +199,11 @@
 
 <section id="handeln" class="schritt">
   <div class="huelle">
-    <h2 data-zeig>Jetzt handeln: Noch ist nichts beschlossen</h2>
+    <h2 data-zeig><span class="langform">Jetzt handeln: </span>Noch ist nichts beschlossen</h2>
     <div class="reiter" role="tablist" aria-label="Was du tun kannst" data-zeig>
-      <button type="button" role="tab" id="reiter-petition" aria-controls="feld-petition" aria-selected="true" data-reiter="petition"><b>Petition unterschreiben</b><span>über 100.000 sind schon dabei</span></button>
-      <button type="button" role="tab" id="reiter-teilen" aria-controls="feld-teilen" aria-selected="false" tabindex="-1" data-reiter="teilen"><b>Ergebnis teilen</b><span>für soziale Netzwerke, als Bild oder Link</span></button>
-      <button type="button" role="tab" id="reiter-brief" aria-controls="feld-brief" aria-selected="false" tabindex="-1" data-reiter="brief"><b>Brief schreiben</b><span>an Abgeordnete, Ausschuss oder Ministerin</span></button>
+      <button type="button" role="tab" id="reiter-petition" aria-controls="feld-petition" aria-selected="true" data-reiter="petition"><b>Petition<span class="langform"> unterschreiben</span></b><span>über 100.000 sind schon dabei</span></button>
+      <button type="button" role="tab" id="reiter-teilen" aria-controls="feld-teilen" aria-selected="false" tabindex="-1" data-reiter="teilen"><b><span class="langform">Ergebnis teilen</span><span class="kurzform">Teilen</span></b><span>für soziale Netzwerke, als Bild oder Link</span></button>
+      <button type="button" role="tab" id="reiter-brief" aria-controls="feld-brief" aria-selected="false" tabindex="-1" data-reiter="brief"><b>Brief<span class="langform"> schreiben</span></b><span>an Abgeordnete, Ausschuss oder Ministerin</span></button>
     </div>
 
     <div class="reiterfeld" id="feld-petition" role="tabpanel" aria-labelledby="reiter-petition">
@@ -220,11 +220,12 @@
     </div>
 
     <div class="reiterfeld" id="feld-teilen" role="tabpanel" aria-labelledby="reiter-teilen" hidden>
-      <p class="klein hinweis">Das Bild enthält die Zahlen aus dem Rechner und die Aussage des Ministeriums, keinen Namen. Der Link öffnet den Rechner mit euren Eingaben.</p>
+      <p class="klein hinweis"><span class="langform">Bild und Text zeigen nur euer Ergebnis, kein Einkommen und keinen Namen. Der Link führt zum Rechner.</span><span class="kurzform">Geteilt wird nur euer Ergebnis, kein Einkommen, kein Name.</span></p>
       <div class="teilen">
       <canvas id="teilbild" width="1080" height="1350" aria-label="Ergebnisbild zum Teilen"></canvas>
       <div class="teilen-rechts">
-        <blockquote class="zitat"><p id="t-text"></p></blockquote>
+        <!-- Handy: Kopiertext eingeklappt; am Desktop immer offen, ohne Zeile zum Aufklappen (main.js, handyklappe) -->
+        <details class="handyklappe zitatklappe"><summary>Text ansehen</summary><blockquote class="zitat"><p id="t-text"></p></blockquote></details>
         <div class="zitatfuss">
           <button class="knopf" type="button" id="t-kopieren"><span class="sym" data-symbol="kopieren"></span>Text kopieren</button>
           <button class="knopf haupt" type="button" id="t-teilen" hidden><span class="sym" data-symbol="teilen"></span>Teilen …</button>
@@ -242,7 +243,7 @@
     </div>
 
     <div class="reiterfeld" id="feld-brief" role="tabpanel" aria-labelledby="reiter-brief" hidden>
-      <p class="klein hinweis">Der Brief enthält euer Rechenergebnis; du kannst den Text direkt ändern. Du verschickst ihn selbst, diese Seite sendet und speichert nichts.</p>
+      <p class="klein hinweis"><span class="langform">Der Brief enthält euer Rechenergebnis; du kannst den Text direkt ändern. Du verschickst ihn selbst, diese Seite sendet und speichert nichts.</span><span class="kurzform">Mit eurem Ergebnis, frei änderbar. Du verschickst ihn selbst; die Seite sendet nichts.</span></p>
       <div class="brief">
       <form class="eingaben" id="briefformular" autocomplete="off">
         <div class="feld einzeln"><label for="b-an">An</label>
@@ -252,6 +253,7 @@
           <a class="suchzeile" href="https://www.bundestag.de/abgeordnete" target="_blank" rel="noopener"><b>Abgeordnete finden <span aria-hidden="true">↗</span><span class="nur-vorlesen">(öffnet in neuem Tab)</span></b><span class="klein">Dort PLZ oder Wahlkreis eingeben, Namen hier eintragen.</span></a></div>
         <div class="paar"><div class="feld einzeln"><label for="b-name">Dein Name</label><input type="text" id="b-name" autocomplete="name"></div>
         <div class="feld einzeln"><label for="b-ort">Wohnort</label><input type="text" id="b-ort" autocomplete="address-level2"></div></div>
+        <details class="handyklappe anpassen"><summary>Anpassen: Situation und Forderungen</summary>
         <div class="feld einzeln"><label for="b-lage">Deine Situation</label>
           <select id="b-lage">
             <option value="erwartet">Wir erwarten ein Kind / planen eines</option>
@@ -264,9 +266,11 @@
           <label class="haken"><input type="checkbox" data-forderung="mutterschutz" checked><span>Mutterschutz darf keine 80-%-Monate kosten</span></label>
           <label class="haken"><input type="checkbox" data-forderung="inflation" checked><span>Regelmäßiger Inflationsausgleich</span></label>
         </div>
+        </details>
       </form>
       <div class="brief-rechts">
         <div class="blatt" id="brieftext" contenteditable="plaintext-only" spellcheck="true" aria-label="Brieftext, bearbeitbar"></div>
+        <button class="textknopf kurzform blatt-auf" type="button" id="b-ganz" aria-controls="brieftext" aria-expanded="false">Brief ansehen und bearbeiten</button>
         <div class="knoepfe">
           <button class="knopf haupt" type="button" id="b-mail">E-Mail öffnen</button>
           <button class="knopf" type="button" id="b-kopieren">Text kopieren</button>
