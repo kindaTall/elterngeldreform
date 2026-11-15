@@ -18,6 +18,8 @@ import { spanne, FAMILIEN, PARTNER_MIT_BEZUG, KINDER_MIT_ELTERNGELD, GEBURTEN, J
 import { STANDARD, PARTNERMONATE, ausHash, alsHash, nettoVon, grundlage, fuerPartnermonate as planVergleich, planhinweis } from './ui/zustand.js';
 import { monatsdiagramm, heatmap, heatmapLegende, differenzbalken, euro, euroDiff } from './ui/diagramme.js';
 import { balkenmodell } from './ui/balken.js';
+import { RASTER } from './ui/diagramme.js';
+import { eigenesFeld, feldText, naechstesFeld, ergebnisKarte, planZeile } from './ui/karte.js';
 import { ADRESSATEN, brief, mailto } from './ui/brief.js';
 import { teiltext, kurztext, netzwerke, zeichne, alsBlob } from './ui/teilen.js';
 import { symbol, symboleEinsetzen } from './ui/symbole.js';
@@ -292,16 +294,96 @@ function wachsen(el) {
   setTimeout(() => el.classList.remove('wachsen'), 1100);
 }
 
+/** Karte: Raster aus heatmap(), Auswahl `gewaehlt` (fest) und `schwebt` (Maus darüber), Regeln in ui/karte.js. */
+let kartenraster;
+let eigen = null;
+let gewaehlt = null;
+let schwebt = null;
+const gleichesFeld = (a, b) => !!a && !!b && a.i === b.i && a.j === b.j;
+
+function feldZeigen() {
+  const f = schwebt ?? gewaehlt;
+  kartenraster?.markiere(f);
+  $('feld-text').textContent = f && kartenraster ? `Gewähltes Feld: ${feldText(kartenraster.felder[f.i][f.j])}` : 'Gewähltes Feld: Feld überfahren, antippen oder mit den Pfeiltasten wählen.';
+  $('feld-weg').classList.toggle('unsichtbar', !gewaehlt);
+}
+
+function karteVerdrahten() {
+  const ziel = $('heatmap');
+  const bei = (e) => kartenraster?.feldBei(e.clientX, e.clientY) ?? null;
+  ziel.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    const f = bei(e);
+    if (gleichesFeld(f, schwebt) || (!f && !schwebt)) return;
+    schwebt = f;
+    feldZeigen();
+  });
+  ziel.addEventListener('pointerleave', () => {
+    if (!schwebt) return;
+    schwebt = null;
+    feldZeigen();
+  });
+  ziel.addEventListener('click', (e) => {
+    const f = bei(e);
+    if (!f) return;
+    gewaehlt = gleichesFeld(f, gewaehlt) ? null : f;
+    feldZeigen();
+  });
+  ziel.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      gewaehlt = null;
+    } else if (naechstesFeld({ i: 0, j: 0 }, e.key)) {
+      // erster Tastendruck wählt den Startpunkt (eigenes Feld oder Mitte), danach wandert die Auswahl
+      const mitte = Math.floor(RASTER.n / 2);
+      gewaehlt = gewaehlt ? naechstesFeld(gewaehlt, e.key) : eigen ?? { i: mitte, j: mitte };
+      schwebt = null;
+    } else {
+      return;
+    }
+    e.preventDefault();
+    feldZeigen();
+  });
+  $('feld-weg').addEventListener('click', () => {
+    gewaehlt = null;
+    schwebt = null;
+    feldZeigen();
+    ziel.focus({ preventScroll: true });
+  });
+}
+
 function karte() {
   const [a, b] = kartenplan.split('-').map(Number);
+  const e = aktuell ? grundlage(zustand) : null;
+  const paar = !!aktuell && !aktuell.eingabe.alleinerziehend;
+  eigen = paar ? eigenesFeld(aktuell.eingabe.nettoA, aktuell.eingabe.nettoB) : null;
+  // Dieselben Optionen wie der Rechner, damit Feld, Kreis und „Euer Ergebnis" zusammenpassen
+  const optionen = { mutterschutzVerbraucht80: !!zustand.lesart, geschwisterbonus: !!zustand.geschw, mehrlinge: zustand.mehr, mutterschutz: zustand.ms ? (zustand.mehr > 0 ? 3 : 2) : 0 };
   const bereich = heatmap($('heatmap'), {
     monateA: a,
     monateB: b,
-    markierung: aktuell && !aktuell.eingabe.alleinerziehend ? { nettoA: aktuell.eingabe.nettoA, nettoB: aktuell.eingabe.nettoB } : undefined,
-    optionen: { mutterschutzVerbraucht80: !!zustand.lesart },
+    markierung: paar ? { nettoA: aktuell.eingabe.nettoA, nettoB: aktuell.eingabe.nettoB } : undefined,
+    wahl: schwebt ?? gewaehlt,
+    optionen,
   });
+  kartenraster = bereich;
   heatmapLegende($('heatmap-legende'), bereich);
-  $('karte-unter').textContent = `Mutter ${a} Monate, davon 2 Mutterschutz, wenn sie Einkommen hat; Partner:in ${b} Monate. Summe über die ganze Bezugszeit.`;
+  $('karte-unter').textContent = `Mutter ${a} Monate${optionen.mutterschutz ? `, davon ${optionen.mutterschutz} Mutterschutz, wenn sie Einkommen hat` : ''}; Partner:in ${b} Monate. Summe über die ganze Bezugszeit.`;
+
+  // Euer Ergebnis (Beispiel, solange nur die Vorgabewerte stehen): genaue Zahlen des Rechners
+  $('euer-titel').textContent = eigeneZahlen ? 'Euer Ergebnis' : 'Beispiel';
+  $('euer-paar').hidden = !paar;
+  $('euer-allein').hidden = paar || !aktuell;
+  if (paar) {
+    const r = ergebnisKarte(e, aktuell.gezeigt, a, b);
+    $('euer-eingabe').textContent = `Mutter ${euro(e.nettoA)} netto · Partner:in ${euro(e.nettoB)} netto`;
+    const z = $('euer-zahl');
+    z.textContent = deltaFormat(r.differenz);
+    z.className = `euer-zahl ${r.differenz < 0 ? 'minus' : r.differenz > 0 ? 'plus' : ''}`;
+    $('euer-statt').textContent = `${euro(r.neu)} statt ${euro(r.alt)}`;
+    const rand = Math.max(e.nettoA, e.nettoB) > RASTER.max ? ` Die Karte endet bei ${euro(RASTER.max)}, der Kreis sitzt am Rand.` : '';
+    $('euer-plan').textContent = planZeile(a, b, aktuell.gezeigt) + rand;
+  }
+  feldZeigen();
 }
 
 function statistik() {
@@ -763,6 +845,7 @@ titelSetzen();
 ausUrl();
 formularFuellen();
 formularVerdrahten();
+karteVerdrahten();
 briefVerdrahten();
 teilenVerdrahten();
 rueckmeldungVerdrahten();

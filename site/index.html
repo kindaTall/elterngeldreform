@@ -379,10 +379,24 @@
                 <button type="button" data-plan="7-7" aria-pressed="false">7 + 7</button>
               </div>
               <p class="unter" id="karte-unter"></p>
+              <div class="euer" id="euer">
+                <h3 class="euer-kopf"><svg class="ring" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7"/></svg><span id="euer-titel">Euer Ergebnis</span></h3>
+                <div id="euer-paar">
+                  <p class="euer-eingabe" id="euer-eingabe"></p>
+                  <p class="euer-zahl" id="euer-zahl"></p>
+                  <p class="euer-statt" id="euer-statt"></p>
+                  <p class="unter" id="euer-plan"></p>
+                </div>
+                <p class="euer-eingabe" id="euer-allein" hidden>Alleinerziehend: Die Karte zeigt Paare. Euer Ergebnis steht in Schritt 2.</p>
+                <div class="euer-feld">
+                  <p id="feld-text" aria-live="polite"></p>
+                  <button type="button" id="feld-weg" class="unsichtbar">Auswahl aufheben</button>
+                </div>
+              </div>
             </div>
             <div class="diagramm">
               <h3>Änderung der Elterngeld-Summe je Familie</h3>
-              <div id="heatmap"></div>
+              <div id="heatmap" tabindex="0" role="group" aria-label="Karte: mit den Pfeiltasten ein Feld wählen, Escape hebt die Auswahl auf"></div>
               <div id="heatmap-legende"></div>
             </div>
           </div>
