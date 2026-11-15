@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elterngeldreform 2027 – Rechner: Was sich für deine Familie ändert</title>
+<meta name="description" content="Unabhängiger Vergleichsrechner zum Gesetzentwurf der Bundesregierung: Elterngeld nach geltendem Recht und nach der Reform ab November 2027, mit Quellen, Briefvorlage und Statistik.">
+<meta property="og:title" content="Elterngeldreform 2027: 1,36 Milliarden Euro weniger Elterngeld">
+<meta property="og:description" content="50 statt 65 Prozent ab dem fünften Monat, zehn statt zwölf Monate für einen Elternteil. Rechne nach, was der Gesetzentwurf für eure Familie bedeutet.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23101216'/%3E%3Crect x='7' y='8' width='8' height='17' fill='%23c3c9d2'/%3E%3Crect x='17' y='15' width='8' height='10' fill='%23ff5a43'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/schibsted-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script>document.documentElement.classList.add('js')</script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="kopf mit-schritten">
+  <div class="huelle">
+    <a class="marke" href="#problem">Elterngeld <b>2027</b></a>
+    <nav class="schritte" aria-label="Schritte">
+      <a href="#problem" data-schritt="problem"><span>1</span>Das Problem</a>
+      <a href="#ergebnis" data-schritt="ergebnis"><span>2</span>Euer Ergebnis</a>
+      <a href="#handeln" data-schritt="handeln"><span>3</span>Handeln</a>
+      <i class="laeufer" aria-hidden="true"></i>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section id="problem" class="schritt erster">
+    <div class="buehne">
+      <div class="buehne-links">
+        <p class="stand" data-zeig><a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurf der Bundesregierung</a> vom 12. November 2026, für Geburten ab 1. November 2027</p>
+        <h1 data-zeig style="--i:1">1,36 Milliarden Euro weniger Elterngeld.</h1>
+        <p class="vorspann" data-zeig style="--i:2">So viel will die Bundesregierung im Jahr 2030 einsparen, fast ein Fünftel der heutigen Ausgaben. Bleibt es bei der heutigen Aufteilung, bekommen <a href="#statistik">nach unserem Überschlag</a> rund 80 Prozent der Familien weniger.</p>
+        <h2 class="plakat-titel" data-zeig style="--i:3">Was das für Familien heißt</h2>
+        <ol class="plakate">
+          <li data-zeig style="--i:4"><div class="wechsel minus"><b id="plakat-schnitt">−1.700 €</b></div><p>Elterngeld weniger je Familie im Durchschnitt, wenn alle aufteilen wie bisher</p></li>
+          <li data-zeig style="--i:5"><div class="wechsel minus"><b>2 Monate</b></div><p><strong>Lücke bis zum Kita-Anspruch</strong>, wenn der Partner nicht mindestens 2 Monate übernimmt, und zwar im Anschluss an die Mutter, nicht parallel. Gut die Hälfte der Väter nimmt heute gar kein Elterngeld.*</p></li>
+        </ol>
+        <p class="quelle" data-zeig style="--i:6"><a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurf</a>, S. 3 und 5–9; Bundeshaushalt, Ist 2025: 7,06 Mrd. €; Kita-Anspruch: § 24 Abs. 2 SGB VIII · <a href="#regeln">Alle Änderungen im Vergleich</a><br>* Statistisches Bundesamt: Bei 53,6 % der 2023 geborenen Kinder bezog der Vater kein Elterngeld.</p>
+      </div>
+      <div class="einschub dunkel" id="start" data-zeig style="--i:2">
+        <h2>Was heißt das für uns?</h2>
+        <p>Was verdient ihr vor der Geburt <span data-einkwort>netto</span> im Monat? Alle Angaben bleiben in eurem Browser.</p>
+        <form id="schnell" autocomplete="off">
+          <label class="grossfeld"><span>Mutter</span>
+            <span class="mit-euro"><input id="s-einkA" type="number" min="0" max="20000" step="50" inputmode="numeric"><i>€</i></span></label>
+          <label class="grossfeld" id="s-partner"><span>Partner:in</span>
+            <span class="mit-euro"><input id="s-einkB" type="number" min="0" max="20000" step="50" inputmode="numeric"><i>€</i></span></label>
+          <button class="knopf hell pfeil runter" type="submit">Was heißt das für mich?</button>
+          <label class="haken"><input type="checkbox" id="s-allein"><span>Ich bin alleinerziehend</span></label>
+        </form>
+        <p class="klein">Modellrechnung zu einem <a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurf</a>, ohne Gewähr.</p>
+      </div>
+    </div>
+</section>
+
+<section id="ergebnis" class="schritt">
+  <div class="huelle">
+    <h2 data-zeig>Das heißt es für euch</h2>
+    <p class="einleitung" id="annahme" data-zeig></p>
+    <ul class="aufteilung" id="aufteilung" data-zeig></ul>
+
+    <div class="fall ergebnisblock" id="ergebnisblock" data-zeig aria-live="polite">
+      <div class="ergebnis-kopf">
+        <div class="differenz" id="ergebnis-zahl">–</div>
+        <p class="satz" id="ergebnis-satz"></p>
+        <label class="bedingung extra" id="zeile-kk">
+          <input type="checkbox" id="kk">
+          <span class="b-text"><b>Mit Inflationsausgleich seit 2007 vergleichen</b><small>Mindest- und Höchstbetrag gelten seit 2007 unverändert. In heutiger Kaufkraft wären es 445 € statt 300 € und 2.660 € statt 1.800 €.</small></span>
+        </label>
+      </div>
+      <div class="bedingungen-liste">
+        <h3>Aber nur, wenn:</h3>
+        <label class="bedingung" id="zeile-um">
+          <input type="checkbox" id="um">
+          <span class="b-text"><b>Partner:in nimmt mindestens 4 Monate Elterngeld</b><small>Heute reichen 2. Mit weniger verfallen Monate.</small></span>
+          <span class="preis" id="preis-um"></span>
+        </label>
+        <div class="partnerwahl" id="partnerwahl">
+          <span>Partner:in nimmt:</span>
+          <div class="umschalter" role="group" aria-label="Elterngeld-Monate Partner:in">
+            <button type="button" data-monb="0" aria-pressed="false">0</button>
+            <button type="button" data-monb="2" aria-pressed="false">2</button>
+            <button type="button" data-monb="4" aria-pressed="true">4</button>
+            <button type="button" data-monb="andere" aria-pressed="false">andere</button>
+          </div>
+          <div class="regler" id="monB-regler">
+            <input id="monB" type="range" min="0" max="11" step="1" aria-label="Elterngeld-Monate Partner:in">
+            <output id="monB-out" for="monB"></output>
+          </div>
+        </div>
+        <label class="bedingung fest" id="zeile-mutter">
+          <input type="checkbox" checked disabled>
+          <span class="b-text"><b>Die Mutter bezieht höchstens 10 statt 12 Monate</b><small>Mehr lässt der Entwurf für einen Elternteil nicht zu. Den Kita-Anspruch gibt es ab dem ersten Geburtstag.</small></span>
+          <span class="preis"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="weiter" data-zeig>
+      <a class="knopf haupt gross pfeil runter" href="#handeln">Jetzt handeln</a>
+      <button class="knopf" type="button" data-klappe="verlauf" aria-expanded="false">Monat für Monat</button>
+      <button class="knopf" type="button" data-klappe="genauer" aria-expanded="false">Genauer rechnen</button>
+      <span class="klein">Modellrechnung ohne Gewähr. <a href="#methodik">So wird gerechnet</a></span>
+    </div>
+
+    <div class="klappe" id="verlauf" hidden>
+<div class="verlauf">
+      <div class="verlauf-kopf">
+        <div>
+          <h3>Elterngeld pro Lebensmonat des Kindes</h3>
+          <p class="unter" id="diagramm-unter"></p>
+        </div>
+      </div>
+      <div class="diagramm" id="monatsdiagramm"></div>
+      <ul class="legende">
+        <li><i class="l-alt"></i>heute</li>
+        <li><i class="l-neu"></i>Entwurf</li>
+        <li><i class="l-schutz"></i>Mutterschaftsgeld statt Elterngeld</li>
+      </ul>
+    </div>
+    </div>
+    <div class="klappe" id="genauer" hidden>
+      <form class="eingaben" id="formular" autocomplete="off">
+        <div class="umschalter" role="group" aria-label="Art der Einkommensangabe">
+          <button type="button" data-modus="netto" aria-pressed="true">Netto eingeben</button>
+          <button type="button" data-modus="brutto" aria-pressed="false">Brutto eingeben</button>
+        </div>
+        <div class="spalten">
+          <fieldset class="feldgruppe">
+            <legend>Mutter / gebärender Elternteil</legend>
+            <div class="feld">
+              <label for="einkA"><span data-einklabel>Netto pro Monat vor der Geburt</span></label>
+              <input class="zahlfeld" id="einkA-zahl" type="number" min="0" max="20000" step="50" inputmode="numeric" aria-label="Einkommen Mutter in Euro">
+              <input id="einkA" type="range" min="0" max="6000" step="50">
+            </div>
+            <div class="feld" data-nur="brutto" hidden>
+              <label for="stklA">Steuerklasse</label>
+              <select id="stklA"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select>
+            </div>
+            <div class="feld" id="feld-monA">
+              <label for="d-monA">Elterngeld-Monate Mutter (inkl. Mutterschutz)</label>
+              <select id="d-monA"><option value="0">so viele wie möglich</option><option value="2">2 Monate</option><option value="3">3 Monate</option><option value="4">4 Monate</option><option value="5">5 Monate</option><option value="6">6 Monate</option><option value="7">7 Monate</option><option value="8">8 Monate</option><option value="9">9 Monate</option><option value="10">10 Monate</option><option value="11">11 Monate</option><option value="12">12 Monate</option></select>
+            </div>
+            <label class="haken"><input type="checkbox" id="mutterschutz"><span>Angestellt mit Mutterschaftsgeld<small>Die ersten zwei Lebensmonate sind durch Mutterschaftsgeld und Arbeitgeberzuschuss abgedeckt; Elterngeld wird dort nicht zusätzlich gezahlt.</small></span></label>
+            <label class="haken"><input type="checkbox" id="lesart"><span>Mutterschutz verbraucht zwei der 80-%-Monate<small>So lesen Juristinnenbund und Familienbund den Entwurf. Ausdrücklich geregelt ist es nicht. Ohne Haken rechnet der Rechner die für Familien günstigere Auslegung.</small></span></label>
+          </fieldset>
+          <fieldset class="feldgruppe">
+            <legend>Familie</legend>
+            <div id="gruppeB">
+              <div class="feld">
+                <label for="einkB"><span data-einklabel>Netto pro Monat vor der Geburt</span>, Partner:in</label>
+                <input class="zahlfeld" id="einkB-zahl" type="number" min="0" max="20000" step="50" inputmode="numeric" aria-label="Einkommen Partner in Euro">
+                <input id="einkB" type="range" min="0" max="6000" step="50">
+              </div>
+              <div class="feld" data-nur="brutto" hidden>
+                <label for="stklB">Steuerklasse Partner:in</label>
+                <select id="stklB"><option>1</option><option>3</option><option selected>4</option><option>5</option></select>
+              </div>
+              <div class="feld">
+                <label for="d-monB">Elterngeld-Monate Partner:in</label>
+                <select id="d-monB"><option value="0">kein Elterngeld</option><option value="2">2 Monate</option><option value="3">3 Monate</option><option value="4">4 Monate</option><option value="5">5 Monate</option><option value="6">6 Monate</option><option value="7">7 Monate</option><option value="8">8 Monate</option><option value="9">9 Monate</option><option value="10">10 Monate</option><option value="11">11 Monate</option><option value="12">12 Monate</option></select>
+              </div>
+            </div>
+            <label class="haken"><input type="checkbox" id="allein"><span>Alleinerziehend<small>Bis zu 14 Monate; nach der Begründung des Entwurfs davon bis zu 8 Monate mit 80 %.</small></span></label>
+            <label class="haken"><input type="checkbox" id="geschwister"><span>Geschwisterbonus<small>Ein weiteres Kind unter 3 oder zwei unter 6 Jahren. Heute 10 %, im Entwurf 5 %, jeweils mindestens 75 €. Vereinfacht in allen Monaten angesetzt.</small></span></label>
+            <div class="feld">
+              <label for="mehrlinge">Mehrlingsgeburt</label>
+              <select id="mehrlinge"><option value="0">nein</option><option value="1">Zwillinge</option><option value="2">Drillinge</option></select>
+            </div>
+            <div class="feld" data-nur="brutto" hidden>
+              <label for="kirche">Kirchensteuer</label>
+              <select id="kirche"><option value="0">nein</option><option value="1">ja</option></select>
+            </div>
+          </fieldset>
+        </div>
+        <p class="klein">Sonderzahlungen wie Weihnachtsgeld zählen im Entwurf künftig mit und können das Ergebnis etwas verbessern. Der Rechner berücksichtigt sie nicht.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section id="handeln" class="schritt">
+  <div class="huelle">
+    <h2 data-zeig>Jetzt handeln: Noch ist nichts beschlossen</h2>
+    <div class="reiter" role="tablist" aria-label="Was du tun kannst" data-zeig>
+      <button type="button" role="tab" id="reiter-brief" aria-controls="feld-brief" aria-selected="true" data-reiter="brief"><b>Brief schreiben</b><span>an Abgeordnete, Ausschuss oder Ministerin</span></button>
+      <button type="button" role="tab" id="reiter-petition" aria-controls="feld-petition" aria-selected="false" data-reiter="petition"><b>Petition unterschreiben</b><span>über 100.000 sind schon dabei</span></button>
+      <button type="button" role="tab" id="reiter-teilen" aria-controls="feld-teilen" aria-selected="false" data-reiter="teilen"><b>Ergebnis teilen</b><span>als Bild oder Link</span></button>
+    </div>
+
+    <div class="reiterfeld" id="feld-brief" role="tabpanel" aria-labelledby="reiter-brief">
+      <p class="klein hinweis">Der Brief enthält euer Rechenergebnis; du kannst den Text direkt ändern. Du verschickst ihn selbst, diese Seite sendet und speichert nichts.</p>
+      <div class="brief">
+      <form class="eingaben" id="briefformular" autocomplete="off">
+        <div class="feld einzeln"><label for="b-an">An</label>
+          <select id="b-an"></select></div>
+        <div class="feld einzeln" id="b-mdb-feld" hidden><label for="b-mdb">Name der/des Abgeordneten</label>
+          <input type="text" id="b-mdb" placeholder="z. B. Maria Beispiel">
+          <span class="klein">Abgeordnete finden: <a href="https://www.bundestag.de/abgeordnete" target="_blank" rel="noopener">Abgeordnetensuche des Bundestags</a></span></div>
+        <div class="paar"><div class="feld einzeln"><label for="b-name">Dein Name</label><input type="text" id="b-name" autocomplete="name"></div>
+        <div class="feld einzeln"><label for="b-ort">Wohnort</label><input type="text" id="b-ort" autocomplete="address-level2"></div></div>
+        <div class="feld einzeln"><label for="b-lage">Deine Situation</label>
+          <select id="b-lage">
+            <option value="erwartet">Wir erwarten ein Kind / planen eines</option>
+            <option value="eltern">Wir sind bereits Eltern</option>
+            <option value="solidarisch">Ich bin nicht selbst betroffen</option>
+          </select></div>
+        <div class="feld einzeln forderungen"><span class="feldname">Forderungen</span>
+          <label class="haken"><input type="checkbox" data-forderung="rate" checked><span>Keine Absenkung auf 50 %</span></label>
+          <label class="haken"><input type="checkbox" data-forderung="monate" checked><span>Weiter 12 Monate für einen Elternteil</span></label>
+          <label class="haken"><input type="checkbox" data-forderung="mutterschutz" checked><span>Mutterschutz darf keine 80-%-Monate kosten</span></label>
+          <label class="haken"><input type="checkbox" data-forderung="inflation" checked><span>Regelmäßiger Inflationsausgleich</span></label>
+        </div>
+      </form>
+      <div>
+        <div class="blatt" id="brieftext" contenteditable="true" spellcheck="true" aria-label="Brieftext, bearbeitbar"></div>
+        <div class="knoepfe">
+          <button class="knopf haupt" type="button" id="b-mail">E-Mail-Programm öffnen</button>
+          <button class="knopf" type="button" id="b-kopieren">Text kopieren</button>
+          <button class="knopf" type="button" id="b-pdf">Als PDF speichern / drucken</button>
+          <button class="knopf" type="button" id="b-txt">Als Datei laden</button>
+        </div>
+        <p class="status" id="b-status" role="status"></p>
+
+      </div>
+    </div>
+    </div>
+
+    <div class="reiterfeld" id="feld-petition" role="tabpanel" aria-labelledby="reiter-petition" hidden>
+      <div class="petition">
+        <div>
+          <h3>„Keine Kürzungen beim Elterngeld!“</h3>
+          <p>Auf WeAct, der Petitionsplattform von Campact, läuft eine Petition an Bundesfamilienministerin Karin Prien. Mehr als 100.000 Menschen haben unterschrieben. Sie wurde im Sommer 2026 gegen die ersten Kürzungspläne gestartet; die Initiatorinnen lehnen auch die Aufteilung 4 + 6 + 4 und die Absenkung auf 50 Prozent ab.</p>
+          <p class="klein">Die Petition stammt nicht von dieser Seite. Der Link führt zu weact.campact.de; dort gelten die Datenschutzbestimmungen von Campact.</p>
+        </div>
+        <a class="knopf haupt gross pfeil" id="petition-link" href="https://weact.campact.de/petitions/keine-kurzungen-beim-elterngeld" target="_blank" rel="noopener">Zur Petition bei WeAct</a>
+      </div>
+    </div>
+
+    <div class="reiterfeld" id="feld-teilen" role="tabpanel" aria-labelledby="reiter-teilen" hidden>
+      <p class="klein hinweis">Das Bild enthält nur die Zahlen aus dem Rechner, keinen Namen. Der Link öffnet den Rechner mit euren Eingaben.</p>
+      <div class="teilen">
+      <canvas id="teilbild" width="1080" height="1350" aria-label="Ergebnisbild zum Teilen"></canvas>
+      <div>
+        <div class="knoepfe">
+          <button class="knopf haupt" type="button" id="t-teilen">Teilen …</button>
+          <button class="knopf" type="button" id="t-bild">Bild speichern</button>
+          <button class="knopf" type="button" id="t-link">Link kopieren</button>
+        </div>
+        <div class="knoepfe" id="t-netzwerke"></div>
+        <p class="status" id="t-status" role="status"></p>
+        <p class="klein teiltext" id="t-text"></p>
+      </div>
+    </div>
+    </div>
+  </div>
+</section>
+
+<section id="hintergrund">
+  <div class="huelle">
+    <h2 data-zeig>Hintergrund</h2>
+    <p class="einleitung" data-zeig>Die Regeln, die Zahlen und die Annahmen dahinter.</p>
+    <p class="klein vorbehalt" data-zeig><strong>Unter Vorbehalt.</strong> <a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Der Entwurf</a> ist noch kein Gesetz und kann sich im Bundestag ändern. Alle Zahlen auf dieser Seite sind Modellrechnungen nach bestem Wissen, ohne Gewähr; an einigen Stellen lässt der Entwurf mehrere Auslegungen zu. Wenn dir ein Fehler auffällt, <a href="#rueckmeldung">melde ihn bitte</a>.</p>
+    <div class="akkordeon" data-zeig>
+      <details id="regeln">
+        <summary>Die Regeln im Vergleich</summary>
+        <div class="inhalt schmal">
+          <div class="tabellenhuelle">
+        <table>
+          <thead><tr><th></th><th>Heute</th><th>Entwurf</th></tr></thead>
+          <tbody>
+            <tr><td>Ersatzrate, Bezugsmonat 1–4 je Elternteil*</td><td>65–67 %</td><td><span class="besser">80 %</span></td></tr>
+            <tr><td>Ersatzrate ab dem 5. Bezugsmonat*</td><td>65–67 %</td><td><span class="schlechter">50 %</span></td></tr>
+            <tr><td>Höchstens für einen Elternteil</td><td>12 Monate</td><td><span class="schlechter">10 Monate</span></td></tr>
+            <tr><td>Volle 14 Monate, wenn der andere Elternteil …</td><td>2 Monate nimmt</td><td><span class="schlechter">4 Monate nimmt</span></td></tr>
+            <tr><td>Mindestbetrag</td><td>300 €</td><td><span class="besser">330 €</span></td></tr>
+            <tr><td>Höchstbetrag</td><td>1.800 €</td><td><span class="besser">1.900 €</span></td></tr>
+            <tr><td>Geschwisterbonus</td><td>10 %, solange ein Geschwister unter 3 ist (oder zwei unter 6)</td><td>5 %, bis zum Ende des Bezugs</td></tr>
+            <tr><td>Partnerschaftsbonus</td><td>bis zu 4 Monate je Elternteil</td><td><span class="schlechter">entfällt</span></td></tr>
+            <tr><td>ElterngeldPlus bis Lebensmonat</td><td>32</td><td><span class="schlechter">28</span></td></tr>
+            <tr><td>Basiselterngeld gleichzeitig</td><td>in der Regel höchstens 1 Monat</td><td><span class="besser">unbegrenzt</span></td></tr>
+            <tr><td>Einkommen für die Berechnung (Angestellte)</td><td>12 Monate vor der Geburt, ohne Sonderzahlungen</td><td>Kalenderjahr vor der Geburt, <span class="besser">mit Sonderzahlungen</span></td></tr>
+            <tr><td>Inflationsausgleich</td><td>keiner seit 2007</td><td>einmalig +30 € und +100 €, danach keiner</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p class="quelle">* Bei einem Netto unter 1.000 € sind die Sätze in beiden Fassungen höher, bis zu 100 %. Geltendes Recht: §§ 2, 2a, 4 BEEG. Entwurf: §§ 2, 2a, 2b, 2c, 4 BEEG-E, <a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurf</a> S. 5–11.</p>
+        </div>
+      </details>
+      <details id="karte">
+        <summary>Wer mehr bekommt und wer weniger</summary>
+        <div class="inhalt">
+          <p class="einleitung">Jedes Feld ist eine Familie: nach rechts steigt das Netto der Mutter, nach oben das Netto des Partners. Die Farbe zeigt, wie sich die Elterngeld-Summe ändert, wenn die Familie ihre heutige Aufteilung beibehält.</p>
+          <div class="umschalter" role="group" aria-label="Aufteilung der Monate heute" id="kartenplan">
+            <button type="button" data-plan="12-2" aria-pressed="true">12 + 2 Monate</button>
+            <button type="button" data-plan="12-0" aria-pressed="false">12 + 0</button>
+            <button type="button" data-plan="10-4" aria-pressed="false">10 + 4</button>
+            <button type="button" data-plan="7-7" aria-pressed="false">7 + 7</button>
+          </div>
+          <div class="diagramm schmal">
+            <h3 id="karte-titel">Änderung der Elterngeld-Summe</h3>
+            <p class="unter" id="karte-unter"></p>
+            <div id="heatmap"></div>
+            <div id="heatmap-legende"></div>
+          </div>
+        </div>
+      </details>
+      <details id="statistik">
+        <summary>Was es im Durchschnitt bedeutet</summary>
+        <div class="inhalt">
+          <p class="einleitung">Umplanen können oder wollen die wenigsten Familien. Bleiben Einkommen und Aufteilung, wie sie bei den 2023 geborenen Kindern waren, und ändern sich nur die Regeln, sieht es so aus:</p>
+          <div class="kennzahlen" id="stat-kennzahlen"></div>
+          <div class="zwei">
+            <div class="diagramm">
+              <h3>Familien nach Aufteilung</h3>
+              <p class="unter">Durchschnittliche Änderung der Elterngeld-Summe je Familie in Euro, nach Bezugsdauer des Partners</p>
+              <div id="stat-aufteilung"></div>
+            </div>
+            <div class="diagramm">
+              <h3>Familien nach Einkommen der Mutter</h3>
+              <p class="unter">Durchschnittliche Änderung je Familie in Euro, nach Netto der Mutter vor der Geburt; das Elterngeld des Partners ist eingerechnet</p>
+              <div id="stat-einkommen"></div>
+            </div>
+          </div>
+          <p class="klein stat-text" id="stat-text"></p>
+        </div>
+      </details>
+      <details id="kaufkraft">
+        <summary>Seit 2007 kein Inflationsausgleich</summary>
+        <div class="inhalt">
+          <div class="kaufkraft">
+            <div>
+              <p class="einleitung">Mindest- und Höchstbetrag gelten unverändert seit der Einführung des Elterngelds 2007. Seitdem sind die Lebenshaltungskosten um rund 48 % gestiegen. Der Entwurf hebt die Beträge um 30 € und 100 € an; einen regelmäßigen Inflationsausgleich sieht er weiterhin nicht vor.</p>
+            </div>
+            <div class="diagramm">
+              <h3>Höchstbetrag pro Monat</h3>
+        <div class="kk-zeile"><span>seit 2007</span><div class="kk-spur"><i class="kk-alt" style="width:calc((100% - 70px) * 0.677)"></i><b>1.800 €</b></div></div>
+        <div class="kk-zeile"><span>Entwurf</span><div class="kk-spur"><i class="kk-neu" style="width:calc((100% - 70px) * 0.714)"></i><b>1.900 €</b></div></div>
+        <div class="kk-zeile"><span>Kaufkraft von 2007</span><div class="kk-spur"><i class="kk-soll" style="width:calc((100% - 70px) * 1.000)"></i><b>2.660 €</b></div></div>
+        <h3 class="kk-abstand">Mindestbetrag pro Monat</h3>
+        <div class="kk-zeile"><span>seit 2007</span><div class="kk-spur"><i class="kk-alt" style="width:calc((100% - 70px) * 0.674)"></i><b>300 €</b></div></div>
+        <div class="kk-zeile"><span>Entwurf</span><div class="kk-spur"><i class="kk-neu" style="width:calc((100% - 70px) * 0.742)"></i><b>330 €</b></div></div>
+        <div class="kk-zeile"><span>Kaufkraft von 2007</span><div class="kk-spur"><i class="kk-soll" style="width:calc((100% - 70px) * 1.000)"></i><b>445 €</b></div></div>
+        <p class="quelle">Eigene Rechnung nach Statistisches Bundesamt, Verbraucherpreisindex (2020 = 100): Jahresdurchschnitt 2007 = 84,7; Januar bis Oktober 2026 = 125,0 (+47,5 %, Beträge gerundet). Zum Vergleich mit Preisstand 2025: +43,9 % (<a href="https://dserver.bundestag.de/btd/21/087/2108793.pdf" target="_blank" rel="noopener">Bundesregierung, BT-Drs. 21/8793</a>), Höchstbetrag rund 2.590 € (<a href="https://www.ifo.de/DocDL/ifoDD_2605_35-39_Nuernbergk-BP.pdf" target="_blank" rel="noopener">ifo Dresden berichtet 5/2026</a>), 432 € und 2.591 € (<a href="https://www.iwkoeln.de/presse/iw-nachrichten/wido-geis-thoene-elterngeld-hat-seit-einfuehrung-fast-ein-drittel-seines-werts-verloren.html" target="_blank" rel="noopener">IW Köln, 8.7.2026</a>). Der Deutsche Familienverband spricht von „mehr als 45 Prozent“ (<a href="https://www.deutscher-familienverband.de/wp-content/uploads/2026/10/261030_Stellungnahme_Elterngeld_pdf.pdf" target="_blank" rel="noopener">Stellungnahme vom 30.10.2026</a>).</p>
+            </div>
+          </div>
+        </div>
+      </details>
+      <details id="methodik">
+        <summary>Wie hier gerechnet wird, Quellen</summary>
+        <div class="inhalt">
+          <p class="einleitung">Alle Ergebnisse sind Modellrechnungen zu einem <a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurf</a>. Sie stehen unter dem Vorbehalt, dass der Entwurf so beschlossen und so ausgelegt wird, wie hier angenommen.</p>
+          <div class="zwei fliesstext">
+      <div>
+        <h3>Was der Rechner abbildet</h3>
+        <p>Basiselterngeld in Monaten ohne Erwerbseinkommen, nach § 2 BEEG in der geltenden Fassung und nach § 2 des <a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurfs</a>: Ersatzrate, Geringverdiener-Staffel unter 1.000 € Netto, Mindest- und Höchstbetrag, Geschwisterbonus, Mehrlingszuschlag, zulässige Monate je Elternteil. Nach geltendem Recht ergibt ElterngeldPlus ohne Teilzeit in Summe dieselben Beträge wie Basiselterngeld, nur über die doppelte Zeit gestreckt. Wie der Entwurf die vier 80-%-Monate bei ElterngeldPlus zählt, regelt er nicht; der Rechner zeigt deshalb nur Basiselterngeld.</p>
+        <h3>Was er nicht abbildet</h3>
+        <p>Teilzeit während des Bezugs, den wegfallenden Partnerschaftsbonus, die Einkommensgrenze von 175.000 €, die Anrechnung auf Bürgergeld und den Progressionsvorbehalt in der Steuererklärung. Außer Acht bleibt auch, dass der Entwurf Sonderzahlungen wie Weihnachtsgeld künftig mitzählt; das erhöht das Elterngeld für Beschäftigte mit solchen Zahlungen. Im Brutto-Modus rechnet der Rechner das Netto so aus wie die Elterngeldstellen: mit pauschalen Abzügen für Steuern und Sozialabgaben (§§ 2e, 2f BEEG), Lohnsteuer nach dem amtlichen Programmablaufplan 2026.</p>
+        <h3>Annahmen</h3>
+        <p>Gerechnet werden zwei Fälle. „Umgeplant“: Die Familie schöpft alle Monate aus, die Mutter nimmt so viele wie ein Elternteil darf, der Partner den Rest (heute 12 + 2, im Entwurf 10 + 4). „Wie bisher“: Die Aufteilung nach heutigem Recht wird übernommen, soweit der Entwurf sie zulässt; Monate, die nicht mehr zulässig sind, entfallen. Monate mit Mutterschaftsgeld zählen als volle Lebensmonate ohne Elterngeld-Auszahlung (zwei, bei Mehrlingen drei); tatsächlich endet die Schutzfrist einige Tage früher, was das Ergebnis um einige Dutzend Euro verschiebt. Der Geschwisterbonus ist in allen Monaten angesetzt. Für Alleinerziehende rechnet der Rechner mit acht Monaten zu 80 %; das steht in der Begründung des Entwurfs (S. 3, 27, 45), nicht im Gesetzestext selbst. Ob die Mutterschutzmonate zwei der vier 80-%-Monate der Mutter verbrauchen, sagt der Entwurf nicht ausdrücklich; er lässt aber die Regel unverändert, nach der sie als Elterngeld-Monate der Mutter gelten (§ 4 Abs. 4 Satz 3). Voreingestellt ist deshalb die Auslegung, dass sie mitzählen. Die andere Auslegung lässt sich unter „Weitere Angaben“ wählen.</p>
+        <h3>Stand des Verfahrens</h3>
+        <p>Das Kabinett hat <a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">den Entwurf</a> am 12. November 2026 beschlossen. Bundestag und Bundesrat haben ihn noch nicht beraten; alles kann sich noch ändern. Gelten sollen die neuen Regeln für Kinder, die ab dem 1. November 2027 geboren werden.</p>
+      </div>
+      <div>
+        <h3>Quellen</h3>
+        <ul>
+          <li><a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurf der Bundesregierung</a> zur Änderung des Bundeselterngeld- und Elternzeitgesetzes (57 Seiten, Stand 12.11.2026)</li>
+          <li><a href="https://www.gesetze-im-internet.de/beeg/" target="_blank" rel="noopener">Bundeselterngeld- und Elternzeitgesetz</a> in der geltenden Fassung</li>
+          <li>Statistisches Bundesamt: <a href="https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Soziales/Elterngeld/_inhalt.html" target="_blank" rel="noopener">Statistik zum Elterngeld</a>, beendete Leistungsbezüge für 2023 geborene Kinder; Leistungsbezüge 2025</li>
+          <li><a href="https://www.bundeshaushalt.de" target="_blank" rel="noopener">Bundeshaushalt</a>, Einzelplan 17, Titel 681 02 „Elterngeld“</li>
+          <li>Stellungnahmen: <a href="https://www.djb.de/presse/stellungnahmen/detail/st26-37" target="_blank" rel="noopener">Deutscher Juristinnenbund</a>, <a href="https://www.dgb.de/fileadmin/download_center/Stellungnahmen/2026-10-30_DGB-STN_BEEG-MuSchG.pdf" target="_blank" rel="noopener">DGB</a>, <a href="https://familienbund.org/artikel/eintrag-29261" target="_blank" rel="noopener">Familienbund der Katholiken</a>, <a href="https://www.sovd.de/aktuelles/meldung/stellungnahme-referentenentwurf-elterngeldreform" target="_blank" rel="noopener">SoVD</a></li>
+        </ul>
+        <h3>Prüfung</h3>
+        <p>Der Rechenkern ist gegen die veröffentlichten Beispielrechnungen von DGB, Juristinnenbund und Stiftung Warentest getestet, die Brutto-Netto-Umrechnung gegen den amtlichen Elterngeldrechner und die Lohnsteuer-Prüftabellen des Bundesfinanzministeriums. Eine zweite, unabhängig aus dem Gesetzestext geschriebene Rechnung kam in rund vier Millionen Vergleichsfällen auf dieselben Beträge. Der Quelltext ist offen einsehbar. Trotzdem können Fehler enthalten sein: <a href="#rueckmeldung">Bitte melde sie</a>; bestätigte Fehler werden korrigiert und hier vermerkt.</p>
+        <h3>Ohne Gewähr</h3>
+        <p>Diese Seite ist ein privates, unabhängiges Projekt. Sie ersetzt keine Beratung und keinen Bescheid der Elterngeldstelle. Verbindliche Auskünfte geben die Elterngeldstellen; den amtlichen Rechner für das geltende Recht gibt es im <a href="https://familienportal.de/familienportal/rechner-antraege/elterngeldrechner" target="_blank" rel="noopener">Familienportal</a>.</p>
+      </div>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section id="rueckmeldung">
+  <div class="huelle">
+    <div class="rueckmeldung">
+      <div>
+        <h2>Fehler gefunden?</h2>
+        <p class="einleitung">Wenn eine Zahl nicht stimmt, eine Regel falsch wiedergegeben ist oder etwas nicht funktioniert: Schreib es hier. Bestätigte Fehler werden korrigiert und unter Methodik vermerkt. Auch Hinweise auf neue Fassungen des Entwurfs helfen.</p>
+      </div>
+      <form class="eingaben" id="rueckmeldeformular" autocomplete="off">
+        <div class="feld einzeln"><label for="r-art">Worum geht es?</label>
+          <select id="r-art">
+            <option>Rechenfehler</option>
+            <option>Sachfehler im Text</option>
+            <option>Technisches Problem</option>
+            <option>Sonstiges</option>
+          </select></div>
+        <div class="feld einzeln"><label for="r-text">Was stimmt nicht?</label>
+          <textarea id="r-text" required maxlength="4000" placeholder="Was hast du eingegeben, was kam heraus, was hättest du erwartet? Gern mit Quelle."></textarea></div>
+        <div class="feld einzeln"><label for="r-kontakt">E-Mail für Rückfragen (freiwillig)</label>
+          <input type="email" id="r-kontakt" autocomplete="email"></div>
+        <label class="haken"><input type="checkbox" id="r-eingaben" checked><span>Meine Rechner-Eingaben mitschicken<small>Hängt den Link zu deinem Ergebnis an, mit Einkommen und Monaten. So lässt sich der Fehler nachstellen.</small></span></label>
+        <input class="falle" type="text" id="r-website" tabindex="-1" aria-hidden="true" autocomplete="off">
+        <div class="knoepfe">
+          <button class="knopf haupt" type="submit" id="r-senden">Meldung per E-Mail senden</button>
+          <button class="knopf" type="button" id="r-kopieren">Text kopieren</button>
+        </div>
+        <p class="status" id="r-status" role="status"></p>
+        <p class="klein" id="r-weg"></p>
+      </form>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="fuss">
+  <div class="huelle">
+    <p>Privates Projekt, ohne Werbung, ohne Tracking, ohne Cookies. Alle Angaben ohne Gewähr; Grundlage ist ein Gesetzentwurf, kein geltendes Recht.</p>
+    <nav><a href="#rueckmeldung">Fehler melden</a><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a></nav>
+  </div>
+</footer>
+
+<a class="schweber" id="schweber" href="#start">Rechner: Was heißt das für uns?</a>
+
+<div id="brief-druck"></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
