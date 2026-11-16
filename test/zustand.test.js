@@ -2,9 +2,8 @@
 // Aufteilung der Monate. Die Beträge sind von Hand aus den Regeln nachgerechnet.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STANDARD, STEUERKLASSEN, ausHash, alsHash, nettoVon, grundlage, monateMutter, vergleichsmonate, fuerPartnermonate, planhinweis } from '../site/js/ui/zustand.js';
+import { STANDARD, ausHash, alsHash, grundlage, monateMutter, vergleichsmonate, fuerPartnermonate, planhinweis } from '../site/js/ui/zustand.js';
 import { ganzeDifferenz } from '../site/js/ui/diagramme.js';
-import { elterngeldNetto } from '../site/js/calc/netto.js';
 
 /** Ergebnis für ein Fragment, so wie Schritt 2 es zeigt. */
 function ergebnis(hash) {
@@ -22,12 +21,19 @@ test('URL: ohne Fragment gilt der Standard, Startwert −3.220 €', () => {
 });
 
 test('URL: Werte außerhalb des Bereichs werden gekürzt, Unlesbares wird Standard', () => {
-  const z = ausHash('#einkA=999999&einkB=-5&monA=40&monB=13&mehr=7&ms=2&allein=-1&lesart=9&geschw=3&kirche=5');
-  assert.deepEqual([z.einkA, z.einkB, z.monA, z.monB, z.mehr, z.ms, z.allein, z.lesart, z.geschw, z.kirche], [20000, 0, 12, 12, 2, 1, 0, 1, 1, 1]);
+  const z = ausHash('#einkA=999999&einkB=-5&monA=40&monB=13&mehr=7&ms=2&allein=-1&lesart=9&geschw=3');
+  assert.deepEqual([z.einkA, z.einkB, z.monA, z.monB, z.mehr, z.ms, z.allein, z.lesart, z.geschw], [20000, 0, 12, 12, 2, 1, 0, 1, 1]);
   assert.equal(ausHash('#einkA=abc').einkA, STANDARD.einkA);
   assert.equal(ausHash('#einkA=1830.4').einkA, 1830);
-  assert.equal(ausHash('#modus=brutto').modus, 'brutto');
-  assert.equal(ausHash('#modus=irgendwas').modus, 'netto');
+});
+
+test('URL: alte Felder (Modus, Steuerklasse, Kirchensteuer) werden ignoriert; Brutto-Links zeigen das Standardbeispiel', () => {
+  const alt = ausHash('#modus=netto&stklA=3&kirche=1&einkA=2500&monB=4');
+  assert.deepEqual([alt.einkA, alt.monB], [2500, 4]);
+  for (const k of ['modus', 'stklA', 'stklB', 'kirche']) assert.ok(!(k in alt));
+  const brutto = ausHash('#modus=brutto&einkA=3200&einkB=5000&stklA=3&kirche=1&monB=4');
+  assert.deepEqual([brutto.einkA, brutto.einkB, brutto.monB], [STANDARD.einkA, STANDARD.einkB, 4]);
+  assert.equal(alsHash(brutto), 'monB=4');
 });
 
 test('URL: unbekannte Schlüssel werden übergangen (alte Links mit entfallenen Angaben öffnen sich normal)', () => {
@@ -40,15 +46,6 @@ test('URL: ein Elternteil nimmt keinen oder mindestens zwei Monate (1 wird 2)', 
   assert.equal(ausHash('#monA=1').monA, 2);
   assert.equal(ausHash('#monB=0').monB, 0);
   assert.equal(ausHash('#monA=0').monA, 0);
-});
-
-test('URL: Steuerklassen nur, wie die Auswahlfelder sie anbieten, sonst 4', () => {
-  assert.deepEqual(STEUERKLASSEN, { stklA: [1, 2, 3, 4, 5], stklB: [1, 3, 4, 5] });
-  assert.equal(ausHash('#modus=brutto&stklB=2').stklB, 4); // Klasse 2 gibt es nur für die Mutter
-  assert.equal(ausHash('#modus=brutto&stklA=2').stklA, 2);
-  assert.equal(ausHash('#stklA=6').stklA, 5); // erst auf 1–5 gekürzt
-  assert.equal(ausHash('#stklB=0').stklB, 1);
-  for (const k of [1, 3, 4, 5]) assert.equal(ausHash(`#stklB=${k}`).stklB, k);
 });
 
 test('URL: Fragment enthält nur Abweichungen vom Standard und lässt sich wieder lesen', () => {
@@ -69,11 +66,9 @@ test('Monate der Mutter: gewählt oder so viele, wie neben den Partnermonaten m�
   assert.equal(monateMutter({ ...STANDARD, monA: 6 }, 4), 6);
 });
 
-test('Netto: im Brutto-Modus umgerechnet mit Steuerklasse und Kirchensteuer', () => {
-  assert.equal(nettoVon({ ...STANDARD }, 'A'), 1800);
-  const z = { ...STANDARD, modus: 'brutto', einkA: 3000, stklA: 3, kirche: 1 };
-  assert.equal(nettoVon(z, 'A'), elterngeldNetto(3000, { steuerklasse: 3, kirchensteuer: true }));
-  assert.equal(grundlage({ ...z, allein: 1 }).nettoB, 0);
+test('Grundlage: Netto aus der Eingabe, Alleinerziehende ohne Partner-Netto', () => {
+  assert.equal(grundlage({ ...STANDARD }).nettoA, 1800);
+  assert.equal(grundlage({ ...STANDARD, allein: 1 }).nettoB, 0);
 });
 
 test('Mutterschutz: zwei Monate, bei Mehrlingen drei, ohne Haken keine', () => {
@@ -85,7 +80,6 @@ test('Mutterschutz: zwei Monate, bei Mehrlingen drei, ohne Haken keine', () => {
 test('Mutterschutz nur mit Einkommen der Mutter: bei 0 € zählt der Haken nicht', () => {
   assert.equal(grundlage({ ...STANDARD, einkA: 0 }).mutterschutzMonate, 0);
   assert.equal(grundlage({ ...STANDARD, einkA: 0, mehr: 2 }).mutterschutzMonate, 0);
-  assert.equal(grundlage({ ...STANDARD, modus: 'brutto', einkA: 0 }).mutterschutzMonate, 0);
   // 12 × 300 € + 2 × 1.800 € gegen 10 × 330 € + 2 × 1.900 €
   const paar = ergebnis('#einkA=0');
   assert.deepEqual([paar.alt, paar.neu, paar.differenz], [7200, 7100, -100]);

@@ -31,7 +31,7 @@
 import { ALT, NEU } from './calc/regeln.js';
 import { vergleicheBeste, bonusGesamt, monatsrechnung } from './calc/szenario.js';
 import { spanne, FAMILIEN, PARTNER_MIT_BEZUG, KINDER_MIT_ELTERNGELD, GEBURTEN, JAHRGANG, DAUER } from './calc/bevoelkerung.js';
-import { STANDARD, PARTNERMONATE, ausHash, alsHash, nettoVon, grundlage, fuerPartnermonate as planVergleich, planhinweis } from './ui/zustand.js';
+import { STANDARD, PARTNERMONATE, ausHash, alsHash, grundlage, fuerPartnermonate as planVergleich, planhinweis } from './ui/zustand.js';
 import { monatsdiagramm, heatmap, heatmapLegende, differenzbalken, euro, euroDiff, ganzeBilanz } from './ui/diagramme.js';
 import { balkenmodell } from './ui/balken.js';
 import { RASTER } from './ui/diagramme.js';
@@ -66,7 +66,7 @@ let kartenmodus = 'gleich';
  */
 let eigeneZahlen = false;
 function titelSetzen() {
-  $('titel-beispiel').textContent = `Beispiel: ${euro(STANDARD.einkA)} und ${euro(STANDARD.einkB)} ${STANDARD.modus}`;
+  $('titel-beispiel').textContent = `Beispiel: ${euro(STANDARD.einkA)} und ${euro(STANDARD.einkB)} netto`;
   $('titel-euch').classList.toggle('unsichtbar', !eigeneZahlen);
   $('titel-beispiel').classList.toggle('unsichtbar', eigeneZahlen);
 }
@@ -101,9 +101,8 @@ function formularFuellen() {
   for (const w of ['A', 'B']) {
     setze(`s-eink${w}`, z[`eink${w}`]);
     setze(`eink${w}-zahl`, z[`eink${w}`]);
-    $(`eink${w}`).max = z.modus === 'brutto' ? 9000 : 6000;
+    $(`eink${w}`).max = 6000;
     $(`eink${w}`).value = z[`eink${w}`];
-    $(`stkl${w}`).value = z[`stkl${w}`];
   }
   // Bonusfelder: leer = 0 (Platzhalter „0 €"); Zustand ohne Eingabe wird nicht in ein Feld geschrieben, in dem getippt wird
   for (const w of ['A', 'B']) setze(`bonus${w}-zahl`, z[`bonus${w}`] || '');
@@ -114,17 +113,13 @@ function formularFuellen() {
   $('d-monA').value = z.monA;
   $('feld-monA').hidden = !!z.allein;
   $('mutterschutz').checked = !!z.ms;
-  $('mutterschutz').disabled = !(nettoVon(z, 'A') > 0); // ohne Einkommen kein Mutterschaftsgeld; der Haken bleibt im Zustand
+  $('mutterschutz').disabled = !(z.einkA > 0); // ohne Einkommen kein Mutterschaftsgeld; der Haken bleibt im Zustand
   $('allein').checked = $('s-allein').checked = !!z.allein;
   $('geschwister').checked = !!z.geschw;
   $('mehrlinge').value = z.mehr;
-  $('kirche').value = z.kirche;
   // Alleinerziehend: kein Netto und keine Monate für Partner:in
   $('gruppeB').hidden = $('s-partner').hidden = $('feld-einkB').hidden = $('partnerwahl').hidden = $('beste-wahl').hidden = !!z.allein;
   $('schnell').classList.toggle('allein', !!z.allein);
-  document.querySelectorAll('[data-modus]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.modus === z.modus)));
-  document.querySelectorAll('[data-nur="brutto"]').forEach((e) => (e.hidden = z.modus !== 'brutto'));
-  document.querySelectorAll('[data-einkwort]').forEach((e) => (e.textContent = z.modus));
 }
 
 /**
@@ -169,7 +164,6 @@ function formularVerdrahten() {
     $(`s-eink${w}`).addEventListener('input', (e) => setze(`eink${w}`, betrag(e)));
     $(`eink${w}-zahl`).addEventListener('input', (e) => setze(`eink${w}`, betrag(e)));
     $(`eink${w}`).addEventListener('input', (e) => setze(`eink${w}`, Number(e.target.value)));
-    $(`stkl${w}`).addEventListener('change', (e) => setze(`stkl${w}`, Number(e.target.value)));
   }
   // Bonus netto im Jahr: das Häkchen klappt die Felder auf; beim Abhaken entfällt der Bonus ganz
   for (const w of ['A', 'B']) $(`bonus${w}-zahl`).addEventListener('input', (e) => setze(`bonus${w}`, Math.round(Math.max(0, Math.min(100000, Number(e.target.value) || 0)))));
@@ -210,16 +204,6 @@ function formularVerdrahten() {
     $(id).addEventListener('change', (e) => setze(k, e.target.checked ? 1 : 0));
   }
   $('mehrlinge').addEventListener('change', (e) => setze('mehr', Number(e.target.value)));
-  $('kirche').addEventListener('change', (e) => setze('kirche', Number(e.target.value)));
-  document.querySelectorAll('[data-modus]').forEach((b) =>
-    b.addEventListener('click', () => {
-      if (zustand.modus === b.dataset.modus) return;
-      // sinnvolle Startwerte beim Wechsel
-      zustand.einkA = b.dataset.modus === 'brutto' ? 2800 : 1800;
-      zustand.einkB = b.dataset.modus === 'brutto' ? 4500 : 2800;
-      setze('modus', b.dataset.modus);
-    }),
-  );
   document.querySelectorAll('[data-kartenmodus]').forEach((b) =>
     b.addEventListener('click', () => {
       kartenmodus = b.dataset.kartenmodus;
@@ -1141,22 +1125,13 @@ function rechnungZeigen() {
   liste.dataset.vorzeichen = vorzeichen;
 
   // Regeln aus regeln.js, mit Quelle
-  const [alt] = ALT.stufen, [neu1, neu2] = NEU.stufen;
   const zuschlag = [
     e.geschwisterbonus && `Geschwisterbonus (heute ${ALT.geschwisterbonus.prozent} %, geplant ${NEU.geschwisterbonus.prozent} %, mindestens ${euro(NEU.geschwisterbonus.mindestens)})`,
     e.mehrlinge > 0 && `Mehrlingszuschlag (${euro(NEU.mehrlingszuschlag)} je weiteres Kind)`,
   ].filter(Boolean);
   const regeln = knoten('p', undefined, 'rechnung-regeln');
-  regeln.append(
-    `Heute ersetzt das Elterngeld ${alt.basis} % des Nettos, über ${euro(alt.abschmelzAb)} sinkend bis ${alt.abschmelzBis} %; ` +
-      `im Entwurf ${neu1.basis} % in den ersten ${neu1.monate} Monaten je Elternteil${allein ? ` (Alleinerziehende ${NEU.achtzigMonateAlleinerziehend})` : ''}, danach ${neu2.basis} %. ` +
-      `Unter ${euro(ALT.geringverdienerGrenze)} netto steigt der Satz. Höchstbetrag heute ${euro(ALT.hoechstbetrag)}, geplant ${euro(NEU.hoechstbetrag)}; Mindestbetrag ${euro(ALT.mindestbetrag)} bzw. ${euro(NEU.mindestbetrag)}. ` +
-      'Ein Bonus zählt nur im Entwurf mit, als Zwölftel zum Monatsnetto (Bemessung). ' +
-      `Im Mutterschutz wird kein Elterngeld gezahlt; die Monate zählen als Monate der Mutter${e.mutterschutzVerbraucht80 ? ' und verbrauchen im Entwurf 80-%-Monate' : ''}. ` +
-      (zuschlag.length ? `Elterngeld mit ${zuschlag.join(' und ')}. ` : '') +
-      (beste ? 'Lohnausfall: Netto des Elternteils zu Hause ohne Bonus, im Mutterschutz 0\u00a0€. ' : '') +
-      'Quelle: § 2 BEEG; Gesetzentwurf der Bundesregierung vom 12.11.2026, § 2 BEEG-E. ',
-  );
+  // Satz, Höchstbetrag und Lohnausfall stehen in der Tabelle; Regeln und Quellen in der Methodik
+  regeln.append(zuschlag.length ? `Mit ${zuschlag.join(' und ')}. Regeln und Quellen: ` : 'Regeln und Quellen: ');
   const methodik = Object.assign(knoten('a', 'So wird gerechnet'), { href: '#methodik' });
   methodik.addEventListener('click', () => $('rechnung').close());
   regeln.append(methodik);

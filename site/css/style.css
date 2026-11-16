@@ -111,7 +111,6 @@ h3 { font-weight: 650; font-size: 16px; line-height: 1.35; margin: 0 0 8px; }
 .da .wechsel b, html:not(.js) .wechsel b { opacity: 1; transform: none; }
 .plakate p { font-size: 17px; line-height: 1.4; color: var(--tinte-2); margin: 8px 0 0; }
 .quellenlink { font-size: 15px; margin: clamp(12px, 2vh, 22px) 0 0; }
-.einkwort { text-transform: capitalize; }
 /* Links im ersten Bild führen zu Quelle und eigener Rechnung: deutlich unterstrichen, nicht blass */
 #problem a { text-decoration-color: currentColor; }
 .quellenstart { scroll-margin-top: 28px; margin: 0 0 36px; padding: 18px 20px 6px; background: var(--flaeche); border-radius: var(--r-klein); max-width: 84ch; }

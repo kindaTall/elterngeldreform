@@ -3,24 +3,21 @@
  * Rechenkern und die Aufteilung der Monate. main.js hält das Zustandsobjekt und verbindet es mit
  * Formularen und Ausgaben. Tests: test/zustand.test.js
  *
- * Felder: modus ('netto' | 'brutto'), einkA/einkB (€ im Monat, je nach modus), stklA/stklB
- * (Steuerklasse, nur Brutto), kirche, monA (Monate der Mutter; 0 = so viele wie möglich), monB
+ * Felder: einkA/einkB (Netto, € im Monat), monA (Monate der Mutter; 0 = so viele wie möglich), monB
  * (Partnermonate: 0 oder 2 bis 12), ms (angestellt mit Mutterschaftsgeld), allein, geschw, mehr
  * (weitere Kinder bei Mehrlingen), lesart (Mutterschutz verbraucht 80-%-Monate), bonusA/bonusB
  * (Bonus/Weihnachtsgeld netto, € im Jahr; 0 = keiner; zählt nur im Entwurf, siehe calc/szenario.js). Unbekannte
- * Schlüssel im Fragment werden übergangen.
+ * Schlüssel im Fragment werden übergangen. Alte Links mit `modus=brutto` (Brutto-Modus gibt es nicht
+ * mehr) verlieren ihre Einkommenswerte: es gilt das Standardbeispiel statt Brutto als Netto zu deuten.
  */
 import { vergleiche, vergleicheVoll } from '../calc/szenario.js';
 import { ALT, NEU } from '../calc/regeln.js';
-import { elterngeldNetto } from '../calc/netto.js';
 
-export const STANDARD = Object.freeze({ modus: 'netto', einkA: 1800, einkB: 2800, stklA: 4, stklB: 4, kirche: 0, monA: 0, monB: 2, ms: 1, allein: 0, geschw: 0, mehr: 0, lesart: 1, bonusA: 0, bonusB: 0 });
+export const STANDARD = Object.freeze({ einkA: 1800, einkB: 2800, monA: 0, monB: 2, ms: 1, allein: 0, geschw: 0, mehr: 0, lesart: 1, bonusA: 0, bonusB: 0 });
 /** Zulässige Partnermonate: keiner oder mindestens zwei; der Regler läuft über die Positionen dieser Liste. */
 export const PARTNERMONATE = Object.freeze([0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
 /** Zulässiger Bereich je Zahl aus der URL; alles andere wird auf den Bereich gekürzt. */
-const BEREICH = { einkA: [0, 20000], einkB: [0, 20000], stklA: [1, 5], stklB: [1, 5], kirche: [0, 1], monA: [0, 12], monB: [0, 12], ms: [0, 1], allein: [0, 1], geschw: [0, 1], mehr: [0, 2], lesart: [0, 1], bonusA: [0, 100000], bonusB: [0, 100000] };
-/** Steuerklassen, die die Auswahlfelder #stklA und #stklB in index.html anbieten (Klasse 2 gibt es nur für die Mutter). */
-export const STEUERKLASSEN = Object.freeze({ stklA: [1, 2, 3, 4, 5], stklB: [1, 3, 4, 5] });
+const BEREICH = { einkA: [0, 20000], einkB: [0, 20000], monA: [0, 12], monB: [0, 12], ms: [0, 1], allein: [0, 1], geschw: [0, 1], mehr: [0, 2], lesart: [0, 1], bonusA: [0, 100000], bonusB: [0, 100000] };
 
 /** Zustand aus einem URL-Fragment (`#einkA=2000&monB=4`); Fehlendes und Unlesbares wird Standard. */
 export function ausHash(hash) {
@@ -28,16 +25,12 @@ export function ausHash(hash) {
   const p = new URLSearchParams(String(hash ?? '').replace(/^#/, ''));
   for (const k of Object.keys(STANDARD)) {
     if (!p.has(k)) continue;
-    if (k === 'modus') {
-      z.modus = p.get(k) === 'brutto' ? 'brutto' : 'netto';
-      continue;
-    }
     const [min, max] = BEREICH[k];
     const v = Math.round(Number(p.get(k)));
     z[k] = Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : STANDARD[k];
   }
   for (const k of ['monA', 'monB']) if (z[k] === 1) z[k] = 2; // ein Elternteil nimmt keinen oder mindestens zwei Monate
-  for (const k of ['stklA', 'stklB']) if (!STEUERKLASSEN[k].includes(z[k])) z[k] = STANDARD[k]; // sonst bliebe das Auswahlfeld leer
+  if (p.get('modus') === 'brutto') [z.einkA, z.einkB] = [STANDARD.einkA, STANDARD.einkB]; // alter Brutto-Link
   return z;
 }
 
@@ -48,19 +41,12 @@ export function alsHash(z) {
   return p.toString();
 }
 
-/** Elterngeld-Netto eines Elternteils ('A' | 'B'), im Brutto-Modus umgerechnet wie in den Elterngeldstellen. */
-export function nettoVon(z, wer) {
-  const eink = z[`eink${wer}`];
-  if (z.modus === 'netto') return eink;
-  return elterngeldNetto(eink, { steuerklasse: z[`stkl${wer}`], kirchensteuer: !!z.kirche });
-}
-
 /** Eingabe für den Rechenkern, noch ohne Aufteilung der Monate. */
 export function grundlage(z) {
-  const nettoA = nettoVon(z, 'A');
+  const nettoA = z.einkA;
   return {
     nettoA,
-    nettoB: z.allein ? 0 : nettoVon(z, 'B'),
+    nettoB: z.allein ? 0 : z.einkB,
     // Mutterschaftsgeld gibt es nur mit Einkommen (wie Karte und Überschlag); Mehrlinge: 12 statt 8 Wochen Schutzfrist
     mutterschutzMonate: z.ms && nettoA > 0 ? (z.mehr > 0 ? 3 : 2) : 0,
     alleinerziehend: !!z.allein,

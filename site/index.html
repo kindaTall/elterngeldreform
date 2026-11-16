@@ -60,7 +60,7 @@
       </div>
       <div class="einschub dunkel" id="start" data-zeig style="--i:2">
         <h2>Was heißt das für uns?</h2>
-        <p>Euer <span class="einkwort" data-einkwort>netto</span> im Monat vor der Geburt. Bleibt in eurem Browser.</p>
+        <p>Euer Netto im Monat vor der Geburt. Bleibt in eurem Browser.</p>
         <form id="schnell" autocomplete="off" novalidate>
           <label class="grossfeld"><span>Mutter</span>
             <span class="mit-euro"><input id="s-einkA" type="number" min="0" max="20000" step="50" inputmode="numeric"><i>€</i></span></label>
@@ -111,7 +111,7 @@
             <div class="feld">
               <div class="zeile2">
                 <div class="spalte-netto">
-                  <label for="einkA-zahl">Mutter, <span data-einkwort>netto</span></label>
+                  <label for="einkA-zahl">Mutter, Netto</label>
                   <span class="mit-einheit"><input class="zahlfeld" id="einkA-zahl" type="number" min="0" max="20000" step="50" inputmode="numeric"><i>€</i></span>
                 </div>
                 <div class="spalte-bonus">
@@ -124,7 +124,7 @@
             <div class="feld" id="feld-einkB">
               <div class="zeile2">
                 <div class="spalte-netto">
-                  <label for="einkB-zahl">Partner:in, <span data-einkwort>netto</span></label>
+                  <label for="einkB-zahl">Partner:in, Netto</label>
                   <span class="mit-einheit"><input class="zahlfeld" id="einkB-zahl" type="number" min="0" max="20000" step="50" inputmode="numeric"><i>€</i></span>
                 </div>
                 <div class="spalte-bonus">
@@ -175,17 +175,9 @@
 
     <div class="klappe" id="genauer" hidden>
       <form class="eingaben" autocomplete="off">
-        <div class="umschalter" role="group" aria-label="Art der Einkommensangabe">
-          <button type="button" data-modus="netto" aria-pressed="true">Netto eingeben</button>
-          <button type="button" data-modus="brutto" aria-pressed="false">Brutto eingeben</button>
-        </div>
         <div class="spalten">
           <fieldset class="feldgruppe">
             <legend>Mutter / gebärender Elternteil</legend>
-            <div class="feld" data-nur="brutto" hidden>
-              <label for="stklA">Steuerklasse</label>
-              <select id="stklA"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select>
-            </div>
             <div class="feld" id="feld-monA">
               <label for="d-monA">Elterngeld-Monate Mutter (inkl. Mutterschutz)</label>
               <select id="d-monA"><option value="0">so viele wie möglich</option><option value="2">2 Monate</option><option value="3">3 Monate</option><option value="4">4 Monate</option><option value="5">5 Monate</option><option value="6">6 Monate</option><option value="7">7 Monate</option><option value="8">8 Monate</option><option value="9">9 Monate</option><option value="10">10 Monate</option><option value="11">11 Monate</option><option value="12">12 Monate</option></select>
@@ -196,20 +188,12 @@
           <fieldset class="feldgruppe">
             <legend>Familie</legend>
             <div id="gruppeB">
-              <div class="feld" data-nur="brutto" hidden>
-                <label for="stklB">Steuerklasse Partner:in</label>
-                <select id="stklB"><option>1</option><option>3</option><option selected>4</option><option>5</option></select>
-              </div>
               <p class="klein planhinweis" id="planhinweis" role="status" hidden></p>
             </div>
             <label class="haken"><input type="checkbox" id="geschwister"><span>Geschwisterbonus<small>Ein weiteres Kind unter 3 oder zwei unter 6 Jahren. Heute 10 %, im Entwurf 5 %, jeweils mindestens 75 €. Vereinfacht in allen Monaten angesetzt.</small></span></label>
             <div class="feld">
               <label for="mehrlinge">Mehrlingsgeburt</label>
               <select id="mehrlinge"><option value="0">nein</option><option value="1">Zwillinge</option><option value="2">Drillinge</option></select>
-            </div>
-            <div class="feld" data-nur="brutto" hidden>
-              <label for="kirche">Kirchensteuer</label>
-              <select id="kirche"><option value="0">nein</option><option value="1">ja</option></select>
             </div>
           </fieldset>
         </div>
@@ -459,7 +443,7 @@
           <div class="zwei fliesstext">
             <div>
               <h3>Was der Rechner abbildet</h3>
-              <p>Basiselterngeld in Monaten ohne Erwerbseinkommen, nach § 2 BEEG und § 2 des Entwurfs: Ersatzrate, Staffel unter 1.000 € netto, Mindest- und Höchstbetrag, Geschwisterbonus, Mehrlingszuschlag, zulässige Monate je Elternteil. ElterngeldPlus ohne Teilzeit ergibt heute dieselbe Summe über die doppelte Zeit; wie der Entwurf Plus-Monate auf die 80-%-Monate anrechnet, regelt er nicht. Der Rechner zeigt deshalb nur Basiselterngeld. Im Brutto-Modus rechnet er das Netto wie die Elterngeldstellen: pauschale Abzüge (§§ 2e, 2f BEEG), Lohnsteuer nach dem amtlichen Programmablaufplan 2026.</p>
+              <p>Basiselterngeld in Monaten ohne Erwerbseinkommen, nach § 2 BEEG und § 2 des Entwurfs: Ersatzrate, Staffel unter 1.000 € netto, Mindest- und Höchstbetrag, Geschwisterbonus, Mehrlingszuschlag, zulässige Monate je Elternteil. ElterngeldPlus ohne Teilzeit ergibt heute dieselbe Summe über die doppelte Zeit; wie der Entwurf Plus-Monate auf die 80-%-Monate anrechnet, regelt er nicht. Der Rechner zeigt deshalb nur Basiselterngeld.</p>
               <h3>Was er nicht abbildet</h3>
               <p>Teilzeit im Bezug, den wegfallenden Partnerschaftsbonus, die Einkommensgrenze von 175.000 €, die Anrechnung auf Bürgergeld, den Progressionsvorbehalt.</p>
               <h3>Annahmen</h3>
@@ -470,7 +454,7 @@
                 <li><strong>Mutterschutz und 80-%-Monate:</strong> Ob die Mutterschutzmonate zwei der vier 80-%-Monate verbrauchen, sagt der Entwurf nicht ausdrücklich. Er lässt aber § 4 Abs. 4 Satz 3 unverändert, nach dem sie als Elterngeld-Monate der Mutter gelten; voreingestellt ist deshalb: Sie zählen mit. So liest ihn der Deutsche Juristinnenbund ausdrücklich (Stellungnahme 26-37 vom 2.11.2026); Familienbund der Katholiken und Deutscher Frauenrat rechnen im Ergebnis genauso (zwei Monate zu 80 %, sechs zu 50 %). Alle drei äußerten sich zum Referentenentwurf; die Regel ist im Kabinettsentwurf unverändert. Die andere Auslegung lässt sich unter „Genauer rechnen“ wählen.</li>
                 <li><strong>Alleinerziehende:</strong> acht Monate zu 80 %; das steht in der Begründung des Entwurfs (S. 3, 27, 45), nicht im Gesetzestext.</li>
                 <li><strong>Geschwisterbonus:</strong> in allen Monaten angesetzt.</li>
-                <li><strong>Bonus netto im Jahr:</strong> wird nur im Entwurf mit einem Zwölftel je Monat zum Netto gerechnet, vereinfacht: Das Elterngeld rechnet mit pauschalen Abzügen vom Brutto, und künftig zählt das Kalenderjahr vor der Geburt. Beim Verdienstausfall bleibt der Bonus außen vor (angenommen: er wird unabhängig von der Elternzeit gezahlt). Karte und Statistik rechnen ohne Bonus.</li>
+                <li><strong>Bonus netto im Jahr:</strong> wird nur im Entwurf mit einem Zwölftel je Monat zum Netto gerechnet, weil künftig das Kalenderjahr vor der Geburt zählt. Beim Verdienstausfall bleibt der Bonus außen vor (angenommen: er wird unabhängig von der Elternzeit gezahlt). Karte und Statistik rechnen ohne Bonus.</li>
               </ul>
             </div>
             <div>
@@ -483,7 +467,7 @@
                 <li>Stellungnahmen: <a href="https://www.djb.de/presse/stellungnahmen/detail/st26-37" target="_blank" rel="noopener">Deutscher Juristinnenbund</a>, <a href="https://www.dgb.de/fileadmin/download_center/Stellungnahmen/2026-10-30_DGB-STN_BEEG-MuSchG.pdf" target="_blank" rel="noopener">DGB</a>, <a href="https://familienbund.org/artikel/eintrag-29261" target="_blank" rel="noopener">Familienbund der Katholiken</a>, <a href="https://www.sovd.de/aktuelles/meldung/stellungnahme-referentenentwurf-elterngeldreform" target="_blank" rel="noopener">SoVD</a></li>
               </ul>
               <h3>Prüfung</h3>
-              <p>Der Rechenkern ist gegen die veröffentlichten Beispielrechnungen von DGB, Juristinnenbund und Stiftung Warentest getestet, die Brutto-Netto-Umrechnung gegen den amtlichen Elterngeldrechner und die Lohnsteuer-Prüftabellen des Bundesfinanzministeriums. Eine zweite, unabhängig aus dem Gesetzestext geschriebene Rechnung kam in rund vier Millionen Vergleichsfällen auf dieselben Beträge. Der <a href="https://github.com/kindaTall/elterngeldreform" target="_blank" rel="noopener">Quelltext</a> ist offen einsehbar. Fehler <a href="#rueckmeldung">bitte melden</a>; bestätigte Fehler werden korrigiert und hier vermerkt.</p>
+              <p>Der Rechenkern ist gegen die veröffentlichten Beispielrechnungen von DGB, Juristinnenbund und Stiftung Warentest getestet. Eine zweite, unabhängig aus dem Gesetzestext geschriebene Rechnung kam in rund vier Millionen Vergleichsfällen auf dieselben Beträge. Der <a href="https://github.com/kindaTall/elterngeldreform" target="_blank" rel="noopener">Quelltext</a> ist offen einsehbar. Fehler <a href="#rueckmeldung">bitte melden</a>; bestätigte Fehler werden korrigiert und hier vermerkt.</p>
               <h3>Ohne Gewähr</h3>
               <p>Ein privates, unabhängiges Projekt. Alle Ergebnisse sind Modellrechnungen zu einem Gesetzentwurf und gelten nur, wenn er so beschlossen und so ausgelegt wird wie hier angenommen. Sie ersetzen keine Beratung und keinen Bescheid; verbindlich sind die Elterngeldstellen. Den amtlichen Rechner für das geltende Recht gibt es im <a href="https://familienportal.de/familienportal/rechner-antraege/elterngeldrechner" target="_blank" rel="noopener">Familienportal</a>.</p>
             </div>

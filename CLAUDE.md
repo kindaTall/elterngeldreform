@@ -10,7 +10,7 @@ Statische Kampagnenseite: Vergleich Elterngeld geltendes Recht vs. Gesetzentwurf
 - Tests: `npm test` (Node-Testrunner, `test/*.test.js`)
 - CI: `.github/workflows/ci.yml` (GitHub Actions, `npm ci && npm test`)
 - Sicherheits-Header: `site/.htaccess` (Apache) und CSP-Meta in den drei HTML-Seiten, beide müssen gleich lauten
-- Rechenkern: `site/js/calc/` — Regeln und Quellen in `regeln.js`, Annahmen in den Dateiköpfen von `szenario.js`, `bevoelkerung.js`, `netto.js`
+- Rechenkern: `site/js/calc/` — Regeln und Quellen in `regeln.js`, Annahmen in den Dateiköpfen von `szenario.js`, `bevoelkerung.js`
 - Bonus netto im Jahr (Häkchen „Bonus / Weihnachtsgeld“ in Schritt 2): zählt nur im Entwurf (+ Bonus/12 aufs Netto), Verdienstausfall ohne Bonus, Karte/Statistik ohne Bonus; Regeln im Kopf von `szenario.js`
 - Bevölkerungsstatistik zum Nachrechnen: `site/daten/bevoelkerung.csv` (+ `-lies-mich.txt`), erzeugt von `scripts/bevoelkerung-csv.mjs`; nach jeder Änderung an `bevoelkerung.js`/`szenario.js`/`regeln.js` `npm run csv` (Test `test/csv.test.js` schlägt sonst fehl)
 - Oberfläche: `site/js/main.js`, `site/js/ui/`
