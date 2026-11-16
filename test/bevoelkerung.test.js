@@ -16,6 +16,8 @@ import {
   AUFTEILUNG_2018,
   PAARE,
   angepasstePaarmonate,
+  muetterNachEinkommen,
+  ANTEIL_OHNE_EINKOMMEN_IM_PAAR,
 } from '../site/js/calc/bevoelkerung.js';
 
 test('Personenzahlen stimmen mit den Destatis-Summen überein', () => {
@@ -53,6 +55,38 @@ test('Mütter ohne beziehenden Partner: niemand doppelt, niemand negativ', () =>
   const r = ueberschlag();
   const paare = r.nachAufteilung.slice(1).reduce((s, g) => s + g.familien, 0);
   assert.ok(Math.abs(paare - PARTNER_MIT_BEZUG) < 1e-6);
+});
+
+test('Vorgabe: 12 % der Mütter im Paar ohne Einkommen, Gesamtrand der Mütter bleibt', () => {
+  assert.equal(ANTEIL_OHNE_EINKOMMEN_IM_PAAR, 0.12);
+  const { imPaar, ohnePartner } = muetterNachEinkommen();
+  const summe = (a) => a.reduce((s, x) => s + x, 0);
+  assert.ok(Math.abs(imPaar[0] / PARTNER_MIT_BEZUG - 0.12) < 1e-12);
+  assert.ok(Math.abs(summe(imPaar) - PARTNER_MIT_BEZUG) < 1e-6);
+  assert.ok(Math.abs(summe(ohnePartner) - (FAMILIEN - PARTNER_MIT_BEZUG)) < 1e-6);
+  [OHNE_EINKOMMEN, ...EINKOMMEN].forEach((k, i) => {
+    assert.ok(ohnePartner[i] >= 0);
+    assert.ok(Math.abs(imPaar[i] + ohnePartner[i] - k.muetter) < 1e-6); // Gesamtrand exakt
+  });
+  // übrige Paar-Mütter im Verhältnis aller Mütter mit Einkommen
+  const quote = (i) => imPaar[i] / EINKOMMEN[i - 1].muetter;
+  for (let i = 2; i <= EINKOMMEN.length; i++) assert.ok(Math.abs(quote(i) - quote(1)) < 1e-12);
+  // dadurch rund 37 % der Mütter ohne beziehenden Partner ohne Einkommen (alle: 25 %)
+  const ohneAnteil = ohnePartner[0] / (FAMILIEN - PARTNER_MIT_BEZUG);
+  assert.ok(ohneAnteil > 0.36 && ohneAnteil < 0.38, `${ohneAnteil}`);
+  // im Modell: Familien mit Paar und Mutter ohne Einkommen
+  const r = ueberschlag();
+  const ohne = r.nachEinkommen[0].familien;
+  assert.ok(Math.abs(ohne - OHNE_EINKOMMEN.muetter) < 1e-6);
+});
+
+test('Hauptzahlen: rund 81 % weniger, im Schnitt rund 1.850 € (mit Spanne)', () => {
+  const s = spanne(true);
+  const m = s.mitte;
+  assert.equal(Math.round(m.anteilVerlierer * 100), 81);
+  assert.equal(Math.round(-m.jeFamilie / 50) * 50, 1850);
+  assert.deepEqual([s.von((r) => r.anteilVerlierer), s.bis((r) => r.anteilVerlierer)].map((x) => Math.round(x * 100)), [76, 93]);
+  assert.ok(m.alt > 6.9e9 && m.alt < 7.1e9);
 });
 
 test('Summe nach geltendem Recht liegt nahe an den Bundesausgaben', () => {

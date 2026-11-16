@@ -60,11 +60,17 @@
  *    12 Monate. Die Klassen 2023 zählen Kalendermonate (Plus voll), Tabelle 4 gewichtete; eine
  *    Mutter mit 12 Plus-Monaten (6 gewichtet) steht 2023 in "10–12", hier in "3–9". Innerhalb
  *    der langen Klassen haben Mütter ohne Partner dieselbe Mischung aus Basis und Plus wie alle.
- *  - Einkommen: Netto der Mutter und des Vaters sind voneinander und von der Aufteilung der
- *    Monate unabhängig verteilt (WISTA 1/2022, Abschnitt 4.2: der Einkommensanteil der Mutter
- *    liegt bei fast allen Aufteilungen nahe 40 %). Mütter im Paar und ohne Partner haben
- *    dieselbe Einkommensverteilung (2018 hatten im Paar knapp 12 % der Mütter kein Einkommen,
- *    unter allen Müttern mit Elterngeld 2023 sind es 25 %).
+ *  - Einkommen: Netto der Mutter und des Vaters sind im Paar voneinander und von der Aufteilung
+ *    der Monate unabhängig verteilt (WISTA 1/2022, Abschnitt 4.2: der Einkommensanteil der
+ *    Mutter liegt bei fast allen Aufteilungen nahe 40 %). Vorgabe aus derselben Quelle: In Paaren
+ *    haben knapp 12 % der Mütter kein Einkommen (`ANTEIL_OHNE_EINKOMMEN_IM_PAAR`, unter allen
+ *    Müttern 2023 sind es 25 %); die übrigen Paar-Mütter verteilen sich im Verhältnis aller
+ *    Mütter mit Einkommen auf die Klassen. Mütter ohne beziehenden Partner sind der Rest (alle
+ *    Mütter minus Paar-Mütter je Klasse; rund 37 % ohne Einkommen), der Gesamtrand der Mütter
+ *    bleibt exakt (`muetterNachEinkommen`).
+ *    Robustheit: Wie Paare nach Einkommen zusammengesetzt sind, ist unbekannt; durchgerechnet mit
+ *    einer Rangkorrelation von −0,3 bis +0,6 (entwuerfe/waermefaktor.mjs) bleiben es 78 bis 82 %
+ *    mit weniger unterm Strich.
  *  - Jede Einkommensklasse wird durch einen Wert vertreten (`netto`); die Werte geben die von
  *    Destatis veröffentlichten Durchschnitte wieder. Die oberste Klasse ist bei 2.770 €
  *    abgeschnitten; wie viel darüber verdient wird, ist unbekannt (`OBERSTE_KLASSE`).
@@ -152,6 +158,28 @@ const anzahl = (wer) => KLASSEN.reduce((s, k) => s + k[wer], 0);
 export const FAMILIEN = anzahl('muetter');
 export const PARTNER_MIT_BEZUG = anzahl('vaeter');
 
+/**
+ * Anteil der Mütter ohne eigenes Einkommen in Paaren, in denen beide beziehen: knapp 12 %
+ * (WISTA 1/2022, Abschnitt 4.2, Jahrgang 2018). Unter allen Müttern 2023 sind es 25 %.
+ */
+export const ANTEIL_OHNE_EINKOMMEN_IM_PAAR = 0.12;
+
+/**
+ * Mütter je Einkommensklasse (Index wie KLASSEN) im Paar und ohne beziehenden Partner (Anzahlen).
+ * Im Paar: 12 % ohne Einkommen, die übrigen im Verhältnis aller Mütter mit Einkommen auf die
+ * Klassen; ohne Partner: alle Mütter minus Paar-Mütter, der Gesamtrand der Mütter bleibt exakt.
+ */
+export function muetterNachEinkommen() {
+  const alle = KLASSEN.map((k) => k.muetter);
+  const mitEinkommen = alle.slice(1).reduce((s, x) => s + x, 0);
+  const imPaar = alle.map((m, i) =>
+    i === 0
+      ? ANTEIL_OHNE_EINKOMMEN_IM_PAAR * PARTNER_MIT_BEZUG
+      : ((1 - ANTEIL_OHNE_EINKOMMEN_IM_PAAR) * PARTNER_MIT_BEZUG * m) / mitEinkommen,
+  );
+  return { imPaar, ohnePartner: alle.map((m, i) => m - imPaar[i]) };
+}
+
 /** Gruppen der Mütter-Bezugsdauer in gewichteten Monaten: Klassen aus DAUER, Monate im Paar. */
 const DAUERGRUPPEN = [
   { klassen: [0], imPaar: (m) => m <= 2 },
@@ -215,12 +243,12 @@ function familien(o) {
   const netto = (k) => k.netto ?? o.obersteKlasse;
   const liste = [];
   const ohne = dauerOhnePartner();
+  const muetter = muetterNachEinkommen();
   // Alleinerziehende: Anteil an allen Müttern mit 10 und mehr Monaten (wie bisher)
   const lang = DAUERGRUPPEN[2].klassen;
   const allein = (o.anteilAlleinerziehend * lang.reduce((s, i) => s + DAUER[i].muetter, 0)) / lang.reduce((s, i) => s + ohne[i], 0);
   KLASSEN.forEach((km, einkommen) => {
     const nettoA = netto(km);
-    const pm = km.muetter / FAMILIEN;
     const mutterschutzMonate = nettoA > 0 ? 2 : 0;
     const basis = { mutterschutzMonate, mutterschutzVerbraucht80: o.mutterschutzVerbraucht80 };
     // Mütter ohne beziehenden Partner
@@ -230,7 +258,7 @@ function familien(o) {
       for (const [alleinerziehend, gewicht] of [[false, 1 - a], [true, a]]) {
         if (gewicht === 0) continue;
         const r = familie({ ...basis, nettoA, nettoB: 0, monateA, monateB: 0, alleinerziehend });
-        liste.push({ einkommen, vater: 0, alleinerziehend, zusatzmonate: 0, lohn: 0, anteil: pm * (ohne[i] / FAMILIEN) * gewicht, ...r, strich: r.differenz });
+        liste.push({ einkommen, vater: 0, alleinerziehend, zusatzmonate: 0, lohn: 0, anteil: (muetter.ohnePartner[einkommen] / FAMILIEN) * (ohne[i] / (FAMILIEN - PARTNER_MIT_BEZUG)) * gewicht, ...r, strich: r.differenz });
       }
     });
     // Paare, in denen beide beziehen
@@ -239,7 +267,7 @@ function familien(o) {
       for (const p of PAARE) {
         const nettoB = netto(kv);
         const e = { ...basis, nettoA, nettoB, monateA: p.mutter, monateB: p.vater, alleinerziehend: false };
-        const anteil = pm * pv * p.anteil * (PARTNER_MIT_BEZUG / FAMILIEN);
+        const anteil = (muetter.imPaar[einkommen] / PARTNER_MIT_BEZUG) * pv * p.anteil * (PARTNER_MIT_BEZUG / FAMILIEN);
         const bleiben = { zusatzmonate: 0, lohn: 0, ...familie(e) };
         let wahl = bleiben;
         const neu = angepasstePaarmonate(p.mutter, p.vater);
