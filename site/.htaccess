@@ -21,6 +21,13 @@ RewriteCond %{HTTPS} !=on [OR]
 RewriteCond %{HTTP_HOST} ^www\. [NC]
 RewriteRule ^ https://elterngeld2027.de%{REQUEST_URI} [L,R=301]
 
+# Der Petitionsknopf zeigt auf /petition, das Petitions-Zitat unter „Was andere sagen“
+# (site/js/ui/stimmen.js) auf /petition-zitat. So steht jeder Klick getrennt im Zugriffsprotokoll
+# des Hosters (einzige Zählung der Seite, ohne Skript und Cookie), und ändert die Petition ihre
+# Adresse, reicht diese eine Zeile. 302 statt 301: Browser merken sich 301 und der Klick käme
+# nicht mehr an.
+RewriteRule ^petition(-zitat)?/?$ https://weact.campact.de/petitions/keine-kurzungen-beim-elterngeld [L,R=302]
+
 # Textdateien komprimiert ausliefern. Beide Module abfragen: fehlt mod_filter, wäre
 # AddOutputFilterByType ein Konfigurationsfehler und die Seite fiele mit 500 aus.
 <IfModule mod_deflate.c>
