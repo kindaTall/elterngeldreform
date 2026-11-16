@@ -24,24 +24,31 @@
  * Hauptannahme "beste Wahl je Familie" (`anpassung: 'beste'`, Standard): Ein Paar, in dem
  * beide beziehen und dessen heutige Aufteilung im Entwurf unzulässig ist (Mutter über 10
  * Monate), wählt, was unterm Strich mehr übrig lässt:
- *  - nicht umplanen: Monate der Mutter über 10 verfallen, sie bleibt trotzdem zu Hause;
+ *  - nicht umplanen: Monate der Mutter über 10 verfallen, sie bleibt trotzdem unbezahlt zu
+ *    Hause (Lohn wie heute);
  *  - minimal anpassen: der Partner nimmt die überzähligen Monate, die Gesamtzahl bleibt
- *    (12 + 2 → 10 + 4, 11 + 3 → 10 + 4), dafür fehlt sein Lohn in diesen Monaten.
- * Umplanen lohnt sich fast nur, wenn der Partner vorher kein Einkommen hatte; für fast alle
- * anderen wäre die feste Anpassung schlechter, weil der Lohn das zusätzliche Elterngeld
- * übersteigt. Optionen: `'fest'` = jedes betroffene Paar passt an (heute nehmen nur 27 % der
+ *    (12 + 2 → 10 + 4, 11 + 3 → 10 + 4). Wie im Rechner (vergleicheBeste) wird das Kind 14
+ *    Monate nacheinander von je einem Elternteil betreut: In den abgegebenen Monaten arbeitet
+ *    die Mutter wieder, der Partner fehlt bei der Arbeit. Lohnänderung je Familie = abgegebene
+ *    Monate × (Netto Mutter − Netto Partner).
+ * Umplanen lohnt sich vor allem, wenn die Mutter mehr oder nicht viel weniger verdient als der
+ * Partner. Optionen: `'fest'` = jedes betroffene Paar passt an (heute nehmen nur 27 % der
  * Väter mit Elterngeld mehr als 2 Monate, Tab. 22922-01; als Annahme günstig für das
  * Elterngeld des Entwurfs, unterm Strich ungünstig), `'keine'` = niemand plant um.
- * ALT rechnet immer mit der beobachteten Aufteilung. Mütter ohne beziehenden Partner und
- * Alleinerziehende planen nicht um: ohne zweiten beziehenden Elternteil gibt es niemanden,
- * zu dem Monate wandern könnten (ein Partner ohne Elterngeld nimmt nach heutigem Verhalten auch
- * künftig keins, Alleinerziehende behalten 14 Monate); Monate der Mutter über 10 entfallen.
+ * ALT rechnet immer mit der beobachteten Aufteilung. Ohne Umplanen gilt im Entwurf höchstens 10
+ * Monate je Elternteil: Monate der Mutter über 10 verfallen, ebenso Partnermonate über 10.
+ * Mütter ohne beziehenden Partner und Alleinerziehende planen nicht um: ohne zweiten beziehenden
+ * Elternteil gibt es niemanden, zu dem Monate wandern könnten (ein Partner ohne Elterngeld nimmt
+ * nach heutigem Verhalten auch künftig keins). Mütter ohne beziehenden Partner verlieren ihre
+ * Monate über 10; Alleinerziehende beziehen in beiden Fassungen die beobachteten Monate, der
+ * Entwurf ändert nur die Zahl der 80-%-Monate auf 8 (nicht pauschal 14 Monate).
  *
  * Maß "unterm Strich" (wie der Rechner im Modus "beste Aufteilung"): was der Familie bleibt,
- * Elterngeld plus Lohn, NEU gegen ALT. Je zusätzlichem Partnermonat fehlt das Monatsnetto des
- * Partners vor der Geburt (Elterngeld-Netto; vereinfacht, ohne Steuer- und Sozialeffekte, ohne
- * Progressionsvorbehalt). Ohne Umplanen ändert sich am Lohn nichts: Monate der Mutter, die im
- * Entwurf entfallen, verbringt sie trotzdem zu Hause, es fehlt nur das Elterngeld. Mutterschutz
+ * Elterngeld plus Lohn, NEU gegen ALT. Je umgeplantem Monat kommt das Monatsnetto der Mutter
+ * zurück und fehlt das des Partners (Elterngeld-Netto vor der Geburt; vereinfacht, ohne Steuer-
+ * und Sozialeffekte, ohne Progressionsvorbehalt). Ohne Umplanen ändert sich am Lohn nichts:
+ * Monate der Mutter, die im Entwurf entfallen, verbringt sie trotzdem zu Hause, es fehlt nur das
+ * Elterngeld. Mutterschutz
  * kostet keinen Lohn (Mutterschaftsleistungen, unverändert). Anteile der Verlierer und
  * Gewinner, Beträge je Familie und Gruppen rechnen unterm Strich; die Summe für den Jahrgang
  * (`differenz`) bleibt reines Elterngeld, vergleichbar mit der Entlastung laut Entwurf.
@@ -67,19 +74,20 @@
  *    Müttern 2023 sind es 25 %); die übrigen Paar-Mütter verteilen sich im Verhältnis aller
  *    Mütter mit Einkommen auf die Klassen. Mütter ohne beziehenden Partner sind der Rest (alle
  *    Mütter minus Paar-Mütter je Klasse; rund 37 % ohne Einkommen), der Gesamtrand der Mütter
- *    bleibt exakt (`muetterNachEinkommen`).
+ *    bleibt exakt (`muetterNachEinkommen`); ihr Einkommen ist unabhängig von ihrer Bezugsdauer.
  *    Robustheit: Wie Paare nach Einkommen zusammengesetzt sind, ist unbekannt; durchgerechnet mit
- *    einer Rangkorrelation von −0,3 bis +0,6 (entwuerfe/waermefaktor.mjs) bleiben es 78 bis 82 %
+ *    einer Rangkorrelation von −0,3 bis +0,6 (entwuerfe/waermefaktor.mjs) bleiben es 71 bis 74 %
  *    mit weniger unterm Strich.
  *  - Jede Einkommensklasse wird durch einen Wert vertreten (`netto`); die Werte geben die von
  *    Destatis veröffentlichten Durchschnitte wieder. Die oberste Klasse ist bei 2.770 €
  *    abgeschnitten; wie viel darüber verdient wird, ist unbekannt (`OBERSTE_KLASSE`).
  *  - Mütter ohne Partner in den Plus-Klassen (13 und mehr Kalendermonate) beziehen 11 bis 12
  *    Basis-Monate (`PLUS_MONATE`), in "10–12" 12, in "3–9" 6, in "bis 2" 2.
- *  - Alleinerziehende behalten im Entwurf 14 Monate, davon 8 zu 80 %. Ihr Anteil ist nicht
- *    veröffentlicht; 9,7 % der Mütter leben nicht mit dem anderen Elternteil zusammen
- *    (Tab. 22922-05, Obergrenze) (`ALLEINERZIEHEND`). Sie gehören zu den Müttern ohne
- *    beziehenden Partner mit 10 und mehr Monaten.
+ *  - Alleinerziehende: Ihr Anteil ist nicht veröffentlicht; 9,7 % aller Mütter mit Elterngeld
+ *    leben nicht mit dem anderen Elternteil zusammen (Tab. 22922-05, Obergrenze). Angesetzt als
+ *    Anteil aller Mütter (FAMILIEN): 0 / 5 / 9,7 % (`ALLEINERZIEHEND`). Sie werden aus den Müttern
+ *    ohne beziehenden Partner mit 10 und mehr Monaten genommen, anteilig je Dauerklasse und
+ *    unabhängig vom Einkommen.
  *  - Mütter mit Erwerbseinkommen haben 2 Monate Mutterschaftsgeld, Mütter ohne keins; die
  *    Monate der Mutter in Tabelle 4 enthalten sie.
  *  - Ohne Geschwisterbonus, Mehrlingszuschlag, Teilzeit, Partnerschaftsbonus, Sonderzahlungen.
@@ -110,7 +118,7 @@ export const OBERSTE_KLASSE = { niedrig: 2770, mittel: 3300, hoch: 3800 };
 
 /** Basis-Monate für Mütter ohne Partner in den ElterngeldPlus-Klassen (13 und mehr Bezugsmonate). */
 const PLUS_MONATE = { niedrig: 11, mittel: 11, hoch: 12 };
-/** Anteil alleinerziehender Mütter. */
+/** Anteil alleinerziehender Mütter an allen Müttern mit Elterngeld (FAMILIEN). */
 const ALLEINERZIEHEND = { niedrig: 0, mittel: 0.05, hoch: 0.097 };
 
 // Bezugsdauer (Tab. 22922-01); `plus`: Klasse entsteht bei Müttern durch ElterngeldPlus.
@@ -236,17 +244,17 @@ function familie(e, neuMonate = {}) {
 /**
  * Alle Familientypen mit `anteil` = Anteil an FAMILIEN. `einkommen` = Klasse der Mutter,
  * `vater` = Monate des Partners (0 ohne beziehenden Partner), `zusatzmonate` = Monate, die der
- * Partner nach dem Entwurf zusätzlich nimmt, wenn das Paar umplant, `lohn` = sein Netto in diesen
- * Monaten, `differenz` = Elterngeld NEU − ALT, `strich` = differenz − lohn (unterm Strich).
+ * Partner nach dem Entwurf zusätzlich nimmt, wenn das Paar umplant, `lohn` = Lohnausfall der Familie
+ * in diesen Monaten (Netto Partner − Netto Mutter, negativ = mehr Lohn), `differenz` = Elterngeld NEU − ALT, `strich` = differenz − lohn (unterm Strich).
  */
 function familien(o) {
   const netto = (k) => k.netto ?? o.obersteKlasse;
   const liste = [];
   const ohne = dauerOhnePartner();
   const muetter = muetterNachEinkommen();
-  // Alleinerziehende: Anteil an allen Müttern mit 10 und mehr Monaten (wie bisher)
+  // Alleinerziehende: Anteil an allen Müttern, genommen aus den Müttern ohne Partner mit 10+ Monaten
   const lang = DAUERGRUPPEN[2].klassen;
-  const allein = (o.anteilAlleinerziehend * lang.reduce((s, i) => s + DAUER[i].muetter, 0)) / lang.reduce((s, i) => s + ohne[i], 0);
+  const allein = (o.anteilAlleinerziehend * FAMILIEN) / lang.reduce((s, i) => s + ohne[i], 0);
   KLASSEN.forEach((km, einkommen) => {
     const nettoA = netto(km);
     const mutterschutzMonate = nettoA > 0 ? 2 : 0;
@@ -258,7 +266,7 @@ function familien(o) {
       for (const [alleinerziehend, gewicht] of [[false, 1 - a], [true, a]]) {
         if (gewicht === 0) continue;
         const r = familie({ ...basis, nettoA, nettoB: 0, monateA, monateB: 0, alleinerziehend });
-        liste.push({ einkommen, vater: 0, alleinerziehend, zusatzmonate: 0, lohn: 0, anteil: (muetter.ohnePartner[einkommen] / FAMILIEN) * (ohne[i] / (FAMILIEN - PARTNER_MIT_BEZUG)) * gewicht, ...r, strich: r.differenz });
+        liste.push({ einkommen, nettoA, nettoB: 0, monateA, monateB: 0, planA: monateA, planB: 0, vater: 0, alleinerziehend, zusatzmonate: 0, lohn: 0, anteil: (muetter.ohnePartner[einkommen] / FAMILIEN) * (ohne[i] / (FAMILIEN - PARTNER_MIT_BEZUG)) * gewicht, ...r, strich: r.differenz });
       }
     });
     // Paare, in denen beide beziehen
@@ -270,14 +278,19 @@ function familien(o) {
         const anteil = (muetter.imPaar[einkommen] / PARTNER_MIT_BEZUG) * pv * p.anteil * (PARTNER_MIT_BEZUG / FAMILIEN);
         const bleiben = { zusatzmonate: 0, lohn: 0, ...familie(e) };
         let wahl = bleiben;
+        let plan = { mutter: p.mutter, vater: p.vater };
         const neu = angepasstePaarmonate(p.mutter, p.vater);
         if (o.anpassung !== 'keine' && neu.vater > p.vater) {
           const zusatzmonate = neu.vater - p.vater;
-          const umplanen = { zusatzmonate, lohn: zusatzmonate * nettoB, ...familie(e, { monateA: neu.mutter, monateB: neu.vater }) };
+          // Mutter arbeitet in den abgegebenen Monaten wieder, der Partner fehlt bei der Arbeit
+          const umplanen = { zusatzmonate, lohn: zusatzmonate * (nettoB - nettoA), ...familie(e, { monateA: neu.mutter, monateB: neu.vater }) };
           // 'beste': nur umplanen, wenn unterm Strich mehr bleibt
-          if (o.anpassung === 'fest' || umplanen.differenz - umplanen.lohn > bleiben.differenz) wahl = umplanen;
+          if (o.anpassung === 'fest' || umplanen.differenz - umplanen.lohn > bleiben.differenz) {
+            wahl = umplanen;
+            plan = neu;
+          }
         }
-        liste.push({ einkommen, vater: p.vater, alleinerziehend: false, anteil, ...wahl, strich: wahl.differenz - wahl.lohn });
+        liste.push({ einkommen, kvater: kv.klasse, nettoA, nettoB, monateA: p.mutter, monateB: p.vater, planA: plan.mutter, planB: plan.vater, vater: p.vater, alleinerziehend: false, anteil, ...wahl, strich: wahl.differenz - wahl.lohn });
       }
     });
   });
@@ -302,7 +315,7 @@ const gruppe = (klasse, liste) => {
  *     `jeFamilie`, `anteilVerlierer`, `anteilGewinner`, und `differenz` in `nachAufteilung`,
  *     `nachEinkommen`, `angepasst`.
  *   - Elterngeld je Familie: `elterngeldJeFamilie`, in den Gruppen `elterngeld`;
- *     Lohnausfall je Familie: `lohnausfall` (Jahrgang) und in den Gruppen `lohnausfall`.
+ *     Lohnausfall (negativ = mehr Lohn): `lohnausfall` (Jahrgang) und in den Gruppen `lohnausfall`.
  *   Bei `anpassung: 'keine'` sind unterm Strich und Elterngeld gleich.
  *   `angepasst`: die Paare, die umplanen.
  */
@@ -338,6 +351,42 @@ export function ueberschlag({
     nachEinkommen: KLASSEN.map((k, i) => gruppe(k.klasse, F.filter((z) => z.einkommen === i))),
     angepasst: gruppe('Paare, die umplanen', umplaner),
   };
+}
+
+/**
+ * Einzelzellen des Modells, eine je Familientyp (Einkommensklassen, Monate, Alleinerziehend), mit
+ * denselben Annahmen und Rechenwegen wie ueberschlag(); die Reihenfolge ist für jede `anpassung`
+ * gleich. Gewicht: `familien` (Anzahl, Summe = FAMILIEN). Je Zelle, alles je Familie:
+ * `typ` ('paar' | 'ein-elternteil' | 'alleinerziehend'), `klasseMutter`, `klassePartner`
+ * (null ohne beziehenden Partner), `nettoA`/`nettoB` (Vertreterwerte), `monateA`/`monateB` heute,
+ * `planA`/`planB` im Plan nach dem Entwurf, `alt`/`neu` (Elterngeld), `lohn` (Lohnausfall),
+ * `strich` (neu − alt − lohn), `umplanen`. Für die CSV (scripts/bevoelkerung-csv.mjs).
+ */
+export function zellen({
+  obersteKlasse = OBERSTE_KLASSE.mittel,
+  plusMonate = PLUS_MONATE.mittel,
+  anteilAlleinerziehend = ALLEINERZIEHEND.mittel,
+  mutterschutzVerbraucht80 = true,
+  anpassung = 'beste',
+} = {}) {
+  if (!['beste', 'fest', 'keine'].includes(anpassung)) throw new Error(`anpassung: ${anpassung}`);
+  return familien({ obersteKlasse, plusMonate, anteilAlleinerziehend, mutterschutzVerbraucht80, anpassung }).map((z) => ({
+    typ: z.vater > 0 ? 'paar' : z.alleinerziehend ? 'alleinerziehend' : 'ein-elternteil',
+    klasseMutter: KLASSEN[z.einkommen].klasse,
+    klassePartner: z.vater > 0 ? z.kvater : null,
+    nettoA: z.nettoA,
+    nettoB: z.vater > 0 ? z.nettoB : null,
+    monateA: z.monateA,
+    monateB: z.monateB,
+    planA: z.planA,
+    planB: z.planB,
+    familien: FAMILIEN * z.anteil,
+    alt: z.alt,
+    neu: z.neu,
+    lohn: z.lohn,
+    strich: z.strich,
+    umplanen: z.zusatzmonate > 0,
+  }));
 }
 
 /**

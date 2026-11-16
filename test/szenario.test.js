@@ -307,8 +307,9 @@ test('Bonus: beste Aufteilung 1.800/2.800 mit Bonus Mutter 1.800 € → Verdien
   assert.equal(v.differenz, 1270);
   assert.equal(v.differenzLohn, -2000);
   assert.equal(v.untermStrich, -730);
-  // Bonus beim Partner (Deckel): nichts ändert sich
-  assert.deepEqual(vergleicheBeste({ ...paar(1800, 2800), bonusB: 3000 }), vergleicheBeste(paar(1800, 2800)));
+  // Bonus beim Partner (Deckel): nichts ändert sich außer dem Bemessungsnetto der Monate
+  const ohneNetto = (x) => JSON.parse(JSON.stringify(x, (k, w) => (k === 'netto' ? undefined : w)));
+  assert.deepEqual(ohneNetto(vergleicheBeste({ ...paar(1800, 2800), bonusB: 3000 })), ohneNetto(vergleicheBeste(paar(1800, 2800))));
 });
 
 test('Bonus kann die beste Aufteilung im Entwurf verschieben: 1.800/1.800 mit Bonus Partner 3.000 € → 4 + 10 statt 10 + 4', () => {
@@ -337,4 +338,81 @@ test('Bonus zählt nicht ohne Monatsnetto, nicht bei Alleinerziehenden (Partner:
   assert.equal(bonusGesamt({ nettoA: 1800, nettoB: 2800, bonusA: 1000, bonusB: 2000 }), 3000);
   assert.equal(bonusGesamt({ nettoA: 1800, nettoB: 2800, bonusA: 1000, bonusB: 2000, alleinerziehend: true }), 1000);
   assert.equal(bonusGesamt({ nettoA: 0, nettoB: 2800, bonusA: 1000, bonusB: 2000 }), 2000);
+});
+
+// Rechnung Monat für Monat („Rechnung anzeigen" in Schritt 2): Zeilen aus berechne(), Summen exakt wie im Vergleich
+import { monatsrechnung } from '../site/js/calc/szenario.js';
+const zeilensumme = (r, seite, feld = 'betrag') => Math.round(r.zeilen.reduce((s, z) => s + (z[seite]?.[feld] ?? 0) * z.anzahl, 0) * 100) / 100;
+
+test('Rechnung 1.800/2.800, beste Aufteilung: 15.300 € gegen 15.880 €, Lohn −2.000 €, unterm Strich −1.420 €', () => {
+  const e = paar(1800, 2800);
+  const r = monatsrechnung(vergleicheBeste(e), e);
+  assert.equal(zeilensumme(r, 'heute'), 15300);
+  assert.equal(zeilensumme(r, 'geplant'), 15880);
+  assert.deepEqual(r.elterngeld, { alt: 15300, neu: 15880, differenz: 580 });
+  assert.equal(zeilensumme(r, 'heute', 'lohn'), r.lohn.alt);
+  assert.equal(zeilensumme(r, 'geplant', 'lohn'), r.lohn.neu);
+  assert.deepEqual(r.lohn, { alt: 23600, neu: 25600, differenz: -2000 });
+  assert.equal(r.untermStrich, -1420);
+  assert.equal(r.elterngeld.differenz + r.lohn.differenz, r.untermStrich);
+  // 1–2 Mutterschutz | 3–4 Mutter 65 %/80 % | 5–10 Mutter 65 %/50 % | 11–12 Mutter/Partner:in | 13–14 Partner:in
+  assert.deepEqual(r.zeilen.map((z) => `${z.von}-${z.bis}`), ['1-2', '3-4', '5-10', '11-12', '13-14']);
+  const [schutz, z34, , z1112, z1314] = r.zeilen;
+  assert.equal(schutz.heute.mutterschutz && schutz.geplant.mutterschutz, true);
+  assert.equal(schutz.heute.betrag + schutz.geplant.betrag + schutz.heute.lohn, 0);
+  assert.deepEqual([z34.heute.rate, z34.heute.betrag, z34.geplant.rate, z34.geplant.betrag], [65, 1170, 80, 1440]);
+  assert.deepEqual([z1112.heute.wer, z1112.geplant.wer, z1112.geplant.betrag, z1112.geplant.grenze], ['A', 'B', 1900, 'hoechst']);
+  assert.equal(z1314.heute.grenze, 'hoechst');
+  assert.equal(z1314.heute.betrag, 1800);
+});
+
+test('Rechnung 1.800/2.800, 2 Partnermonate: 15.300 € gegen 12.080 €, 2 Monate ohne Elterngeld, kein Lohn', () => {
+  const e = { ...paar(1800, 2800), monateA: 12, monateB: 2 };
+  const v = vergleiche(e);
+  const r = monatsrechnung(v, e);
+  assert.equal(zeilensumme(r, 'heute'), 15300);
+  assert.equal(zeilensumme(r, 'geplant'), 12080);
+  assert.equal(r.elterngeld.differenz, v.differenz);
+  assert.equal(r.lohn, undefined);
+  assert.equal(r.untermStrich, undefined);
+  const letzte = r.zeilen[r.zeilen.length - 1];
+  assert.equal(letzte.geplant, null);
+  assert.equal(letzte.bis, 14);
+});
+
+test('Rechnung: Summen stimmen für viele Fälle (Bonus, Alleinerziehend, ohne Einkommen, Mehrlinge)', () => {
+  const faelle = [
+    paar(2385, 1750),
+    paar(0, 2385),
+    paar(0, 0),
+    { ...paar(1800, 2800), bonusA: 1800 },
+    { ...paar(1800, 1800), bonusB: 3000 },
+    { nettoA: 1800, nettoB: 0, mutterschutzMonate: 2, alleinerziehend: true, bonusA: 1000 },
+    { ...paar(2000, 3000), mehrlinge: 1, mutterschutzMonate: 3, geschwisterbonus: true },
+  ];
+  for (const e of faelle) {
+    for (const v of [vergleicheBeste(e), vergleiche({ ...e, monateA: 12, monateB: 2 })]) {
+      const r = monatsrechnung(v, e);
+      assert.equal(zeilensumme(r, 'heute'), v.alt.summe, JSON.stringify(e));
+      assert.equal(zeilensumme(r, 'geplant'), v.neu.summe, JSON.stringify(e));
+      assert.equal(r.zeilen.reduce((s, z) => s + z.anzahl, 0), Math.max(v.alt.bezugsmonate, v.neu.bezugsmonate));
+      if (v.beste) {
+        assert.equal(r.lohn.alt, v.alt.lohnausfall);
+        assert.equal(r.lohn.neu, v.neu.lohnausfall);
+        assert.equal(r.lohn.differenz, v.differenzLohn);
+      }
+    }
+  }
+});
+
+test('Rechnung: Bonus erhöht nur das Bemessungsnetto im Entwurf, nicht den Lohnausfall; Mindestbetrag wird markiert', () => {
+  const e = { ...paar(1800, 2800), bonusA: 1800 };
+  const r = monatsrechnung(vergleicheBeste(e), e);
+  const z = r.zeilen.find((x) => x.heute?.wer === 'A' && x.geplant?.wer === 'A' && !x.heute.mutterschutz);
+  assert.equal(z.heute.netto, 1800);
+  assert.equal(z.geplant.netto, 1950);
+  assert.equal(z.geplant.lohn, 1800);
+  const ohne = monatsrechnung(vergleicheBeste(paar(0, 2385)), paar(0, 2385));
+  assert.equal(ohne.zeilen[0].heute.grenze, 'mindest');
+  assert.equal(ohne.zeilen[0].heute.betrag, 300);
 });

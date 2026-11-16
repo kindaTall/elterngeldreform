@@ -1,0 +1,17 @@
+bevoelkerung.csv: Einzelzellen des Bevölkerungsmodells zum Nachrechnen (Stand 16.11.2026)
+
+Quelle: Statistisches Bundesamt, Elterngeld, beendete Leistungsbezüge für 2023 geborene Kinder
+(Tab. 22922-01, 22922-04); Aufteilung der Monate in Paaren: WISTA 1/2022, Tabelle 4.
+Annahmen: mittlere Werte, Mutterschutz verbraucht 80-%-Monate. Alle Annahmen und Quellen stehen im
+Kopf von site/js/calc/bevoelkerung.js (im Repository der Seite). Neu erzeugt mit: npm run csv
+
+Format: Semikolon, Dezimalkomma, UTF-8. Eine Zeile je Familientyp (Einkommensklassen, Monate).
+Geld immer je Familie (beide Elternteile zusammen), Monate je Elternteil. Mutter = beziehende Mutter.
+Anzahl Familien: Gewicht der Zeile (Summe = alle Familien mit Elterngeld im Jahrgang).
+Je Modell (keine Anpassung / feste Anpassung / beste Wahl): geplante Monate (Plan der Familie, bezahlt
+werden höchstens die Monate nach Entwurf), Elterngeld heute und geplant, Lohnausfall durch Umplanen (in den
+abgegebenen Monaten arbeitet die Mutter wieder, der Partner fehlt: Netto Partner − Netto Mutter je
+Monat; negativ = mehr Lohn), unterm Strich = Elterngeld geplant − heute − Lohnausfall, plant um (ja/nein).
+Nachzählen des Anteils mit weniger: Summe „Anzahl Familien“ aller Zeilen mit „unterm Strich“ (beste Wahl) kleiner 0,
+geteilt durch die Summe „Anzahl Familien“ aller Zeilen. Durchschnitt je Familie: Summe aus
+Anzahl × unterm Strich, geteilt durch die Summe der Anzahlen.

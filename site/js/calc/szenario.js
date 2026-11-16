@@ -87,11 +87,15 @@ function bezugVon(netto, monate, regeln, { mutterschutz = 0, ersteStufeMonate, v
     // Zähler für die erste Stufe: mit oder ohne Mutterschutzmonate
     const zaehler = verbraucht ? n : Math.max(1, n - mutterschutz);
     const stufe = stufeFuerBezugsmonat(zaehler, regeln, ersteStufeMonate);
+    const rate = ersatzrate(Math.max(0, netto), stufe, regeln);
+    const roh = (Math.max(0, netto) * rate) / 100; // vor Höchst- und Mindestbetrag
     liste.push({
       bezugsmonat: n,
       mutterschutz: imMutterschutz,
+      netto, // Bemessungsnetto (im Entwurf mit Bonus/12)
       basis: stufe.basis, // 67 (ALT) bzw. 80 / 50 (NEU)
-      rate: ersatzrate(Math.max(0, netto), stufe, regeln),
+      rate,
+      grenze: roh > regeln.hoechstbetrag ? 'hoechst' : roh < regeln.mindestbetrag ? 'mindest' : null,
       betrag: imMutterschutz ? 0 : monatsbetrag(netto, stufe, regeln, zuschlaege),
     });
   }
@@ -250,4 +254,57 @@ export function vergleicheBeste(eingabe) {
     untermStrich: cent(alt.ausfall - neu.ausfall),
     beste: true,
   };
+}
+
+/**
+ * Rechnung Monat für Monat zu einem Vergleich (Ergebnis von vergleiche(), vergleicheVoll() oder
+ * vergleicheBeste()), für „Rechnung anzeigen" in Schritt 2. Rechnet nichts neu: die Monate kommen
+ * aus berechne() (erst A, dann B, wie das Monatsdiagramm), gleiche aufeinanderfolgende Monate sind
+ * zu einer Zeile zusammengefasst.
+ *
+ * Je Zeile: von, bis (Lebensmonat, 1-basiert), anzahl, heute und geplant je
+ * {wer: 'A'|'B', netto (Bemessungsnetto), rate, betrag, mutterschutz, grenze: 'hoechst'|'mindest'|null,
+ * lohn} oder null (kein Elterngeld in diesem Monat). lohn = Netto des Elternteils zu Hause OHNE Bonus,
+ * im Mutterschutz 0 (wie verdienstausfall()). Summen: elterngeld {alt, neu, differenz} wie im
+ * Vergleich; nur bei der besten Aufteilung zusätzlich lohn {alt, neu, differenz} (Lohnausfall,
+ * differenz = alt − neu wie differenzLohn) und untermStrich.
+ * @param {object} vergleich
+ * @param {{nettoA: number, nettoB?: number}} eingabe Monatsnetto ohne Bonus (für den Lohnausfall)
+ */
+export function monatsrechnung(vergleich, { nettoA, nettoB = 0 }) {
+  const lohnVon = { A: nettoA, B: nettoB };
+  const reihe = (ergebnis) =>
+    ['A', 'B'].flatMap((wer) =>
+      ergebnis.monate[wer].map((m) => ({
+        wer,
+        netto: m.netto,
+        rate: m.rate,
+        betrag: m.betrag,
+        mutterschutz: m.mutterschutz,
+        grenze: m.mutterschutz ? null : m.grenze,
+        lohn: m.mutterschutz ? 0 : lohnVon[wer],
+      })),
+    );
+  const alt = reihe(vergleich.alt);
+  const neu = reihe(vergleich.neu);
+  const gleich = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+  const zeilen = [];
+  for (let i = 0; i < Math.max(alt.length, neu.length); i++) {
+    const heute = alt[i] ?? null, geplant = neu[i] ?? null;
+    const letzte = zeilen[zeilen.length - 1];
+    if (letzte && gleich(letzte.heute, heute) && gleich(letzte.geplant, geplant)) {
+      letzte.bis = i + 1;
+      letzte.anzahl++;
+    } else zeilen.push({ von: i + 1, bis: i + 1, anzahl: 1, heute, geplant });
+  }
+  const ergebnis = {
+    zeilen,
+    elterngeld: { alt: vergleich.alt.summe, neu: vergleich.neu.summe, differenz: vergleich.differenz },
+  };
+  if (vergleich.beste) {
+    const lohn = (liste) => cent(liste.reduce((s, m) => s + m.lohn, 0));
+    ergebnis.lohn = { alt: lohn(alt), neu: lohn(neu), differenz: cent(lohn(alt) - lohn(neu)) };
+    ergebnis.untermStrich = vergleich.untermStrich;
+  }
+  return ergebnis;
 }

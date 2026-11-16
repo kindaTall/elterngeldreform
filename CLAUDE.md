@@ -12,8 +12,10 @@ Statische Kampagnenseite: Vergleich Elterngeld geltendes Recht vs. Gesetzentwurf
 - Sicherheits-Header: `site/.htaccess` (Apache) und CSP-Meta in den drei HTML-Seiten, beide müssen gleich lauten
 - Rechenkern: `site/js/calc/` — Regeln und Quellen in `regeln.js`, Annahmen in den Dateiköpfen von `szenario.js`, `bevoelkerung.js`, `netto.js`
 - Bonus netto im Jahr (Häkchen „Bonus / Weihnachtsgeld“ in Schritt 2): zählt nur im Entwurf (+ Bonus/12 aufs Netto), Verdienstausfall ohne Bonus, Karte/Statistik ohne Bonus; Regeln im Kopf von `szenario.js`
+- Bevölkerungsstatistik zum Nachrechnen: `site/daten/bevoelkerung.csv` (+ `-lies-mich.txt`), erzeugt von `scripts/bevoelkerung-csv.mjs`; nach jeder Änderung an `bevoelkerung.js`/`szenario.js`/`regeln.js` `npm run csv` (Test `test/csv.test.js` schlägt sonst fehl)
 - Oberfläche: `site/js/main.js`, `site/js/ui/`
 - Rechner in Schritt 2: zwei Balken „Heute/Geplant“, Modell ohne DOM in `site/js/ui/balken.js` (Farben: Kommentar bei den Balken-Regeln in `style.css`)
+- „Rechnung anzeigen“ in Schritt 2: `<dialog id="rechnung">`, Inhalt von `rechnungZeigen()` in `main.js`, Zeilen aus `monatsrechnung()` in `szenario.js` (keine zweite Rechnung im UI)
 - Teilen-Bild (1080×1350) zeichnet `zeichne` in `site/js/ui/teilen.js`; `site/og.png` hat denselben Aufbau im Querformat
 - Symbole der Teilen-Knöpfe: `site/js/ui/symbole.js` (Marken aus Simple Icons, CC0, Quelle im Dateikopf; eigene neutrale Symbole)
 - Schrift liegt in `site/fonts/` (Schibsted Grotesk aus `@fontsource-variable/*`), keine externen Anfragen beim Laden

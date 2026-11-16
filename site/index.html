@@ -50,10 +50,10 @@
       <div class="buehne-links">
         <p class="stand" data-zeig><a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurf</a> vom 12.11.2026 · für Geburten ab 1.11.2027</p>
         <h1 data-zeig style="--i:1">1,36 Milliarden Euro weniger Elterngeld.</h1>
-        <p class="vorspann" data-zeig style="--i:2">So viel will die Bundesregierung 2030 einsparen. <a href="#statistik">Nach unserem Überschlag</a> hätten rund <span id="vorspann-anteil">80</span> Prozent der Familien unterm Strich weniger.</p>
+        <p class="vorspann" data-zeig style="--i:2">So viel will die Bundesregierung 2030 einsparen. <a href="#statistik">Nach unserem Überschlag</a> hätten rund <span id="vorspann-anteil">70</span> Prozent der Familien unterm Strich weniger.</p>
         <h2 class="plakat-titel" data-zeig style="--i:3">Was das für Familien heißt</h2>
         <ol class="plakate">
-          <li data-zeig style="--i:4"><div class="wechsel minus"><b id="plakat-schnitt">−1.800 €</b></div><p>weniger je Familie im Schnitt, unterm Strich, <a href="#statistik">nach unserem Überschlag</a></p></li>
+          <li data-zeig style="--i:4"><div class="wechsel minus"><b id="plakat-schnitt">−1.000 €</b></div><p>weniger je Familie im Schnitt, unterm Strich, <a href="#statistik">nach unserem Überschlag</a></p></li>
           <li data-zeig style="--i:5"><div class="wechsel minus"><b>2 Monate</b></div><p><strong>Lücke bis zum Kita-Anspruch</strong>, wenn der Partner nicht 2 Monate im Anschluss übernimmt. Gut die Hälfte der Väter nimmt heute kein Elterngeld.</p></li>
         </ol>
         <p class="quellenlink" data-zeig style="--i:6"><a href="#quellen-start">Quellen und Rechenweg</a></p>
@@ -96,10 +96,11 @@
             <div class="delta" id="delta"><b id="delta-zahl">–</b><span id="delta-prozent"></span></div>
           </div>
         </div>
-        <div class="saeulen-fuss" aria-hidden="true">
-          <div><span>Heute</span><b id="summe-heute">–</b></div>
-          <div><span>Geplant</span><b id="summe-geplant">–</b><em id="verfallen"></em></div>
-          <p class="bilanz" id="bilanz"></p>
+        <div class="saeulen-fuss">
+          <div aria-hidden="true"><span>Heute</span><b id="summe-heute">–</b></div>
+          <div aria-hidden="true"><span>Geplant</span><b id="summe-geplant">–</b><em id="verfallen"></em></div>
+          <p class="bilanz" id="bilanz" aria-hidden="true"></p>
+          <button type="button" class="rechnung-auf" id="rechnung-auf" aria-haspopup="dialog">Rechnung anzeigen</button>
         </div>
         <figcaption class="nur-vorlesen" id="saeulen-text" aria-live="polite"></figcaption>
       </figure>
@@ -162,6 +163,15 @@
         <p class="klein gewaehr">Modellrechnung ohne Gewähr. <a href="#methodik">So wird gerechnet</a></p>
       </div>
     </div>
+
+    <!-- „Rechnung anzeigen": Rechnung des gezeigten Ergebnisses Monat für Monat, gefüllt von rechnungZeigen() in main.js -->
+    <dialog class="rechnung" id="rechnung" aria-labelledby="rechnung-titel">
+      <div class="rechnung-kopf">
+        <h2 id="rechnung-titel">So entsteht die Zahl</h2>
+        <button type="button" class="rechnung-zu" id="rechnung-zu" aria-label="Schließen">×</button>
+      </div>
+      <div class="rechnung-inhalt" id="rechnung-inhalt"></div>
+    </dialog>
 
     <div class="klappe" id="genauer" hidden>
       <form class="eingaben" autocomplete="off">
@@ -344,7 +354,7 @@
         </div>
       </details>
       <details id="statistik">
-        <summary><span class="frage">Wie viele Familien haben weniger?</span><span class="kern">Rund <span id="kern-anteil">80</span> %, im Schnitt <span id="kern-betrag">1.800 €</span> je Familie unterm Strich (eigener Überschlag)</span></summary>
+        <summary><span class="frage">Wie viele Familien haben weniger?</span><span class="kern">Rund <span id="kern-anteil">70</span> %, im Schnitt <span id="kern-betrag">1.000 €</span> je Familie unterm Strich (eigener Überschlag)</span></summary>
         <div class="inhalt">
           <p class="aussage">Eigener Überschlag für alle 2023 geborenen Kinder: gleiche Einkommen, 14 Monate zusammen, nur die Regeln neu.</p>
           <div class="kennzahlen" id="stat-kennzahlen"></div>
@@ -439,10 +449,10 @@
             <h3>Quellen der Zahlen auf der Startseite</h3>
             <ul>
               <li><strong>1,36 Milliarden Euro weniger im Jahr 2030:</strong> <a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurf</a>, S. 3 und 5–9. Fast ein Fünftel der heutigen Ausgaben von 7,06 Mrd. € (Bundeshaushalt, Ist 2025).</li>
-              <li><strong>Rund 80 Prozent der Familien, im Schnitt −1.800 € je Familie unterm Strich:</strong> eigene Modellrechnung auf Basis der Elterngeldstatistik des Statistischen Bundesamts, keine Zahl aus dem Entwurf. Unterm Strich: Elterngeld plus Lohn. Familien dürfen die 14 Monate neu aufteilen und tun es, wenn ihnen dann mehr bleibt; das ändert kaum etwas, weil dann meist der höhere Lohn des Partners fehlt. Je nach Annahme sind es <span id="quellen-spanne-anteil">76 bis 93</span> Prozent und <span id="quellen-spanne-betrag">1.600 bis 2.300 €</span> (<a href="#statistik">Überschlag</a>).</li>
+              <li><strong>Rund 70 Prozent der Familien, im Schnitt −1.000 € je Familie unterm Strich:</strong> eigene Modellrechnung auf Basis der Elterngeldstatistik des Statistischen Bundesamts, keine Zahl aus dem Entwurf. Unterm Strich: Elterngeld plus Lohn. Familien dürfen die 14 Monate neu aufteilen und tun es, wenn ihnen dann mehr bleibt. Je nach Annahme sind es <span id="quellen-spanne-anteil">64 bis 87</span> Prozent und <span id="quellen-spanne-betrag">700 bis 1.500 €</span> (<a href="#statistik">Überschlag</a>; alle Familientypen zum Nachrechnen: <a href="daten/bevoelkerung.csv" download>CSV</a>, <a href="daten/bevoelkerung-lies-mich.txt">Erklärung</a>).</li>
               <li><strong>2 Monate Lücke bis zum Kita-Anspruch:</strong> Der Partner muss mindestens 2 Monate übernehmen, und zwar im Anschluss an die Mutter, nicht parallel. Kita-Anspruch: § 24 Abs. 2 SGB VIII.</li>
               <li><strong>Gut die Hälfte der Väter ohne Elterngeld:</strong> Statistisches Bundesamt, bei 53,6 % der 2023 geborenen Kinder bezog der Vater kein Elterngeld.</li>
-              <li><strong>Aufteilung der Monate bei Paaren:</strong> Statistisches Bundesamt, <a href="https://www.statistischebibliothek.de/mir/servlets/MCRFileNodeServlet/DEHeft_derivate_00095674/WISTA_1_2022.pdf" target="_blank" rel="noopener">WISTA 1/2022</a>, Tabelle 4 (Paare mit Elterngeld beider, Jahrgang 2018); dort haben knapp 12 % der Mütter im Paar kein eigenes Einkommen (Abschnitt 4.2). Wie Paare nach Einkommen zusammengesetzt sind, ist unbekannt; von gegensätzlich bis gleichartig durchgerechnet bleiben es 78 bis 82 %.</li>
+              <li><strong>Aufteilung der Monate bei Paaren:</strong> Statistisches Bundesamt, <a href="https://www.statistischebibliothek.de/mir/servlets/MCRFileNodeServlet/DEHeft_derivate_00095674/WISTA_1_2022.pdf" target="_blank" rel="noopener">WISTA 1/2022</a>, Tabelle 4 (Paare mit Elterngeld beider, Jahrgang 2018); dort haben knapp 12 % der Mütter im Paar kein eigenes Einkommen (Abschnitt 4.2). Wie Paare nach Einkommen zusammengesetzt sind, ist unbekannt; von gegensätzlich bis gleichartig durchgerechnet bleiben es 71 bis 74 %.</li>
               <li><a href="#regeln">Alle Änderungen im Vergleich</a></li>
             </ul>
           </div>

@@ -20,16 +20,19 @@
  * stehen in ganzen Euro, die Differenz aus den gerundeten Summen (ganzeDifferenz in ui/diagramme.js).
  * Der Zustand selbst (Standardwerte, URL-Fragment, Eingabe für den Rechenkern, Aufteilung der
  * Monate) liegt ohne DOM in ui/zustand.js.
+ * „Rechnung anzeigen" (unter den Summen) öffnet einen Dialog mit der Rechnung des gezeigten Ergebnisses
+ * Monat für Monat (rechnungZeigen(); Zeilen aus monatsrechnung() in calc/szenario.js, nichts wird im UI
+ * nachgerechnet), Summen in ganzen Euro wie die große Zahl (ganzeBilanz in ui/diagramme.js).
  * Die Adresszeile trägt keine Eingaben: Ein eingehendes Fragment mit Zustand (älterer geteilter Link,
  * #monB=12) wird gelesen und danach aus der Adresszeile entfernt; geteilt wird immer die schlichte
  * Adresse (TEILADRESSE in ui/teilen.js). Nur die Fehlermeldung hängt auf Wunsch einen Link mit den
  * Eingaben an (eingabenUrl()).
  */
-import { NEU } from './calc/regeln.js';
-import { vergleicheBeste, bonusGesamt } from './calc/szenario.js';
+import { ALT, NEU } from './calc/regeln.js';
+import { vergleicheBeste, bonusGesamt, monatsrechnung } from './calc/szenario.js';
 import { spanne, FAMILIEN, PARTNER_MIT_BEZUG, KINDER_MIT_ELTERNGELD, GEBURTEN, JAHRGANG, DAUER } from './calc/bevoelkerung.js';
 import { STANDARD, PARTNERMONATE, ausHash, alsHash, nettoVon, grundlage, fuerPartnermonate as planVergleich, planhinweis } from './ui/zustand.js';
-import { monatsdiagramm, heatmap, heatmapLegende, differenzbalken, euro, euroDiff } from './ui/diagramme.js';
+import { monatsdiagramm, heatmap, heatmapLegende, differenzbalken, euro, euroDiff, ganzeBilanz } from './ui/diagramme.js';
 import { balkenmodell } from './ui/balken.js';
 import { RASTER } from './ui/diagramme.js';
 import { eigenesFeld, feldText, naechstesFeld, ergebnisKarte, planZeile, feldWert, ergebnisBeste, plaeneText } from './ui/karte.js';
@@ -592,11 +595,11 @@ function statistik() {
   // Annahmen des Überschlags als kurze Liste: fettes Stichwort, dann ein bis zwei Sätze
   const anmerkungen = [
     ['Grundlage', `${n.format(FAMILIEN)} Familien, in denen die Mutter Elterngeld bezogen hat, und ${n.format(PARTNER_MIT_BEZUG)} Väter mit Elterngeld, für ${n.format(KINDER_MIT_ELTERNGELD)} der ${n.format(GEBURTEN)} im Jahr ${JAHRGANG} geborenen Kinder (Statistisches Bundesamt).`],
-    ['Paare', 'Die Aufteilung der Monate echter Paare stammt aus Tabelle 4 der WISTA 1/2022. Das Einkommen beider Eltern gilt als unabhängig voneinander; in Paaren haben knapp 12 % der Mütter kein eigenes Einkommen (dieselbe Quelle). Wie Paare nach Einkommen zusammengesetzt sind, ist unbekannt; von gegensätzlich bis gleichartig durchgerechnet bleiben es 78 bis 82 %. „Nur ein Elternteil“ umfasst Alleinerziehende und Paare, in denen der Partner kein Elterngeld bezieht.'],
+    ['Paare', 'Die Aufteilung der Monate echter Paare stammt aus Tabelle 4 der WISTA 1/2022. Das Einkommen beider Eltern gilt als unabhängig voneinander; in Paaren haben knapp 12 % der Mütter kein eigenes Einkommen (dieselbe Quelle). Wie Paare nach Einkommen zusammengesetzt sind, ist unbekannt; von gegensätzlich bis gleichartig durchgerechnet bleiben es 71 bis 74 %. „Nur ein Elternteil“ umfasst Alleinerziehende und Paare, in denen der Partner kein Elterngeld bezieht.'],
     ['Spanne', 'Einkommen und Bezugsdauer nennt die Statistik nur in Klassen. Die Spanne ergibt sich daraus, wie man die höchsten Einkommen (über 2.770 € netto), ElterngeldPlus und den Anteil der Alleinerziehenden ansetzt; Balken und Mittelwerte zeigen eine mittlere Variante.'],
     ['Auslegung', `Die Mutterschutzmonate verbrauchen zwei der vier 80-%-Monate. Nach der anderen Auslegung wären es etwa ${mrd(andere.bis(diff))} bis ${mrd(andere.von(diff))} Mrd. € weniger.`],
     ['Abgleich', `Nach heutigem Recht ergibt der Überschlag ${mrd(m.alt)} Mrd. € für den Jahrgang; der Bund hat 2024 tatsächlich 7,2 Mrd. € für Elterngeld ausgegeben. Der Entwurf nennt für 2030 eine Entlastung von 1,36 Mrd. €; darin sind 140 Mio. € Mehrausgaben für die neue Einkommensermittlung und 25 Mio. € Einsparung beim Partnerschaftsbonus verrechnet, auf die hier gerechneten Regeln entfallen also rund 1,5 Mrd. €. Welche Geburtenzahl und welches Verhalten die Regierung unterstellt, sagt der Entwurf nicht.`],
-    ['Verhalten', 'Paare, deren Aufteilung der Entwurf nicht mehr zulässt, dürfen umplanen: Partner:in übernimmt die überzähligen Monate, die Gesamtzahl bleibt. Gerechnet ist das nur, wenn ihnen unterm Strich mehr bleibt. Weil dann meist der höhere Lohn fehlt, lohnt es sich fast nur, wenn Partner:in vorher kein Einkommen hatte (rund 14.000 Paare). Lohn = Netto vor der Geburt, ohne Steuereffekte.'],
+    ['Verhalten', 'Paare, deren Aufteilung der Entwurf nicht mehr zulässt, dürfen umplanen: Partner:in übernimmt die überzähligen Monate, die Gesamtzahl bleibt. Gerechnet ist das nur, wenn ihnen unterm Strich mehr bleibt; die Mutter arbeitet in den abgegebenen Monaten wieder. Das tun rund 190.000 Paare, vor allem wenn die Mutter ähnlich viel oder mehr verdient. Lohn = Netto vor der Geburt, ohne Steuereffekte.'],
     ['Nicht enthalten', 'Geschwisterbonus, Mehrlinge, Teilzeit im Bezug, Partnerschaftsbonus, Sonderzahlungen.'],
   ];
   $('stat-text').replaceChildren(
@@ -1006,6 +1009,178 @@ function fuehrungVerdrahten() {
   zeige();
 }
 
+// ---------- „Rechnung anzeigen": Rechnung des gezeigten Ergebnisses Monat für Monat ----------
+const WER = { A: 'Mutter', B: 'Partner:in' };
+const zwei = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+/** Betrag je Monat: ganze Euro, Cent nur wenn vorhanden (1.550,25 €) */
+const geld = (x) => (Math.round(x * 100) % 100 === 0 ? euro(x) : `${zwei.format(x)} €`);
+const satz = (r) => `${String(r).replace('.', ',')} %`;
+
+function knoten(tag, text, klasse) {
+  const k = document.createElement(tag);
+  if (klasse) k.className = klasse;
+  if (text !== undefined) k.textContent = text;
+  return k;
+}
+/** Zelle mit Hauptwert und kleinen Zusatzzeilen darunter */
+function zelle(tag, haupt, ...zusatz) {
+  const z = knoten(tag);
+  z.append(haupt);
+  for (const t of zusatz.filter(Boolean)) z.append(knoten('small', t));
+  return z;
+}
+
+/** Text einer Seite (heute/geplant) für die Spalte „Wer" */
+const werText = (m) => (!m ? 'kein Elterngeld' : m.mutterschutz ? 'Mutterschutz (Mutterschaftsgeld)' : WER[m.wer]);
+
+function rechnungZeigen() {
+  const v = aktuell.gezeigt;
+  const e = aktuell.eingabe;
+  const r = monatsrechnung(v, e);
+  const g = ganzeBilanz(v);
+  const allein = e.alleinerziehend;
+  const beste = !!v.beste;
+  const inhalt = $('rechnung-inhalt');
+
+  // Worum es geht: Eingaben und Aufteilung
+  const plan = (x) => (allein ? `${x.plan.monateA} Monate` : `${x.plan.monateA} + ${x.plan.monateB} Monate`);
+  const netto = allein ? `${euro(e.nettoA)} netto, alleinerziehend` : `Mutter ${euro(e.nettoA)}, Partner:in ${euro(e.nettoB)} netto`;
+  const bonus = [e.bonusA > 0 && e.nettoA > 0 && `Mutter ${euro(e.bonusA)}`, !allein && e.bonusB > 0 && e.nettoB > 0 && `Partner:in ${euro(e.bonusB)}`].filter(Boolean);
+  const art = allein ? '' : beste ? 'Beste Aufteilung je Fassung' : 'Gewählte Aufteilung';
+  const vorspann = knoten('p', `${netto}${bonus.length ? `; Bonus im Jahr: ${bonus.join(', ')}` : ''}. ${art ? `${art}: heute` : 'Heute'} ${plan(v.alt)}, geplant ${plan(v.neu)}.`, 'rechnung-vorspann');
+
+  // Tabelle je Bezugsmonat, gleiche Monate zusammengefasst. Am Handy sind die Spalten Netto und Satz
+  // ausgeblendet (.breit); dieselben Angaben stehen dort klein in „Wer" und „Elterngeld" (.handy).
+  const tabelle = knoten('table');
+  tabelle.append(knoten('caption', 'Elterngeld je Lebensmonat des Kindes, heute und nach dem Entwurf'));
+  const kopf = knoten('thead');
+  const kz = knoten('tr');
+  for (const [t, extra, klasse] of [['Monat'], ['Wer'], ['Netto', 'Bemessung', 'zahl breit'], ['Satz', 'heute', 'zahl breit'], ['Elterngeld', 'heute', 'zahl'], ['Satz', 'geplant', 'zahl breit'], ['Elterngeld', 'geplant', 'zahl']]) {
+    const th = zelle('th', t, extra);
+    th.scope = 'col';
+    if (klasse) th.className = klasse;
+    kz.append(th);
+  }
+  kopf.append(kz);
+  const klein = (t, klasse) => knoten('small', t, klasse);
+  const rumpf = knoten('tbody');
+  for (const z of r.zeilen) {
+    const tr = knoten('tr');
+    const { heute: h, geplant: p } = z;
+    if ((h ?? p)?.mutterschutz) tr.className = 'schutz';
+    const monat = zelle('th', z.anzahl > 1 ? `${z.von}–${z.bis}` : String(z.von), z.anzahl > 1 && `${z.anzahl} Monate`);
+    monat.scope = 'row';
+    const nettoText = (m) => (!m || m.mutterschutz ? '–' : geld(m.netto));
+    // Wer: eine Angabe, wenn heute und geplant gleich, sonst beide; am Handy je darunter das Netto
+    const wer = knoten('td', undefined, 'wer');
+    const nettoKlein = (m) => (nettoText(m) === '–' ? [] : [klein(nettoText(m), 'handy')]);
+    if (werText(h) === werText(p) && nettoText(h) === nettoText(p)) wer.append(werText(h), ...nettoKlein(h));
+    else if (werText(h) === werText(p)) wer.append(werText(h), klein(`heute ${nettoText(h)}`, 'handy'), klein(`geplant ${nettoText(p)}`, 'handy'));
+    else wer.append(`heute: ${werText(h)}`, ...nettoKlein(h), klein(`geplant: ${werText(p)}`), ...nettoKlein(p));
+    const netto = nettoText(h) === nettoText(p) ? zelle('td', nettoText(h)) : zelle('td', `heute: ${nettoText(h)}`, `geplant: ${nettoText(p)}`);
+    netto.className = 'zahl breit';
+    const seite = (m) => {
+      const satzZelle = knoten('td', !m || m.mutterschutz ? '–' : satz(m.rate), 'zahl breit');
+      const betrag = knoten('td', !m ? '–' : geld(m.betrag), 'zahl');
+      if (m && !m.mutterschutz) {
+        betrag.append(klein(satz(m.rate), 'handy'));
+        if (m.grenze) betrag.append(klein(m.grenze === 'hoechst' ? 'Höchstbetrag' : 'Mindestbetrag'));
+        if (z.anzahl > 1) betrag.append(klein(`zus. ${geld(m.betrag * z.anzahl)}`));
+      }
+      return [satzZelle, betrag];
+    };
+    tr.append(monat, wer, netto, ...seite(h), ...seite(p));
+    rumpf.append(tr);
+  }
+  const fuss = knoten('tfoot');
+  const summe = knoten('tr');
+  const sth = knoten('th', 'Zusammen, Familie');
+  sth.colSpan = 2;
+  sth.scope = 'row';
+  summe.append(sth, knoten('td', '', 'breit'), knoten('td', '', 'breit'), knoten('td', euro(g.alt), 'zahl'), knoten('td', '', 'breit'), knoten('td', euro(g.neu), 'zahl'));
+  fuss.append(summe);
+  tabelle.append(kopf, rumpf, fuss);
+  const rahmen = knoten('div', undefined, 'rechnung-tabelle');
+  rahmen.tabIndex = 0; // am Handy seitlich scrollbar, auch mit der Tastatur
+  rahmen.setAttribute('role', 'region');
+  rahmen.setAttribute('aria-label', 'Rechnung je Monat');
+  rahmen.append(tabelle);
+
+  // Summen je Familie, in ganzen Euro wie die große Zahl
+  const liste = knoten('dl', undefined, 'rechnung-summen');
+  const posten = (dt, dd, klasse) => {
+    const d = knoten('div', undefined, klasse);
+    d.append(knoten('dt', dt), typeof dd === 'string' ? knoten('dd', dd) : dd);
+    liste.append(d);
+  };
+  const differenz = (x) => (Math.round(x) === 0 ? '±0 €' : euroDiff(x));
+  posten('Elterngeld heute', euro(g.alt));
+  posten('Elterngeld geplant', euro(g.neu));
+  posten(beste ? 'Unterschied Elterngeld' : 'Unterschied, unterm Strich', differenz(g.differenz), beste ? 'linie' : 'linie gross');
+  if (beste) {
+    // Lohnausfall als Rechnung: Monate × Netto des Elternteils zu Hause, je Fassung
+    const lohnRechnung = (seite, gesamt) => {
+      const teile = new Map();
+      for (const z of r.zeilen) {
+        const m = z[seite];
+        if (m && m.lohn > 0) teile.set(m.wer, { n: (teile.get(m.wer)?.n ?? 0) + z.anzahl, lohn: m.lohn });
+      }
+      const dd = knoten('dd', euro(gesamt));
+      const weg = [...teile.values()].map((t) => `${t.n} × ${geld(t.lohn)}`).join(' + ');
+      if (weg) dd.append(knoten('small', weg));
+      return dd;
+    };
+    posten('Lohnausfall heute', lohnRechnung('heute', r.lohn.alt));
+    posten('Lohnausfall geplant', lohnRechnung('geplant', r.lohn.neu));
+    posten(g.lohn < 0 ? 'Weniger Lohn' : 'Unterschied Lohn', differenz(g.lohn), 'linie');
+    const dd = knoten('dd', differenz(g.unterm));
+    dd.append(knoten('small', `${differenz(g.differenz)} Elterngeld ${g.lohn < 0 ? '−' : '+'} ${euro(Math.abs(g.lohn))} Lohn`));
+    posten('Unterm Strich', dd, 'linie gross');
+  }
+  const vorzeichen = (beste ? g.unterm : g.differenz) < 0 ? 'minus' : (beste ? g.unterm : g.differenz) > 0 ? 'plus' : 'null';
+  liste.dataset.vorzeichen = vorzeichen;
+
+  // Regeln aus regeln.js, mit Quelle
+  const [alt] = ALT.stufen, [neu1, neu2] = NEU.stufen;
+  const zuschlag = [
+    e.geschwisterbonus && `Geschwisterbonus (heute ${ALT.geschwisterbonus.prozent} %, geplant ${NEU.geschwisterbonus.prozent} %, mindestens ${euro(NEU.geschwisterbonus.mindestens)})`,
+    e.mehrlinge > 0 && `Mehrlingszuschlag (${euro(NEU.mehrlingszuschlag)} je weiteres Kind)`,
+  ].filter(Boolean);
+  const regeln = knoten('p', undefined, 'rechnung-regeln');
+  regeln.append(
+    `Heute ersetzt das Elterngeld ${alt.basis} % des Nettos, über ${euro(alt.abschmelzAb)} sinkend bis ${alt.abschmelzBis} %; ` +
+      `im Entwurf ${neu1.basis} % in den ersten ${neu1.monate} Monaten je Elternteil${allein ? ` (Alleinerziehende ${NEU.achtzigMonateAlleinerziehend})` : ''}, danach ${neu2.basis} %. ` +
+      `Unter ${euro(ALT.geringverdienerGrenze)} netto steigt der Satz. Höchstbetrag heute ${euro(ALT.hoechstbetrag)}, geplant ${euro(NEU.hoechstbetrag)}; Mindestbetrag ${euro(ALT.mindestbetrag)} bzw. ${euro(NEU.mindestbetrag)}. ` +
+      'Ein Bonus zählt nur im Entwurf mit, als Zwölftel zum Monatsnetto (Bemessung). ' +
+      `Im Mutterschutz wird kein Elterngeld gezahlt; die Monate zählen als Monate der Mutter${e.mutterschutzVerbraucht80 ? ' und verbrauchen im Entwurf 80-%-Monate' : ''}. ` +
+      (zuschlag.length ? `Elterngeld mit ${zuschlag.join(' und ')}. ` : '') +
+      (beste ? 'Lohnausfall: Netto des Elternteils zu Hause ohne Bonus, im Mutterschutz 0\u00a0€. ' : '') +
+      'Quelle: § 2 BEEG; Gesetzentwurf der Bundesregierung vom 12.11.2026, § 2 BEEG-E. ',
+  );
+  const methodik = Object.assign(knoten('a', 'So wird gerechnet'), { href: '#methodik' });
+  methodik.addEventListener('click', () => $('rechnung').close());
+  regeln.append(methodik);
+
+  inhalt.replaceChildren(vorspann, rahmen, liste, regeln);
+}
+
+function rechnungVerdrahten() {
+  const dialog = $('rechnung');
+  let vorher = null;
+  $('rechnung-auf').addEventListener('click', (ev) => {
+    vorher = ev.currentTarget;
+    rechnungZeigen();
+    dialog.showModal();
+    $('rechnung-inhalt').scrollTop = 0;
+  });
+  $('rechnung-zu').addEventListener('click', () => dialog.close());
+  // Klick neben den Dialog (auf den abgedunkelten Grund) schließt ihn
+  dialog.addEventListener('click', (ev) => {
+    if (ev.target === dialog) dialog.close();
+  });
+  dialog.addEventListener('close', () => vorher?.focus({ preventScroll: true }));
+}
+
 // ---------- Start ----------
 // Das Fragment trägt entweder die Eingaben (#einkA=…, älterer geteilter Link) oder ein Sprungziel
 // (#methodik, etwa aus dem Impressum). Eingaben werden übernommen und danach aus der Adresse entfernt.
@@ -1024,6 +1199,7 @@ karteVerdrahten();
 briefVerdrahten();
 teilenVerdrahten();
 rueckmeldungVerdrahten();
+rechnungVerdrahten();
 symboleEinsetzen();
 stimmenBauen();
 statistik();

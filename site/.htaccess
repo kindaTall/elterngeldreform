@@ -45,4 +45,9 @@ RewriteRule ^petition(-zitat)?/?$ https://weact.campact.de/petitions/keine-kurzu
   </FilesMatch>
 </IfModule>
 
+# Daten zum Nachrechnen (site/daten/): CSV und Erläuterung als UTF-8 ausliefern, sonst zeigt Excel
+# oder der Browser Umlaute falsch an.
+AddType text/csv;charset=utf-8 .csv
+AddCharset utf-8 .txt
+
 Options -Indexes

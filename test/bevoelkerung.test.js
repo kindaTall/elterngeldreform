@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   ueberschlag,
+  zellen,
   spanne,
   dauerOhnePartner,
   FAMILIEN,
@@ -19,6 +20,8 @@ import {
   muetterNachEinkommen,
   ANTEIL_OHNE_EINKOMMEN_IM_PAAR,
 } from '../site/js/calc/bevoelkerung.js';
+import { berechne, vergleicheBeste } from '../site/js/calc/szenario.js';
+import { ALT, NEU } from '../site/js/calc/regeln.js';
 
 test('Personenzahlen stimmen mit den Destatis-Summen überein', () => {
   for (const [wer, gesamt] of [['muetter', 642965], ['vaeter', 302135]]) {
@@ -48,9 +51,12 @@ test('Mütter ohne beziehenden Partner: niemand doppelt, niemand negativ', () =>
   const ohne = dauerOhnePartner();
   for (const n of ohne) assert.ok(n >= 0);
   assert.ok(Math.abs(ohne.reduce((s, n) => s + n, 0) - (FAMILIEN - PARTNER_MIT_BEZUG)) < 1e-6);
-  // auch die höchste Annahme für Alleinerziehende (9,7 % der Mütter ab 10 Monaten) passt hinein
+  // auch die höchste Annahme für Alleinerziehende (9,7 % aller Mütter) passt in die Mütter ohne Partner ab 10 Monaten
   const lang = [2, 3, 4, 5];
-  assert.ok(0.097 * lang.reduce((s, i) => s + DAUER[i].muetter, 0) < lang.reduce((s, i) => s + ohne[i], 0));
+  assert.ok(0.097 * FAMILIEN < lang.reduce((s, i) => s + ohne[i], 0));
+  // Alleinerziehende im Modell: 5 % aller Mütter (mittlere Annahme)
+  const allein = zellen().filter((c) => c.typ === 'alleinerziehend').reduce((s, c) => s + c.familien, 0);
+  assert.ok(Math.abs(allein - 0.05 * FAMILIEN) < 1e-6);
   // Familien mit beziehendem Partner = Väter mit Elterngeld
   const r = ueberschlag();
   const paare = r.nachAufteilung.slice(1).reduce((s, g) => s + g.familien, 0);
@@ -80,13 +86,35 @@ test('Vorgabe: 12 % der Mütter im Paar ohne Einkommen, Gesamtrand der Mütter b
   assert.ok(Math.abs(ohne - OHNE_EINKOMMEN.muetter) < 1e-6);
 });
 
-test('Hauptzahlen: rund 81 % weniger, im Schnitt rund 1.850 € (mit Spanne)', () => {
+test('Hauptzahlen: rund 71 % weniger, im Schnitt rund 1.000 € (mit Spanne)', () => {
+  // Abgleich: unabhängige Nachrechnung entwuerfe/nachrechnung.py --mutterlohn (71,3 % / 20,3 % / −1.018 €)
   const s = spanne(true);
   const m = s.mitte;
-  assert.equal(Math.round(m.anteilVerlierer * 100), 81);
-  assert.equal(Math.round(-m.jeFamilie / 50) * 50, 1850);
-  assert.deepEqual([s.von((r) => r.anteilVerlierer), s.bis((r) => r.anteilVerlierer)].map((x) => Math.round(x * 100)), [76, 93]);
+  assert.equal(Math.round(m.anteilVerlierer * 1000), 713);
+  assert.equal(Math.round(m.anteilGewinner * 1000), 203);
+  assert.equal(Math.round(-m.jeFamilie / 50) * 50, 1000);
+  assert.ok(Math.abs(m.angepasst.familien - 193000) < 1000, `${m.angepasst.familien}`);
+  assert.ok(m.differenz > -0.6e9 && m.differenz < -0.57e9, `${m.differenz}`);
+  assert.deepEqual([s.von((r) => r.anteilVerlierer), s.bis((r) => r.anteilVerlierer)].map((x) => Math.round(x * 100)), [64, 87]);
   assert.ok(m.alt > 6.9e9 && m.alt < 7.1e9);
+});
+
+test('Umplanen wie im Rechner: Mutter arbeitet in den abgegebenen Monaten wieder', () => {
+  const paar = (nettoA, nettoB) => zellen().find((c) => c.typ === 'paar' && c.monateA === 12 && c.monateB === 2 && c.nettoA === nettoA && c.nettoB === nettoB);
+  // Lohnänderung je Familie = abgegebene Monate × (Netto Partner − Netto Mutter)
+  for (const c of zellen({ anpassung: 'fest' }).filter((c) => c.umplanen)) assert.equal(c.lohn, (c.planB - c.monateB) * (c.nettoB - c.nettoA));
+  // 0/2.385: Umplanen ergäbe wie vergleicheBeste −570,50 €, Bleiben (10 + 2, Mutter unbezahlt zu Hause) +399,50 €
+  assert.equal(vergleicheBeste({ nettoA: 0, nettoB: 2385 }).untermStrich, -570.5);
+  const c = paar(0, 2385);
+  assert.deepEqual([c.planA, c.planB, c.lohn, c.strich], [12, 2, 0, 399.5]);
+  assert.equal(zellen({ anpassung: 'fest' }).find((z) => z.typ === 'paar' && z.monateA === 12 && z.monateB === 2 && z.nettoA === 0 && z.nettoB === 2385).strich, -570.5);
+  // 1.800/2.800 (kein Vertreterwert, mit denselben Rechenwegen): Bleiben −3.220 €, Umplanen −1.420 € = vergleicheBeste
+  const e = { nettoA: 1800, nettoB: 2800, mutterschutzMonate: 2, monateA: 12, monateB: 2 };
+  const alt = berechne(e, ALT).summe;
+  const bleiben = berechne({ ...e, monateA: 10 }, NEU).summe - alt;
+  const umplanen = berechne({ ...e, monateA: 10, monateB: 4 }, NEU).summe - alt - 2 * (2800 - 1800);
+  assert.deepEqual([bleiben, umplanen], [-3220, -1420]);
+  assert.equal(vergleicheBeste({ nettoA: 1800, nettoB: 2800, mutterschutzMonate: 2 }).untermStrich, Math.max(bleiben, umplanen));
 });
 
 test('Summe nach geltendem Recht liegt nahe an den Bundesausgaben', () => {
@@ -153,7 +181,7 @@ test('Umplanen betrifft nur Paare; beste Wahl ist unterm Strich nie schlechter',
   // fest: alle Paare mit Mutter über 10 Monaten planen um
   const betroffen = PARTNER_MIT_BEZUG * PAARE.filter((p) => p.mutter > 10).reduce((s, p) => s + p.anteil, 0);
   assert.ok(Math.abs(fest.angepasst.familien - betroffen) < 1e-6);
-  assert.ok(fest.differenz > keine.differenz && fest.jeFamilie < keine.jeFamilie);
+  assert.ok(fest.differenz > keine.differenz && fest.jeFamilie > keine.jeFamilie);
   // beste: eine Teilmenge plant um, unterm Strich mindestens so gut wie beide anderen
   assert.ok(beste.angepasst.familien > 0 && beste.angepasst.familien < betroffen);
   assert.ok(beste.jeFamilie >= keine.jeFamilie && beste.jeFamilie >= fest.jeFamilie);
@@ -178,4 +206,17 @@ test('Schritt 1 nennt als Stand ohne Skript dieselben Schätzwerte wie das Model
   // Zeile „Wie viele Familien bekommen weniger?“ in der zugeklappten Liste im Hintergrund
   assert.equal(steht('kern-anteil'), String(Math.round(s.mitte.anteilVerlierer * 10) * 10));
   assert.equal(steht('kern-betrag'), `${hundert(s.mitte.jeFamilie)} €`);
+});
+
+test('zellen() ergibt dieselben Summen wie ueberschlag()', () => {
+  for (const anpassung of ['beste', 'fest', 'keine']) {
+    const r = ueberschlag({ anpassung });
+    const z = zellen({ anpassung });
+    const summe = (f) => z.reduce((s, c) => s + c.familien * f(c), 0);
+    assert.ok(Math.abs(summe(() => 1) - FAMILIEN) < 1e-6);
+    assert.ok(Math.abs(summe((c) => c.neu - c.alt) - r.differenz) < 1);
+    assert.ok(Math.abs(summe((c) => c.lohn) - r.lohnausfall) < 1);
+    assert.ok(Math.abs(summe((c) => c.strich) - r.untermStrich) < 1);
+    assert.ok(Math.abs(summe((c) => Number(c.strich < 0)) / FAMILIEN - r.anteilVerlierer) < 1e-9);
+  }
 });
