@@ -158,3 +158,14 @@ test('alleinerziehend: 14 Monate, die Partnermonate aus der URL zählen nicht', 
   assert.deepEqual(r.v.neu.plan, { monateA: 14, monateB: 0 });
   assert.deepEqual([r.alt, r.neu], [12 * 1300, 6 * 1600 + 6 * 1000]);
 });
+
+test('Bonus: Standard 0, Fragment gekürzt auf 0 bis 100.000, nur in der Adresse bei Abweichung; alleinerziehend ohne Bonus Partner:in', () => {
+  assert.equal(STANDARD.bonusA, 0);
+  assert.equal(ausHash('#bonusB=3000').bonusB, 3000);
+  assert.equal(ausHash('#bonusA=-5').bonusA, 0);
+  assert.equal(ausHash('#bonusA=999999').bonusA, 100000);
+  assert.equal(alsHash({ ...STANDARD, bonusB: 3000 }), 'bonusB=3000');
+  const e = grundlage({ ...STANDARD, bonusA: 1800, bonusB: 3000 });
+  assert.deepEqual([e.bonusA, e.bonusB], [1800, 3000]);
+  assert.equal(grundlage({ ...STANDARD, bonusA: 1800, bonusB: 3000, allein: 1 }).bonusB, 0);
+});

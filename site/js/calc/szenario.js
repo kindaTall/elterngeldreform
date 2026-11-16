@@ -1,14 +1,23 @@
 /**
  * Vergleich eines Bezugsplans unter ALT und NEU (siehe regeln.js).
  *
- * Zwei Vergleiche:
+ * Drei Vergleiche:
  *  - vergleiche(): Eingabe ist der Plan, den die Familie nach geltendem Recht hätte
  *    ("Wunschplan"). Für NEU wird derselbe Plan so weit übernommen, wie der Entwurf ihn zulässt;
  *    Monate, die nicht mehr zulässig sind, entfallen ersatzlos (so auch § 4 Abs. 3–4 BEEG-E).
  *  - vergleicheVoll(): Die Familie schöpft unter beiden Regelwerken alle Monate aus und plant
  *    dafür um (ALT 12 + 2, NEU 10 + 4).
+ *  - vergleicheBeste(): Jedes Regelwerk mit der Aufteilung von 14 Monaten, die der Familie am
+ *    wenigsten Einkommen kostet (Elterngeld und Lohn); Annahmen dort.
  *
  * Elternteil A = Mutter/gebärender Elternteil, B = Partner:in.
+ * Bonus (bonusA/bonusB, € netto im Jahr, Weihnachtsgeld u. ä.): zählt nur im Entwurf, als Zwölftel
+ * zum Monatsnetto (Bemessungsnetto = Netto + Bonus/12); heute bleibt er außen vor. Höchst- und
+ * Mindestbetrag und Ersatzrate wirken auf das erhöhte Netto. Vereinfacht: das Elterngeld rechnet mit
+ * pauschalen Abzügen vom Brutto, künftig zählt das Kalenderjahr vor der Geburt. Der Verdienstausfall
+ * (besterPlan) rechnet mit dem Monatsnetto OHNE Bonus: Annahme, der Bonus wird unabhängig von der
+ * Elternzeit gezahlt und fällt in den Monaten zu Hause nicht aus. Deshalb kann der Bonus die
+ * günstigste Aufteilung im Entwurf verschieben.
  * Mutterschutz: Monate mit Mutterschaftsleistungen gelten als Basiselterngeld-Monate von A
  * (§ 4 Abs. 4 S. 3 BEEG, unverändert im Entwurf); das Elterngeld wird in ihnen vollständig
  * angerechnet (§ 3 Abs. 1), Auszahlung also 0 €. Vereinfachung: volle Lebensmonate.
@@ -27,6 +36,8 @@ import { monatsbetrag, ersatzrate, stufeFuerBezugsmonat } from './elterngeld.js'
  * @typedef {object} Eingabe
  * @property {number} nettoA  Elterngeld-Netto von A vor der Geburt, €/Monat
  * @property {number} nettoB  Elterngeld-Netto von B, €/Monat (bei alleinerziehend ignoriert)
+ * @property {number} [bonusA=0] Bonus/Weihnachtsgeld netto von A, €/Jahr (zählt nur im Entwurf, siehe oben)
+ * @property {number} [bonusB=0] dasselbe für B (bei alleinerziehend ignoriert)
  * @property {number} monateA gewünschte Basis-Monate von A inkl. Mutterschutzmonate
  * @property {number} monateB gewünschte Basis-Monate von B
  * @property {number} [mutterschutzMonate=0] Monate von A mit Mutterschaftsleistungen (Angestellte: 2)
@@ -64,6 +75,11 @@ export function zulaessigerPlan({ monateA, monateB, alleinerziehend = false, net
   return { monateA: a, monateB: b };
 }
 
+/** Bonus der Familie (€ netto im Jahr), der im Entwurf tatsächlich mitzählt: nur neben einem Monatsnetto, bei Alleinerziehenden nur der von A. */
+export function bonusGesamt({ nettoA = 0, nettoB = 0, bonusA = 0, bonusB = 0, alleinerziehend = false }) {
+  return (nettoA > 0 ? Math.max(0, bonusA) : 0) + (!alleinerziehend && nettoB > 0 ? Math.max(0, bonusB) : 0);
+}
+
 function bezugVon(netto, monate, regeln, { mutterschutz = 0, ersteStufeMonate, verbraucht = true, zuschlaege }) {
   const liste = [];
   for (let n = 1; n <= monate; n++) {
@@ -89,6 +105,8 @@ export function berechne(eingabe, regeln) {
   const {
     nettoA,
     nettoB = 0,
+    bonusA = 0,
+    bonusB = 0,
     mutterschutzMonate = 0,
     alleinerziehend = false,
     geschwisterbonus = false,
@@ -99,13 +117,15 @@ export function berechne(eingabe, regeln) {
   const zuschlaege = { geschwisterbonus, mehrlinge };
   const ersteStufeMonate =
     alleinerziehend && regeln.achtzigMonateAlleinerziehend ? regeln.achtzigMonateAlleinerziehend : undefined;
-  const A = bezugVon(nettoA, plan.monateA, regeln, {
+  // Bemessungsnetto: im Entwurf mit einem Zwölftel des Bonus (vereinfacht)
+  const bemessung = (netto, bonus) => (regeln.sonderzahlungen && netto > 0 ? netto + Math.max(0, bonus) / 12 : netto); // ohne Monatsnetto kein Bonus
+  const A = bezugVon(bemessung(nettoA, bonusA), plan.monateA, regeln, {
     mutterschutz: Math.min(mutterschutzMonate, plan.monateA),
     ersteStufeMonate,
     verbraucht: mutterschutzVerbraucht80,
     zuschlaege,
   });
-  const B = bezugVon(nettoB, plan.monateB, regeln, { zuschlaege });
+  const B = bezugVon(bemessung(nettoB, alleinerziehend ? 0 : bonusB), plan.monateB, regeln, { zuschlaege });
   const summeA = summe(A);
   const summeB = summe(B);
   return {
@@ -154,4 +174,80 @@ export function vollerPlan(regeln, alleinerziehend = false) {
 export function vergleicheVoll(eingabe) {
   const mit = (regeln) => berechne({ ...eingabe, ...vollerPlan(regeln, eingabe.alleinerziehend) }, regeln);
   return gegenueber(mit(ALT), mit(NEU));
+}
+
+const cent = (x) => Math.round(x * 100) / 100;
+
+/**
+ * Lohn, der der Familie in den Bezugsmonaten fehlt (lohnausfall: Netto des Elternteils zu Hause),
+ * und Verdienstausfall (ausfall: dasselbe abzüglich Elterngeld), beide für ein Ergebnis von berechne().
+ * Mutterschutzmonate zählen 0: Mutterschaftsgeld und Arbeitgeberzuschuss ersetzen dort das Netto.
+ */
+export function verdienstausfall(ergebnis, { nettoA, nettoB = 0 }) {
+  const a = ergebnis.monate.A.filter((m) => !m.mutterschutz).length;
+  const lohnausfall = cent(a * nettoA + ergebnis.monate.B.length * nettoB);
+  return { lohnausfall, ausfall: cent(lohnausfall - ergebnis.summe) };
+}
+
+/**
+ * Beste Aufteilung eines Paares unter einem Regelwerk: die zulässige Aufteilung von zusammen 14
+ * Monaten mit dem kleinsten Verdienstausfall der Familie (siehe vergleicheBeste()).
+ * monateA/monateB der Eingabe werden ignoriert. Rückgabe: Ergebnis von berechne() samt ausfall
+ * und lohnausfall.
+ */
+export function besterPlan(eingabe, regeln) {
+  const ms = eingabe.mutterschutzMonate ?? 0;
+  const gesamt = regeln.maxMonatePaar;
+  for (let T = gesamt; T > 0; T--) {
+    let best = null;
+    for (let b = 0; b <= T; b++) {
+      const a = T - b;
+      if (ms > 0 && a < ms) continue; // die Mutterschutzmonate sind immer Monate der Mutter
+      const plan = { ...eingabe, alleinerziehend: false, monateA: a, monateB: b };
+      const z = zulaessigerPlan(plan, regeln);
+      if (z.monateA !== a || z.monateB !== b) continue;
+      const r = berechne(plan, regeln);
+      const k = { ...r, ...verdienstausfall(r, eingabe) };
+      // Gleichstand (auf den Cent): der Plan mit weniger Partnermonaten, also der zuerst gefundene
+      if (!best || k.ausfall < best.ausfall - 0.005) best = k;
+    }
+    if (best) return best;
+  }
+  throw new Error('kein zulässiger Plan');
+}
+
+/**
+ * Beste Aufteilung heute gegen beste Aufteilung geplant: Jedes Regelwerk mit seiner Aufteilung von
+ * zusammen 14 Monaten (nacheinander, kein gleichzeitiger Bezug), bei der der Familie am wenigsten
+ * Einkommen fehlt.
+ *
+ * Annahmen:
+ *  - Verdienstausfall = Summe über die Bezugsmonate von (Netto des Elternteils zu Hause −
+ *    Elterngeld dieses Monats). Die Mutterschutzmonate einer erwerbstätigen Mutter kosten 0 und
+ *    bringen 0 € Elterngeld; sie zählen als Monate der Mutter (wie berechne()).
+ *  - Das Kind wird 14 Monate zu Hause betreut, jeder Monat von genau einem Elternteil mit Elterngeld.
+ *    Nur wenn nach geltendem Recht keine 14 Monate zulässig sind (beide ohne Einkommen: 12), gilt
+ *    die längste zulässige Dauer; die fehlenden Monate kosten dann nichts, weil kein Netto ausfällt.
+ *  - Gleichstand: der Plan mit weniger Partnermonaten.
+ *  - Gerechnet wird nur mit Geld. Stillen, Wünsche des Arbeitgebers, Teilzeit, Karrierefolgen,
+ *    Steuern auf das Elterngeld (Progressionsvorbehalt) und Sozialbeiträge bleiben außen vor.
+ *  - Alleinerziehende können nicht aufteilen: dann wie vergleicheVoll() (beste: false).
+ *
+ * Rückgabe wie vergleiche() (alt, neu, differenz = Elterngeld, entfalleneMonate), dazu je
+ * Regelwerk ausfall und lohnausfall in alt/neu, differenzLohn (Lohn geplant − heute, negativ =
+ * weniger Lohn) und untermStrich (= −Differenz Verdienstausfall = differenz + differenzLohn).
+ * Bei gleicher Aufteilung in beiden Regelwerken ist untermStrich gleich der Elterngelddifferenz.
+ * @param {Eingabe} eingabe
+ */
+export function vergleicheBeste(eingabe) {
+  if (eingabe.alleinerziehend) return { ...vergleicheVoll(eingabe), beste: false };
+  const alt = besterPlan(eingabe, ALT);
+  const neu = besterPlan(eingabe, NEU);
+  return {
+    ...gegenueber(alt, neu),
+    entfalleneMonate: Math.max(0, alt.bezugsmonate - neu.bezugsmonate),
+    differenzLohn: cent(alt.lohnausfall - neu.lohnausfall),
+    untermStrich: cent(alt.ausfall - neu.ausfall),
+    beste: true,
+  };
 }

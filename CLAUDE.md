@@ -11,13 +11,14 @@ Statische Kampagnenseite: Vergleich Elterngeld geltendes Recht vs. Gesetzentwurf
 - CI: `.github/workflows/ci.yml` (GitHub Actions, `npm ci && npm test`)
 - Sicherheits-Header: `site/.htaccess` (Apache) und CSP-Meta in den drei HTML-Seiten, beide müssen gleich lauten
 - Rechenkern: `site/js/calc/` — Regeln und Quellen in `regeln.js`, Annahmen in den Dateiköpfen von `szenario.js`, `bevoelkerung.js`, `netto.js`
+- Bonus netto im Jahr (Häkchen „Bonus / Weihnachtsgeld“ in Schritt 2): zählt nur im Entwurf (+ Bonus/12 aufs Netto), Verdienstausfall ohne Bonus, Karte/Statistik ohne Bonus; Regeln im Kopf von `szenario.js`
 - Oberfläche: `site/js/main.js`, `site/js/ui/`
 - Rechner in Schritt 2: zwei Balken „Heute/Geplant“, Modell ohne DOM in `site/js/ui/balken.js` (Farben: Kommentar bei den Balken-Regeln in `style.css`)
 - Teilen-Bild (1080×1350) zeichnet `zeichne` in `site/js/ui/teilen.js`; `site/og.png` hat denselben Aufbau im Querformat
 - Symbole der Teilen-Knöpfe: `site/js/ui/symbole.js` (Marken aus Simple Icons, CC0, Quelle im Dateikopf; eigene neutrale Symbole)
 - Schrift liegt in `site/fonts/` (Schibsted Grotesk aus `@fontsource-variable/*`), keine externen Anfragen beim Laden
 - Geldbeträge und Differenzen immer je Familie/Paar zeigen, nie getrennt nach Mutter und Vater (Rechner, Statistik, Brief, Teilen)
-- Aufbau der Seite: drei Schritte (Problem → Ergebnis → Handeln), danach aufklappbarer Hintergrund; der Rechner vergleicht dieselbe Aufteilung der Monate nach geltendem Recht und nach dem Entwurf (Partnermonate in Schritt 2, Monate der Mutter unter „Genauer rechnen“)
+- Aufbau der Seite: drei Schritte (Problem → Ergebnis → Handeln), danach aufklappbarer Hintergrund; der Rechner zeigt vorgewählt die beste Aufteilung je Fassung, Zahl „unterm Strich“ (`vergleicheBeste()` in `szenario.js`, Standard `AUFTEILUNG_STANDARD` in `main.js`); eigene Partnermonate vergleichen dieselbe Aufteilung nach beiden Fassungen
 - Handy (unter 900 px): Schritt 2 und 3 je auf einen Bildschirm (quere Balken, Umschaltleiste, Teilen mit Bildvorschau); `.langform`/`.kurzform` und `details.handyklappe` (am Desktop offen) steuern die Kurzfassung
 - Teilen ohne Einkommen: geteilt wird immer `TEILADRESSE` (`site/js/ui/teilen.js`), die Adresszeile trägt keine Eingaben; nur die Fehlermeldung hängt sie auf Wunsch an
 - Gestaltung: Regeln im Kopf von `site/css/style.css` (weiß, eine Schrift, Farbe nur für mehr/weniger, dezente Bewegung)

@@ -8,6 +8,14 @@
  * `monB` (0 oder 2 bis 12; Standard 2, wie bei den meisten Familien) und den Monaten der Mutter
  * `monA` (0 = so viele wie möglich; unter „Genauer rechnen"). Unter den Eingaben steht eine Zeile
  * zur Einordnung der Partnermonate (einordnung()).
+ * Über der Monatswahl steht die Zeile „Beste Aufteilung" (vorgewählt, AUFTEILUNG_STANDARD): dann
+ * rechnet Schritt 2 beste Aufteilung heute gegen beste Aufteilung geplant (vergleicheBeste() in
+ * calc/szenario.js), die große Zahl ist „unterm Strich" (Elterngeld und Lohn), die Monatswahl zeigt
+ * die Partnermonate der besten Aufteilung im Entwurf. Wer Monate wählt, verlässt sie und bekommt den
+ * Vergleich derselben Aufteilung; ein Klick auf die Zeile stellt sie wieder her. Teilen und Brief
+ * zeigen immer, was im Rechner eingestellt ist.
+ * Bonus netto im Jahr (das Häkchen „Bonus / Weihnachtsgeld" blendet je Netto-Feld ein Bonusfeld ein): zählt nur im
+ * Entwurf, Regeln im Kopf von calc/szenario.js; Karte und „Euer Ergebnis" dort rechnen ohne Bonus (aktuell.karte).
  * Beträge erscheinen nur je Familie, nie getrennt nach Mutter und Vater; Summen und Differenz
  * stehen in ganzen Euro, die Differenz aus den gerundeten Summen (ganzeDifferenz in ui/diagramme.js).
  * Der Zustand selbst (Standardwerte, URL-Fragment, Eingabe für den Rechenkern, Aufteilung der
@@ -18,12 +26,13 @@
  * Eingaben an (eingabenUrl()).
  */
 import { NEU } from './calc/regeln.js';
+import { vergleicheBeste, bonusGesamt } from './calc/szenario.js';
 import { spanne, FAMILIEN, PARTNER_MIT_BEZUG, KINDER_MIT_ELTERNGELD, GEBURTEN, JAHRGANG, DAUER } from './calc/bevoelkerung.js';
 import { STANDARD, PARTNERMONATE, ausHash, alsHash, nettoVon, grundlage, fuerPartnermonate as planVergleich, planhinweis } from './ui/zustand.js';
 import { monatsdiagramm, heatmap, heatmapLegende, differenzbalken, euro, euroDiff } from './ui/diagramme.js';
 import { balkenmodell } from './ui/balken.js';
 import { RASTER } from './ui/diagramme.js';
-import { eigenesFeld, feldText, naechstesFeld, ergebnisKarte, planZeile } from './ui/karte.js';
+import { eigenesFeld, feldText, naechstesFeld, ergebnisKarte, planZeile, feldWert, ergebnisBeste, plaeneText } from './ui/karte.js';
 import { ADRESSATEN, brief, mailto } from './ui/brief.js';
 import { TEILADRESSE, teiltext, kurztext, netzwerke, zeichne, alsBlob } from './ui/teilen.js';
 import { symbol, symboleEinsetzen } from './ui/symbole.js';
@@ -36,8 +45,18 @@ const SEITE = location.origin + location.pathname;
 const RUHIG = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 let andereOffen = false;
+/** Häkchen „Bonus / Weihnachtsgeld": zeigt die Bonusfelder (offen bleiben sie auch bei eingetragenem Bonus, z. B. aus der Adresse). */
+let bonusOffen = false;
 const zustand = { ...STANDARD };
 let kartenplan = '12-2';
+/**
+ * Aufteilung in Schritt 2 beim Ankommen: 'beste' (jeder Rechtsstand mit seiner günstigsten
+ * Aufteilung) oder 'gleich' (gewählte Monate nach beiden Rechtsständen). Eine Zeile zum Umstellen.
+ */
+const AUFTEILUNG_STANDARD = 'beste';
+let aufteilung = AUFTEILUNG_STANDARD;
+/** Karte im Hintergrund: 'gleich' (fester Plan, bisher) oder 'beste'. */
+let kartenmodus = 'gleich';
 /**
  * Eigene Zahlen: true nach der ersten Eingabe oder wenn der Zustand aus der Adresse kam. Bis dahin
  * zeigt Schritt 2 die Vorgabewerte und sagt das in der Überschrift („Beispiel: …").
@@ -83,11 +102,11 @@ function formularFuellen() {
     $(`eink${w}`).value = z[`eink${w}`];
     $(`stkl${w}`).value = z[`stkl${w}`];
   }
-  const andere = andereOffen || ![0, 2, 4].includes(z.monB);
-  document.querySelectorAll('[data-monb]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.monb === 'andere' ? andere : !andere && Number(b.dataset.monb) === z.monB)));
-  $('monB-regler').classList.toggle('unsichtbar', !andere); // bleibt im Layout, damit nichts springt
-  $('monB').value = PARTNERMONATE.indexOf(z.monB);
-  $('monB-out').textContent = z.monB === 0 ? 'keine' : `${z.monB} Monate`;
+  // Bonusfelder: leer = 0 (Platzhalter „0 €"); Zustand ohne Eingabe wird nicht in ein Feld geschrieben, in dem getippt wird
+  for (const w of ['A', 'B']) setze(`bonus${w}-zahl`, z[`bonus${w}`] || '');
+  bonusOffen ||= z.bonusA > 0 || z.bonusB > 0;
+  $('bonus-an').checked = bonusOffen;
+  $('netto-paar').classList.toggle('bonus-offen', bonusOffen);
   $('lesart').checked = !!z.lesart;
   $('d-monA').value = z.monA;
   $('feld-monA').hidden = !!z.allein;
@@ -98,11 +117,38 @@ function formularFuellen() {
   $('mehrlinge').value = z.mehr;
   $('kirche').value = z.kirche;
   // Alleinerziehend: kein Netto und keine Monate für Partner:in
-  $('gruppeB').hidden = $('s-partner').hidden = $('feld-einkB').hidden = $('partnerwahl').hidden = !!z.allein;
+  $('gruppeB').hidden = $('s-partner').hidden = $('feld-einkB').hidden = $('partnerwahl').hidden = $('beste-wahl').hidden = !!z.allein;
   $('schnell').classList.toggle('allein', !!z.allein);
   document.querySelectorAll('[data-modus]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.modus === z.modus)));
   document.querySelectorAll('[data-nur="brutto"]').forEach((e) => (e.hidden = z.modus !== 'brutto'));
   document.querySelectorAll('[data-einkwort]').forEach((e) => (e.textContent = z.modus));
+}
+
+/**
+ * Monatswahl Partner:in: gedrückt ist p (bei der besten Aufteilung deren Partnermonate im Entwurf);
+ * liegt p nicht bei 0, 2 oder 4, zeigt „andere" die Zahl im Regler. Das Segment „Beste Aufteilung · p Monate"
+ * (oben in derselben Umschaltleiste) ist allein gedrückt, solange es gilt; 0/2/4/andere sind dann nicht gedrückt.
+ */
+function monatswahlZeigen(p, beste, besteP) {
+  // „Beste Aufteilung" ist ein Schalter über der Zahlenreihe; ist er an, ist darunter zusätzlich die beste
+  // Monatszahl gedrückt. Liegt sie nicht bei 0, 2 oder 4, bekommt sie einen eigenen Knopf an ihrer Stelle.
+  const extra = $('monb-extra');
+  const extraWert = besteP != null && ![0, 2, 4].includes(besteP) ? besteP : null;
+  extra.hidden = extraWert == null;
+  if (extraWert != null) {
+    extra.textContent = String(extraWert);
+    extra.dataset.wert = String(extraWert);
+    const nach = [...document.querySelectorAll('[data-monb]')].find((b) => b !== extra && (b.dataset.monb === 'andere' || Number(b.dataset.monb) > extraWert));
+    if (extra.nextElementSibling !== nach) nach.before(extra);
+  }
+  $('partnerwahl').querySelector('.umschalter').classList.toggle('fuenf', extraWert != null);
+  const wert = (b) => (b === extra ? extraWert : Number(b.dataset.monb));
+  const andere = !beste && (andereOffen || ![0, 2, 4, extraWert].includes(p));
+  document.querySelectorAll('[data-monb]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.monb === 'andere' ? andere : !andere && wert(b) === p)));
+  $('monB-regler').classList.toggle('unsichtbar', !andere); // bleibt im Layout, damit nichts springt
+  $('monB').value = PARTNERMONATE.indexOf(p);
+  $('monB-out').textContent = p === 0 ? 'keine' : `${p} Monate`;
+  $('beste-wahl').setAttribute('aria-pressed', String(beste));
 }
 
 function formularVerdrahten() {
@@ -122,14 +168,41 @@ function formularVerdrahten() {
     $(`eink${w}`).addEventListener('input', (e) => setze(`eink${w}`, Number(e.target.value)));
     $(`stkl${w}`).addEventListener('change', (e) => setze(`stkl${w}`, Number(e.target.value)));
   }
+  // Bonus netto im Jahr: das Häkchen klappt die Felder auf; beim Abhaken entfällt der Bonus ganz
+  for (const w of ['A', 'B']) $(`bonus${w}-zahl`).addEventListener('input', (e) => setze(`bonus${w}`, Math.round(Math.max(0, Math.min(100000, Number(e.target.value) || 0)))));
+  $('bonus-an').addEventListener('change', (e) => {
+    bonusOffen = e.target.checked;
+    if (bonusOffen) {
+      formularFuellen();
+    } else {
+      zustand.bonusA = zustand.bonusB = 0;
+      formularFuellen();
+      rechne();
+    }
+  });
   // Bedingungen in Schritt 2
+  // Eine eigene Monatswahl verlässt die beste Aufteilung
   const partner = (p, offen = false) => {
     andereOffen = offen;
+    aufteilung = 'gleich';
     setze('monB', p);
   };
-  document.querySelectorAll('[data-monb]').forEach((b) => b.addEventListener('click', () => (b.dataset.monb === 'andere' ? partner(zustand.monB, true) : partner(Number(b.dataset.monb)))));
+  $('beste-wahl').addEventListener('click', () => {
+    // Abwählen behält die Monatszahl und rechnet sie als gleiche Aufteilung
+    if (aufteilung === 'beste') {
+      aufteilung = 'gleich';
+      if (aktuell?.gezeigt?.neu?.plan) zustand.monB = aktuell.gezeigt.neu.plan.monateB;
+    } else aufteilung = 'beste';
+    andereOffen = false;
+    formularFuellen();
+    rechne();
+  });
+  document.querySelectorAll('[data-monb]').forEach((b) => b.addEventListener('click', () => (b.dataset.monb === 'andere' ? partner(zustand.monB, true) : partner(Number(b.dataset.monb === 'extra' ? b.dataset.wert : b.dataset.monb)))));
   $('monB').addEventListener('input', (e) => partner(PARTNERMONATE[Number(e.target.value)], true));
-  $('d-monA').addEventListener('change', (e) => setze('monA', Number(e.target.value)));
+  $('d-monA').addEventListener('change', (e) => {
+    aufteilung = 'gleich';
+    setze('monA', Number(e.target.value));
+  });
   for (const [id, k] of [['mutterschutz', 'ms'], ['allein', 'allein'], ['s-allein', 'allein'], ['geschwister', 'geschw'], ['lesart', 'lesart']]) {
     $(id).addEventListener('change', (e) => setze(k, e.target.checked ? 1 : 0));
   }
@@ -142,6 +215,13 @@ function formularVerdrahten() {
       zustand.einkA = b.dataset.modus === 'brutto' ? 2800 : 1800;
       zustand.einkB = b.dataset.modus === 'brutto' ? 4500 : 2800;
       setze('modus', b.dataset.modus);
+    }),
+  );
+  document.querySelectorAll('[data-kartenmodus]').forEach((b) =>
+    b.addEventListener('click', () => {
+      kartenmodus = b.dataset.kartenmodus;
+      document.querySelectorAll('[data-kartenmodus]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      karte();
     }),
   );
   document.querySelectorAll('[data-plan]').forEach((b) =>
@@ -201,13 +281,19 @@ const kurz = (r, allein) => (allein ? `${r.plan.monateA} Monate` : `Mutter ${r.p
  */
 const VAETER_UEBER_2 = 1 - DAUER[0].vaeter / DAUER.reduce((s, d) => s + d.vaeter, 0);
 
-/** Eine Zeile zur Einordnung unter den Eingaben: [Satz, Quellenhinweis] oder null. */
-function einordnung(v, allein) {
-  if (allein) return [`Alleinerziehend: ${v.neu.plan.monateA} Monate, im Entwurf davon ${NEU.achtzigMonateAlleinerziehend} mit 80 %.`, 'laut Begründung des Entwurfs'];
-  const p = v.alt.plan.monateB;
-  if (p > 2) return [`Mehr als 2 Monate nehmen heute nur ${Math.round(VAETER_UEBER_2 * 100)} % der Väter mit Elterngeld.`, 'Destatis, Jahrgang 2023'];
-  if (p > 0) return ['Heute nimmt nur knapp die Hälfte der Väter überhaupt Elterngeld.', 'Destatis, Jahrgang 2023'];
-  return null;
+/**
+ * Einordnung unter der Monatswahl: {zeilen, quelle, warnung} oder null. Bei Paaren je eine Warnzeile
+ * (mit Warndreieck) ab 1 und ab 3 Partnermonaten; p sind die gezeigten Partnermonate (bei der besten
+ * Aufteilung die im Entwurf).
+ */
+function einordnung(p, v, allein, beste) {
+  if (allein) return { zeilen: [`Alleinerziehend: ${v.neu.plan.monateA} Monate, im Entwurf davon ${NEU.achtzigMonateAlleinerziehend} mit 80 %.`], quelle: 'laut Begründung des Entwurfs', warnung: false };
+  const zeilen = [];
+  // Beste Aufteilung: beide Fassungen sind jede für sich günstigst aufgeteilt, das soll man sehen
+  if (beste) zeilen.push(`Beide je günstigst aufgeteilt: heute ${v.alt.plan.monateA} + ${v.alt.plan.monateB}, geplant ${v.neu.plan.monateA} + ${v.neu.plan.monateB} Monate.`);
+  if (p > 0) zeilen.push('Nur knapp die Hälfte der Väter nimmt heute überhaupt Elterngeld.');
+  if (p > 2) zeilen.push(`Davon nehmen nur ${Math.round(VAETER_UEBER_2 * 100)} % mehr als 2 Monate.`);
+  return zeilen.length ? { zeilen, quelle: 'Destatis, Jahrgang 2023', warnung: true } : null;
 }
 
 const anteil = (x) => `${(x * 100).toFixed(2)}%`;
@@ -259,7 +345,7 @@ function zeigeBalken(m) {
   balken('saeule-heute', m.heute);
   balken('saeule-geplant', m.geplant);
   const stueck = $('stueck');
-  stueck.className = `stueck ${m.stueck.art ?? 'keins'}`;
+  stueck.className = `stueck ${m.stueck.art ?? 'keins'}${m.neutral ? ' neutral' : ''}`;
   stueck.style.setProperty('--von', anteil(m.stueck.von));
   stueck.style.setProperty('--l', anteil(m.stueck.bis - m.stueck.von));
   $('saeulen').dataset.vorzeichen = m.vorzeichen;
@@ -268,30 +354,48 @@ function zeigeBalken(m) {
   zaehle($('summe-heute'), m.heute.summe, euro);
   zaehle($('summe-geplant'), m.geplant.summe, euro);
   $('verfallen').textContent = m.verfallenText;
-  $('saeulen-text').textContent = m.beschreibung;
+  $('bilanz').textContent = m.bilanz;
+  $('saeulen').classList.toggle('mit-bilanz', !!m.bilanz);
+  $('saeulen-text').textContent = `${m.beschreibung}${m.bilanz ? ` ${m.bilanz}` : ''}`;
 }
 
 function rechne() {
   const e = grundlage(zustand);
   const allein = e.alleinerziehend;
-  const gezeigt = fuerPartnermonate(e, zustand.monB);
-  aktuell = { eingabe: { ...e, ...gezeigt.alt.plan }, gezeigt };
+  const beste = aufteilung === 'beste' && !allein;
+  const gezeigt = beste ? vergleicheBeste(e) : fuerPartnermonate(e, zustand.monB);
+  // Die Karte rechnet ohne Bonus (und markiert das Feld nach dem Monatsnetto): dafür dasselbe noch einmal ohne
+  const mitBonus = bonusGesamt(e) > 0;
+  const ohneBonus = mitBonus ? { ...e, bonusA: 0, bonusB: 0 } : e;
+  const gezeigtKarte = !mitBonus ? gezeigt : beste ? vergleicheBeste(ohneBonus) : fuerPartnermonate(ohneBonus, zustand.monB);
+  aktuell = { eingabe: { ...e, ...gezeigt.alt.plan }, gezeigt, karte: { e: ohneBonus, gezeigt: gezeigtKarte, mitBonus } };
+  const p = beste ? gezeigt.neu.plan.monateB : zustand.monB;
+  // Das Segment „Beste Aufteilung" nennt immer die beste Zahl, auch wenn gerade 0/2/4/andere gewählt ist
+  const besteP = allein ? null : (beste ? gezeigt : vergleicheBeste(e)).neu.plan.monateB;
+  monatswahlZeigen(p, beste, besteP);
 
   // Hinweis unter „Genauer rechnen", wenn nach geltendem Recht anders aufgeteilt wird als gewählt
-  const hinweis = planhinweis(zustand, e, gezeigt.alt.plan);
+  const hinweis = beste ? '' : planhinweis(zustand, e, gezeigt.alt.plan);
   $('planhinweis').textContent = hinweis;
   $('planhinweis').hidden = !hinweis;
 
   zeigeBalken(balkenmodell(gezeigt, { alleinerziehend: allein }));
-  const zeile = einordnung(gezeigt, allein);
-  if (zeile) {
-    const quelle = document.createElement('a');
-    quelle.href = '#methodik';
-    quelle.textContent = zeile[1];
-    $('einordnung').replaceChildren(`${zeile[0]} `, quelle);
-  } else {
-    $('einordnung').replaceChildren();
-  }
+  // Einordnung: je Zeile ein Satz, bei Paaren mit Warndreieck; die Quelle hängt an der letzten Zeile
+  const ein = einordnung(p, gezeigt, allein, beste);
+  $('einordnung').replaceChildren(
+    ...(ein?.zeilen ?? []).map((t, i, alle) => {
+      const z = Object.assign(document.createElement('span'), { className: 'warnzeile' });
+      if (ein.warnung) {
+        const dreieck = Object.assign(document.createElement('span'), { className: 'dreieck' });
+        dreieck.append(symbol('warnung', 16));
+        z.append(dreieck);
+      }
+      const letzte = i === alle.length - 1;
+      z.append(letzte ? `${t} ` : t);
+      if (letzte) z.append(Object.assign(document.createElement('a'), { href: '#methodik', textContent: ein.quelle }));
+      return z;
+    }),
+  );
 
   verlauf(false);
   karte();
@@ -333,9 +437,12 @@ function feldZeigen() {
     const feld = kartenraster.felder[f.i][f.j];
     const zahl = teil(`feld-zahl ${feld.differenz < 0 ? 'minus' : feld.differenz > 0 ? 'plus' : ''}`, euroDiff(feld.differenz));
     const sichtbar = [kopf, teil('feld-eingabe', `Mutter ${euro(feld.nettoA)} netto · Partner:in ${euro(feld.nettoB)} netto`), zahl];
+    // beste Aufteilung: dazu die beiden Aufteilungen des Felds
+    const plaene = feld.alt ? `Beste Aufteilung ${plaeneText(feld.alt, feld.neu)}` : '';
+    if (plaene) sichtbar.push(teil('feld-eingabe', plaene));
     sichtbar.forEach((el) => el.setAttribute('aria-hidden', 'true'));
     // Vorleseprogramme bekommen denselben Inhalt als einen Satz
-    $('feld-text').replaceChildren(...sichtbar, teil('nur-vorlesen', `Gewähltes Feld: ${feldText(feld)}`));
+    $('feld-text').replaceChildren(...sichtbar, teil('nur-vorlesen', `Gewähltes Feld: ${feldText(feld)}${plaene ? `, unterm Strich. ${plaene}` : ''}`));
   } else {
     $('feld-text').replaceChildren(kopf, teil('feld-eingabe', 'Feld überfahren, antippen oder mit den Pfeiltasten wählen.'));
   }
@@ -387,35 +494,50 @@ function karteVerdrahten() {
 
 function karte() {
   const [a, b] = kartenplan.split('-').map(Number);
-  const e = aktuell ? grundlage(zustand) : null;
+  const e = aktuell ? aktuell.karte.e : null; // ohne Bonus
   const paar = !!aktuell && !aktuell.eingabe.alleinerziehend;
   eigen = paar ? eigenesFeld(aktuell.eingabe.nettoA, aktuell.eingabe.nettoB) : null;
   // Dieselben Optionen wie der Rechner, damit Feld, Kreis und „Euer Ergebnis" zusammenpassen
   const optionen = { mutterschutzVerbraucht80: !!zustand.lesart, geschwisterbonus: !!zustand.geschw, mehrlinge: zustand.mehr, mutterschutz: zustand.ms ? (zustand.mehr > 0 ? 3 : 2) : 0 };
+  const beste = kartenmodus === 'beste';
   const bereich = heatmap($('heatmap'), {
     monateA: a,
     monateB: b,
     markierung: paar ? { nettoA: aktuell.eingabe.nettoA, nettoB: aktuell.eingabe.nettoB } : undefined,
     wahl: schwebt ?? gewaehlt,
     optionen,
+    ...(beste ? { wert: feldWert(optionen), titel: 'Änderung unterm Strich (Elterngeld und Lohn) nach Netto beider Eltern, jeweils beste Aufteilung' } : {}),
   });
   kartenraster = bereich;
   heatmapLegende($('heatmap-legende'), bereich);
-  $('karte-unter').textContent = `Mutter ${a} Monate${optionen.mutterschutz ? `, davon ${optionen.mutterschutz} Mutterschutz, wenn sie Einkommen hat` : ''}; Partner:in ${b} Monate. Summe über die ganze Bezugszeit.`;
+  document.querySelectorAll('[data-plan]').forEach((x) => (x.disabled = beste));
+  $('karte-titel').textContent = beste ? 'Änderung unterm Strich je Familie (Elterngeld und Lohn)' : 'Änderung der Elterngeld-Summe je Familie';
+  $('karte-unter').textContent = beste
+    ? `Je Feld und Rechtsstand die Aufteilung von 14 Monaten mit dem kleinsten Verdienstausfall${optionen.mutterschutz ? `; ${optionen.mutterschutz} Monate Mutterschutz, wenn die Mutter Einkommen hat` : ''}.`
+    : `Mutter ${a} Monate${optionen.mutterschutz ? `, davon ${optionen.mutterschutz} Mutterschutz, wenn sie Einkommen hat` : ''}; Partner:in ${b} Monate. Summe über die ganze Bezugszeit.`;
 
   // Euer Ergebnis (Beispiel, solange nur die Vorgabewerte stehen): genaue Zahlen des Rechners
   $('euer-titel').textContent = eigeneZahlen ? 'Euer Ergebnis' : 'Beispiel';
   $('euer-paar').hidden = !paar;
   $('euer-allein').hidden = paar || !aktuell;
-  if (paar) {
-    const r = ergebnisKarte(e, aktuell.gezeigt, a, b);
-    $('euer-eingabe').textContent = `Mutter ${euro(e.nettoA)} netto · Partner:in ${euro(e.nettoB)} netto`;
+  if (paar && beste) {
+    const r = ergebnisBeste(e, aktuell.karte.gezeigt);
+    $('euer-eingabe').textContent = `Mutter ${euro(e.nettoA)} netto · Partner:in ${euro(e.nettoB)} netto${aktuell.karte.mitBonus ? ', ohne Bonus' : ''}`;
+    const z = $('euer-zahl');
+    z.textContent = deltaFormat(r.unterm);
+    z.className = `euer-zahl ${r.unterm < 0 ? 'minus' : r.unterm > 0 ? 'plus' : ''}`;
+    $('euer-statt').textContent = `unterm Strich: Elterngeld ${deltaFormat(r.differenz)}, Lohn ${deltaFormat(r.lohn)}`;
+    const rand = Math.max(e.nettoA, e.nettoB) > RASTER.max ? ` Die Karte endet bei ${euro(RASTER.max)}, der Kreis sitzt am Rand.` : '';
+    $('euer-plan').textContent = `Beste Aufteilung (Mutter + Partner:in): ${r.plaene} Monate.${rand}`;
+  } else if (paar) {
+    const r = ergebnisKarte(e, aktuell.karte.gezeigt, a, b);
+    $('euer-eingabe').textContent = `Mutter ${euro(e.nettoA)} netto · Partner:in ${euro(e.nettoB)} netto${aktuell.karte.mitBonus ? ', ohne Bonus' : ''}`;
     const z = $('euer-zahl');
     z.textContent = deltaFormat(r.differenz);
     z.className = `euer-zahl ${r.differenz < 0 ? 'minus' : r.differenz > 0 ? 'plus' : ''}`;
     $('euer-statt').textContent = `${euro(r.neu)} statt ${euro(r.alt)}`;
     const rand = Math.max(e.nettoA, e.nettoB) > RASTER.max ? ` Die Karte endet bei ${euro(RASTER.max)}, der Kreis sitzt am Rand.` : '';
-    $('euer-plan').textContent = planZeile(a, b, aktuell.gezeigt) + rand;
+    $('euer-plan').textContent = planZeile(a, b, aktuell.karte.gezeigt) + rand;
   }
   feldZeigen();
 }
@@ -437,10 +559,10 @@ function statistik() {
   const schnitt = `${hundert(jeFamilie(m))} €`;
   // Kennzahlen: je Fläche eine Zahl und ein kurzer Satz; die Spanne steht in Klammern
   const kz = [
-    [`rund ${anteil} %`, 'minus', `der Familien bekämen weniger (je nach Annahme ${pz(s.von(verl))} bis ${pz(s.bis(verl))} %)`],
-    [`−${schnitt}`, 'minus', `je Familie im Schnitt, über die ganze Bezugszeit (${hundert(s.von(jeFamilie))} bis ${hundert(s.bis(jeFamilie))} €)`],
-    [`rund ${Math.round(m.anteilGewinner * 10) * 10} %`, '', `bekämen mehr (${pz(s.von(gew))} bis ${pz(s.bis(gew))} %), vor allem wenn die Mutter vorher wenig oder nichts verdiente`],
-    [`−${mrd(s.bis(diff))} bis −${mrd(s.von(diff))}`, 'minus', `Mrd. € weniger für einen Geburtsjahrgang, ${Math.round(s.von(proz))} bis ${Math.round(s.bis(proz))} % der heutigen Summe`],
+    [`rund ${anteil} %`, 'minus', `der Familien hätten unterm Strich weniger (je nach Annahme ${pz(s.von(verl))} bis ${pz(s.bis(verl))} %)`],
+    [`−${schnitt}`, 'minus', `je Familie im Schnitt unterm Strich (Elterngeld und Lohn, ganze Bezugszeit; ${hundert(s.von(jeFamilie))} bis ${hundert(s.bis(jeFamilie))} €)`],
+    [`rund ${Math.round(m.anteilGewinner * 10) * 10} %`, '', `hätten mehr (${pz(s.von(gew))} bis ${pz(s.bis(gew))} %), vor allem wenn die Mutter vorher wenig oder nichts verdiente`],
+    [`−${mrd(s.bis(diff))} bis −${mrd(s.von(diff))}`, 'minus', `Mrd. € weniger Elterngeld für einen Geburtsjahrgang, ${Math.round(s.von(proz))} bis ${Math.round(s.bis(proz))} % der heutigen Summe`],
   ];
   $('stat-kennzahlen').replaceChildren(
     ...kz.map(([zahl, klasse, text]) => {
@@ -465,16 +587,16 @@ function statistik() {
   $('kern-anteil').textContent = anteil;
   $('quellen-spanne-anteil').textContent = `${pz(s.von(verl))} bis ${pz(s.bis(verl))}`;
   const zeilen = (gruppen) => gruppen.map((g) => ({ label: g.klasse, wert: g.differenz }));
-  differenzbalken($('stat-aufteilung'), zeilen(m.nachAufteilung), 'Änderung je Familie nach Monaten des Partners');
-  differenzbalken($('stat-einkommen'), zeilen(m.nachEinkommen), 'Änderung je Familie nach Netto der Mutter');
+  differenzbalken($('stat-aufteilung'), zeilen(m.nachAufteilung), 'Änderung je Familie unterm Strich nach Monaten des Partners');
+  differenzbalken($('stat-einkommen'), zeilen(m.nachEinkommen), 'Änderung je Familie unterm Strich nach Netto der Mutter');
   // Annahmen des Überschlags als kurze Liste: fettes Stichwort, dann ein bis zwei Sätze
   const anmerkungen = [
     ['Grundlage', `${n.format(FAMILIEN)} Familien, in denen die Mutter Elterngeld bezogen hat, und ${n.format(PARTNER_MIT_BEZUG)} Väter mit Elterngeld, für ${n.format(KINDER_MIT_ELTERNGELD)} der ${n.format(GEBURTEN)} im Jahr ${JAHRGANG} geborenen Kinder (Statistisches Bundesamt).`],
-    ['Paare', 'Die Statistik zählt Mütter und Väter getrennt. Angenommen ist, dass jeder dieser Väter zu einer dieser Familien gehört und Einkommen und Bezugsdauer beider Eltern nicht zusammenhängen. „Nur ein Elternteil“ umfasst Alleinerziehende und Paare, in denen der Partner kein Elterngeld bezieht.'],
+    ['Paare', 'Die Aufteilung der Monate echter Paare stammt aus Tabelle 4 der WISTA 1/2022. Das Einkommen beider Eltern gilt als unabhängig voneinander. „Nur ein Elternteil“ umfasst Alleinerziehende und Paare, in denen der Partner kein Elterngeld bezieht.'],
     ['Spanne', 'Einkommen und Bezugsdauer nennt die Statistik nur in Klassen. Die Spanne ergibt sich daraus, wie man die höchsten Einkommen (über 2.770 € netto), ElterngeldPlus und den Anteil der Alleinerziehenden ansetzt; Balken und Mittelwerte zeigen eine mittlere Variante.'],
     ['Auslegung', `Die Mutterschutzmonate verbrauchen zwei der vier 80-%-Monate. Nach der anderen Auslegung wären es etwa ${mrd(andere.bis(diff))} bis ${mrd(andere.von(diff))} Mrd. € weniger.`],
     ['Abgleich', `Nach heutigem Recht ergibt der Überschlag ${mrd(m.alt)} Mrd. € für den Jahrgang; der Bund hat 2024 tatsächlich 7,2 Mrd. € für Elterngeld ausgegeben. Der Entwurf nennt für 2030 eine Entlastung von 1,36 Mrd. €; darin sind 140 Mio. € Mehrausgaben für die neue Einkommensermittlung und 25 Mio. € Einsparung beim Partnerschaftsbonus verrechnet, auf die hier gerechneten Regeln entfallen also rund 1,5 Mrd. €. Welche Geburtenzahl und welches Verhalten die Regierung unterstellt, sagt der Entwurf nicht.`],
-    ['Verhalten', 'Nähme der Partner wegen der Reform mehr Monate, fiele das Minus beim Elterngeld kleiner aus; dafür fehlte in diesen Monaten das meist höhere Gehalt.'],
+    ['Verhalten', 'Paare, deren Aufteilung der Entwurf nicht mehr zulässt, dürfen umplanen: Partner:in übernimmt die überzähligen Monate, die Gesamtzahl bleibt. Gerechnet ist das nur, wenn ihnen unterm Strich mehr bleibt. Weil dann meist der höhere Lohn fehlt, lohnt es sich fast nur, wenn Partner:in vorher kein Einkommen hatte (rund 14.000 Paare). Lohn = Netto vor der Geburt, ohne Steuereffekte.'],
     ['Nicht enthalten', 'Geschwisterbonus, Mehrlinge, Teilzeit im Bezug, Partnerschaftsbonus, Sonderzahlungen.'],
   ];
   $('stat-text').replaceChildren(

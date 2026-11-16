@@ -113,3 +113,30 @@ test('Nachbarfälle: Partner 10 und 11 (bezahlter Rest bei der Mutter), Partner 
   assert.equal(m0.nurMutterschutz, false);
   assert.ok(m0.anteil > 0);
 });
+
+// Beste Aufteilung: Balken zeigen Elterngeld, die Zahl und die Farbe „unterm Strich"
+import { vergleicheBeste, vergleiche } from '../site/js/calc/szenario.js';
+import { bilanzSatz } from '../site/js/ui/balken.js';
+test('beste Aufteilung 1.800/2.800: −1.420 € unterm Strich, Balken 15.300 / 15.880 €, Stück neutral', () => {
+  const v = vergleicheBeste({ nettoA: 1800, nettoB: 2800, mutterschutzMonate: 2, mutterschutzVerbraucht80: true });
+  const m = balkenmodell(v);
+  assert.deepEqual([m.heute.summe, m.geplant.summe, m.delta], [15300, 15880, -1420]);
+  assert.equal(m.deltaText, '−1.420 €');
+  assert.equal(m.prozentText, 'unterm Strich');
+  assert.equal(m.vorzeichen, 'minus');
+  assert.equal(m.stueck.art, 'mehr'); // mehr Elterngeld, aber unterm Strich weniger
+  assert.equal(m.neutral, true);
+  assert.equal(m.bilanz, '580 € mehr Elterngeld, aber 2.000 € weniger Lohn.');
+  assert.equal(m.geplant.segmente[1].text, 'Partner:in · 4 Monate');
+  assert.match(m.beschreibung, /heute 12 \+ 2, geplant 10 \+ 4 Monate/);
+});
+test('Bilanzsatz: gleicher Lohn, beide weniger', () => {
+  const v = vergleicheBeste({ nettoA: 3000, nettoB: 3000, mutterschutzMonate: 2, mutterschutzVerbraucht80: true });
+  assert.equal(bilanzSatz(v), '1.200 € weniger Elterngeld, gleich viel Lohn.');
+  assert.equal(bilanzSatz({ alt: { summe: 100 }, neu: { summe: 50 }, differenzLohn: -10 }), '50 € weniger Elterngeld und 10 € weniger Lohn.');
+});
+test('gleiche Aufteilung: kein Bilanzsatz, Stück farbig', () => {
+  const m = balkenmodell(vergleiche({ nettoA: 1800, nettoB: 2800, monateA: 12, monateB: 2, mutterschutzMonate: 2 }));
+  assert.equal(m.bilanz, '');
+  assert.equal(m.neutral, false);
+});

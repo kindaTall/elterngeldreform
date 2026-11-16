@@ -27,6 +27,18 @@ export function ganzeDifferenz(v) {
   return { alt, neu, differenz, prozent: alt > 0 ? Math.round((differenz / alt) * 1000) / 10 || 0 : 0 };
 }
 
+/**
+ * Wie ganzeDifferenz(), dazu für den Vergleich der besten Aufteilungen (vergleicheBeste() in
+ * calc/szenario.js) die Lohndifferenz und „unterm Strich" in ganzen Euro: unterm = differenz + lohn,
+ * damit „580 € mehr Elterngeld, 2.000 € weniger Lohn" und „−1.420 €" immer zusammenpassen. Ohne
+ * Lohndifferenz (gleiche Aufteilung) ist unterm die Elterngelddifferenz.
+ */
+export function ganzeBilanz(v) {
+  const g = ganzeDifferenz(v);
+  const lohn = ganz(v.differenzLohn ?? 0);
+  return { ...g, lohn, unterm: g.differenz + lohn };
+}
+
 function el(name, attrs = {}, text) {
   const e = document.createElementNS(NS, name);
   for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
@@ -116,28 +128,33 @@ export const RASTER = Object.freeze({ schritt: 250, max: 5000, n: 5000 / 250 + 1
  * Karte der Differenz über Netto A (x) und Netto B (y) für einen festen Plan. Je Feld gerechnet an
  * genau seinem Punkt (Netto i·250 / j·250). optionen.mutterschutz: Monate Mutterschutz der Mutter
  * mit Einkommen (Standard 2), der Rest geht an vergleiche().
- * Rückgabe: Spanne der Differenzen für die Legende, `felder[i][j]` ({nettoA, nettoB, differenz}, die
+ * `wert(nettoA, nettoB)` ersetzt die Rechnung je Feld (z. B. „beste Aufteilung", feldWert() in
+ * ui/karte.js) und gibt mindestens {differenz} in ganzen Euro zurück; weitere Angaben landen im Feld.
+ * Rückgabe: Spanne der Differenzen für die Legende, `felder[i][j]` ({nettoA, nettoB, differenz, …}, die
  * Differenz in ganzen Euro wie im Rechner), `feldBei(x, y)` (Bildschirmpunkt → {i, j} oder null) und
  * `markiere(feld | null)` für den Rahmen des gewählten Felds.
- * @param {{monateA:number, monateB:number, markierung?:{nettoA:number,nettoB:number}, wahl?:{i:number,j:number}, optionen?:object}} p
+ * @param {{monateA:number, monateB:number, markierung?:{nettoA:number,nettoB:number}, wahl?:{i:number,j:number}, optionen?:object, wert?:Function, titel?:string}} p
  */
-export function heatmap(ziel, { monateA, monateB, markierung, wahl, optionen = {} }) {
+export function heatmap(ziel, { monateA, monateB, markierung, wahl, optionen = {}, wert, titel }) {
   const { schritt, max, n } = RASTER;
   const W = breite(ziel), L = 64, R = 2, T = 4, B = 46;
   const H = Math.round(W - L - R) + T + B;
   const zw = (W - L - R) / n, zh = (H - T - B) / n;
-  const s = svg(W, H, `Änderung der Elterngeld-Summe nach Netto beider Eltern bei ${monateA} + ${monateB} Monaten`);
+  const s = svg(W, H, titel ?? `Änderung der Elterngeld-Summe nach Netto beider Eltern bei ${monateA} + ${monateB} Monaten`);
+  const rechne =
+    wert ??
+    ((nettoA, nettoB) => ({ differenz: ganzeDifferenz(vergleiche({ ...optionen, nettoA, nettoB, monateA, monateB, mutterschutzMonate: nettoA > 0 ? (optionen.mutterschutz ?? 2) : 0 })).differenz }));
   let minD = 0, maxD = 0;
   const felder = [];
   for (let i = 0; i < n; i++) {
     felder.push([]);
     for (let j = 0; j < n; j++) {
       const nettoA = i * schritt, nettoB = j * schritt;
-      const v = vergleiche({ ...optionen, nettoA, nettoB, monateA, monateB, mutterschutzMonate: nettoA > 0 ? (optionen.mutterschutz ?? 2) : 0 });
-      minD = Math.min(minD, v.differenz);
-      maxD = Math.max(maxD, v.differenz);
-      felder[i].push({ nettoA, nettoB, differenz: ganzeDifferenz(v).differenz });
-      s.append(el('rect', { x: L + i * zw, y: T + (n - 1 - j) * zh, width: zw - 1, height: zh - 1, fill: differenzFarbe(v.differenz) }));
+      const f = { nettoA, nettoB, ...rechne(nettoA, nettoB) };
+      minD = Math.min(minD, f.differenz);
+      maxD = Math.max(maxD, f.differenz);
+      felder[i].push(f);
+      s.append(el('rect', { x: L + i * zw, y: T + (n - 1 - j) * zh, width: zw - 1, height: zh - 1, fill: differenzFarbe(f.differenz) }));
     }
   }
   // Rahmen des gewählten Felds (eckig, dünn; der Kreis der eigenen Lage bleibt rund)

@@ -6,18 +6,19 @@
  * Felder: modus ('netto' | 'brutto'), einkA/einkB (€ im Monat, je nach modus), stklA/stklB
  * (Steuerklasse, nur Brutto), kirche, monA (Monate der Mutter; 0 = so viele wie möglich), monB
  * (Partnermonate: 0 oder 2 bis 12), ms (angestellt mit Mutterschaftsgeld), allein, geschw, mehr
- * (weitere Kinder bei Mehrlingen), lesart (Mutterschutz verbraucht 80-%-Monate). Unbekannte
+ * (weitere Kinder bei Mehrlingen), lesart (Mutterschutz verbraucht 80-%-Monate), bonusA/bonusB
+ * (Bonus/Weihnachtsgeld netto, € im Jahr; 0 = keiner; zählt nur im Entwurf, siehe calc/szenario.js). Unbekannte
  * Schlüssel im Fragment werden übergangen.
  */
 import { vergleiche, vergleicheVoll } from '../calc/szenario.js';
 import { ALT, NEU } from '../calc/regeln.js';
 import { elterngeldNetto } from '../calc/netto.js';
 
-export const STANDARD = Object.freeze({ modus: 'netto', einkA: 1800, einkB: 2800, stklA: 4, stklB: 4, kirche: 0, monA: 0, monB: 2, ms: 1, allein: 0, geschw: 0, mehr: 0, lesart: 1 });
+export const STANDARD = Object.freeze({ modus: 'netto', einkA: 1800, einkB: 2800, stklA: 4, stklB: 4, kirche: 0, monA: 0, monB: 2, ms: 1, allein: 0, geschw: 0, mehr: 0, lesart: 1, bonusA: 0, bonusB: 0 });
 /** Zulässige Partnermonate: keiner oder mindestens zwei; der Regler läuft über die Positionen dieser Liste. */
 export const PARTNERMONATE = Object.freeze([0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
 /** Zulässiger Bereich je Zahl aus der URL; alles andere wird auf den Bereich gekürzt. */
-const BEREICH = { einkA: [0, 20000], einkB: [0, 20000], stklA: [1, 5], stklB: [1, 5], kirche: [0, 1], monA: [0, 12], monB: [0, 12], ms: [0, 1], allein: [0, 1], geschw: [0, 1], mehr: [0, 2], lesart: [0, 1] };
+const BEREICH = { einkA: [0, 20000], einkB: [0, 20000], stklA: [1, 5], stklB: [1, 5], kirche: [0, 1], monA: [0, 12], monB: [0, 12], ms: [0, 1], allein: [0, 1], geschw: [0, 1], mehr: [0, 2], lesart: [0, 1], bonusA: [0, 100000], bonusB: [0, 100000] };
 /** Steuerklassen, die die Auswahlfelder #stklA und #stklB in index.html anbieten (Klasse 2 gibt es nur für die Mutter). */
 export const STEUERKLASSEN = Object.freeze({ stklA: [1, 2, 3, 4, 5], stklB: [1, 3, 4, 5] });
 
@@ -66,6 +67,8 @@ export function grundlage(z) {
     geschwisterbonus: !!z.geschw,
     mehrlinge: z.mehr,
     mutterschutzVerbraucht80: !!z.lesart,
+    bonusA: z.bonusA,
+    bonusB: z.allein ? 0 : z.bonusB,
   };
 }
 

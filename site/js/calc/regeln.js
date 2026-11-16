@@ -43,6 +43,7 @@ export const ALT = Object.freeze({
   minMonateElternteil: 2, // § 4 Abs. 4 S. 2
   geschwisterbonus: { prozent: 10, mindestens: 75 }, // § 2a Abs. 1
   mehrlingszuschlag: 300, // § 2a Abs. 4
+  sonderzahlungen: false, // Sonderzahlungen wie Weihnachtsgeld zählen in der Bemessung nicht mit
 });
 
 export const NEU = Object.freeze({
@@ -68,6 +69,7 @@ export const NEU = Object.freeze({
   minMonateElternteil: 2, // § 4 Abs. 4 S. 2 BEEG-E, S. 9
   geschwisterbonus: { prozent: 5, mindestens: 75 }, // § 2a Abs. 1 BEEG-E, S. 6; Begr. S. 41
   mehrlingszuschlag: 300, // § 2a Abs. 4 unverändert
+  sonderzahlungen: true, // künftig zählen Sonderzahlungen in der Bemessung mit; der Rechner nimmt ein Zwölftel je Monat
   stichtag: '2027-11-01', // Art. 11, S. 22; § 27 Abs. 1c, S. 12; dokumentiert nur, der Rechner fragt kein Geburtsdatum ab
 });
 

@@ -4,15 +4,21 @@
  * (MINISTERIUM_ZITAT, „finanziell attraktiver" rot unterstrichen, nur bei weniger Geld), darunter die
  * Quelle; unten ein Farbblock (rot bei weniger, grün bei mehr, dunkel bei gleich) mit der Differenz je
  * Familie, den beiden Summen und der Bedingung. Die Texte stehen als reine Funktion in bildTexte(),
- * gezeichnet wird in zeichne(). Auf dem Bild steht immer die feste Adresse ADRESSE.
+ * gezeichnet wird in zeichne(). Auf dem Bild steht immer die feste Adresse ADRESSE. Rechnet der Rechner
+ * mit Bonus, steht in der kleinen Zeile unten „mit Bonus".
  * Geteilt wird immer die schlichte Adresse TEILADRESSE, nie der Zustand des Rechners: Text und Bild
  * nennen das Ergebnis der Familie (Differenz, Summen, Bedingung), aber kein Einkommen; wer den Link
  * öffnet, sieht den Rechner mit den Vorgabewerten.
  * Es enthält nur Rechenwerte und das Zitat; Netzwerk-Links öffnen die Seite des Netzwerks erst nach Klick,
  * vorher wird nichts an Dritte übertragen. Summen und Differenz in ganzen Euro, die Differenz aus den
  * gerundeten Summen (ganzeDifferenz). Tests: test/teilen.test.js
+ *
+ * Beste Aufteilung (gezeigt aus vergleicheBeste(), gezeigt.beste): wie in Schritt 2 steht dann
+ * „unterm Strich" (Elterngeld und Lohn) als große Zahl, daneben Elterngeld- und Lohndifferenz und
+ * statt der Bedingung, wer bei der günstigsten Aufteilung wie lange zu Hause bliebe.
  */
-import { euro, euroDiff, ganzeDifferenz } from './diagramme.js';
+import { bonusGesamt } from '../calc/szenario.js';
+import { euro, euroDiff, ganzeDifferenz, ganzeBilanz } from './diagramme.js';
 
 const FARBEN = { grund: '#ffffff', tinte: '#101216', grau: '#525964', grau2: '#6b7380', verlust: '#d0321d', gewinn: '#12805a' };
 const ADRESSE = 'elterngeld2027.de';
@@ -42,6 +48,23 @@ function bedingung({ eingabe, gezeigt }, bild = false) {
   return bild ? satz.replace(/^./, (z) => z.toUpperCase()) : satz;
 }
 
+const pm = (x) => (x === 0 ? '±0 €' : euroDiff(x));
+
+/** Bei der besten Aufteilung, wer wie lange statt heute zu Hause bliebe: „der Partner bliebe 4 statt 2 Monate zu Hause". */
+function umplanung(v) {
+  const h = v.alt.plan, g = v.neu.plan;
+  if (g.monateB !== h.monateB && (g.monateB > h.monateB || g.monateA === h.monateA)) return `der Partner bliebe ${g.monateB} statt ${h.monateB} Monate zu Hause`;
+  if (g.monateA !== h.monateA) return `die Mutter bliebe ${g.monateA} statt ${h.monateA} Monate zu Hause`;
+  return 'die Aufteilung bliebe wie heute';
+}
+
+/** Teilen-Text bei der besten Aufteilung; mitTeilen=false lässt die Klammer mit Elterngeld und Lohn weg. */
+function besteSatz(v, wer, mitTeilen = true, mitUmplanung = true) {
+  const g = ganzeBilanz(v);
+  const teile = mitTeilen ? ` (Elterngeld ${pm(g.differenz)}, Lohn ${pm(g.lohn)})` : '';
+  return `${wer} hieße das unterm Strich ${pm(g.unterm)}${teile}${mitUmplanung ? `, bei der jeweils günstigsten Aufteilung: ${umplanung(v)}` : ''}.`;
+}
+
 /**
  * Eine Zahl je Familie: das in Schritt 2 gezeigte Ergebnis samt seiner Bedingung.
  * @param {{eingabe: object, gezeigt: object}} aktuell siehe main.js
@@ -51,6 +74,7 @@ export function teiltext(aktuell) {
   const wer = eingabe.alleinerziehend ? 'Für mich' : 'Für unsere Familie';
   const b = bedingung(aktuell);
   const g = ganzeDifferenz(v);
+  if (v.beste) return `Das Familienministerium sagt, das Elterngeld solle \u201E${MINISTERIUM_KURZ}\u201C werden. ${besteSatz(v, wer)} Was wäre es bei dir? ${TEILADRESSE} #Elterngeld #Elterngeldreform`;
   return `Das Familienministerium sagt, das Elterngeld solle \u201E${MINISTERIUM_KURZ}\u201C werden. ${wer} hieße das ${euroDiff(g.differenz)} (${euro(g.neu)} statt ${euro(g.alt)})${b ? `, ${b}` : ''}. Was wäre es bei dir? ${TEILADRESSE} #Elterngeld #Elterngeldreform`;
 }
 
@@ -77,7 +101,8 @@ export const KURZ_GRENZE = Object.freeze({ x: 270, bluesky: 290 });
 /**
  * Kurzfassung des Teilen-Texts für X und Bluesky: Zitat-Kurzform des Ministeriums, die Zahl der
  * Familie, Adresse, ein Hashtag. Passt sie nicht unter KURZ_GRENZE (fünfstellige Beträge, lange
- * Bedingung), fallen der Reihe nach weg: die beiden Summen, die Bedingung.
+ * Bedingung), fallen der Reihe nach weg: die beiden Summen, die Bedingung. Bei der besten
+ * Aufteilung: erst die Umplanung, dann die Klammer mit Elterngeld und Lohn.
  */
 export function kurztext(aktuell) {
   const { eingabe, gezeigt: v } = aktuell;
@@ -88,7 +113,10 @@ export function kurztext(aktuell) {
   const satz = (mitSummen, mitBedingung) =>
     `Das Familienministerium sagt, das Elterngeld solle „${MINISTERIUM_KURZ}“ werden. ${wer} hieße das ${euroDiff(g.differenz)}${mitSummen ? summen : ''}${mitBedingung && b ? `, ${b}` : ''}. ${TEILADRESSE} #Elterngeld`;
   const passt = (t) => laengeX(t) <= KURZ_GRENZE.x && laengeBluesky(t) <= KURZ_GRENZE.bluesky;
-  const fassungen = [satz(true, true), satz(false, true), satz(false, false)];
+  const anfang = `Das Familienministerium sagt, das Elterngeld solle „${MINISTERIUM_KURZ}“ werden. `;
+  const fassungen = v.beste
+    ? [[true, true], [true, false], [false, true], [false, false]].map(([t, u]) => `${anfang}${besteSatz(v, wer, t, u)} ${TEILADRESSE} #Elterngeld`)
+    : [satz(true, true), satz(false, true), satz(false, false)];
   return fassungen.find(passt) ?? fassungen[fassungen.length - 1];
 }
 
@@ -150,6 +178,23 @@ export function bildTexte(aktuell) {
   const { eingabe, gezeigt: v } = aktuell;
   const g = ganzeDifferenz(v);
   const allein = !!eingabe.alleinerziehend;
+  if (v.beste) {
+    const b = ganzeBilanz(v);
+    const r = b.unterm < 0 ? 'weniger' : b.unterm > 0 ? 'mehr' : 'gleich';
+    return {
+      richtung: r,
+      kopf: 'Das Familienministerium sagt:',
+      zitat: `\u201E${MINISTERIUM_ZITAT}\u201C`,
+      quelle: 'bmbfsfj.bund.de, 12.11.2026',
+      wer: 'Für uns hieße das unterm Strich:',
+      differenz: pm(b.unterm),
+      vergleich: `aus Elterngeld ${pm(b.differenz)} und Lohn ${pm(b.lohn)}`,
+      bedingung: `Jeweils günstigste Aufteilung: heute Mutter ${v.alt.plan.monateA}, Partner ${v.alt.plan.monateB} Monate; geplant Mutter ${v.neu.plan.monateA}, Partner ${v.neu.plan.monateB}`,
+      frage: 'Was wäre es bei euch?',
+      adresse: ADRESSE,
+      hinweis: `Modellrechnung zum Gesetzentwurf vom 12.11.2026${bonusGesamt(eingabe) > 0 ? ', mit Bonus' : ''}, ohne Gewähr`,
+    };
+  }
   const richtung = g.differenz < 0 ? 'weniger' : g.differenz > 0 ? 'mehr' : 'gleich';
   return {
     richtung,
@@ -162,7 +207,7 @@ export function bildTexte(aktuell) {
     bedingung: allein ? spaeterWeniger(v) : bedingung(aktuell, true),
     frage: allein ? 'Was wäre es bei dir?' : 'Was wäre es bei euch?',
     adresse: ADRESSE,
-    hinweis: 'Modellrechnung zum Gesetzentwurf vom 12.11.2026, ohne Gewähr',
+    hinweis: `Modellrechnung zum Gesetzentwurf vom 12.11.2026${bonusGesamt(eingabe) > 0 ? ', mit Bonus' : ''}, ohne Gewähr`,
   };
 }
 
@@ -257,10 +302,11 @@ export async function zeichne(canvas, aktuell) {
   const yz = top + 104 + 34 + px * 0.74;
   betrag(c, t.differenz, R - px * 0.035, yz, px, '#fff');
   setze(42, 600, '#fff');
-  c.fillText(t.vergleich, R, yz + 76);
+  const vergleichZeilen = umbrechen(t.vergleich, B, messe);
+  vergleichZeilen.forEach((zeile, i) => c.fillText(zeile, R, yz + 76 + i * 52));
   if (t.bedingung) {
     setze(32, 500, 'rgba(255,255,255,0.85)');
-    let yb = yz + 128;
+    let yb = yz + 128 + (vergleichZeilen.length - 1) * 52;
     for (const zeile of umbrechen(t.bedingung, B, messe)) { c.fillText(zeile, R, yb); yb += 42; }
   }
   c.fillStyle = 'rgba(255,255,255,0.35)';

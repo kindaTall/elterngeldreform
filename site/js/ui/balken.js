@@ -18,9 +18,15 @@
  *    „< 1 %"), vorzeichen 'minus' | 'plus' | 'null'.
  *  - verfallenText: Monate, die im Entwurf ganz entfallen („− 2 Monate ohne Elterngeld"), sonst ''.
  *  - beschreibung: ein Satz für Screenreader und Bildbeschreibung.
+ *  - beste Aufteilung (v aus vergleicheBeste(), v.beste): die Balken zeigen weiter das Elterngeld
+ *    mit den Monaten der jeweils besten Aufteilung; delta, deltaText und vorzeichen (Farbe) richten
+ *    sich aber nach „unterm Strich" (Elterngeld und Lohn), prozentText ist dann „unterm Strich",
+ *    neutral = true (das Stück über dem rechten Balken ohne Rot/Grün, weil es nur das Elterngeld
+ *    zeigt) und bilanz ist die Zeile dazu („580 € mehr Elterngeld, aber 2.000 € weniger Lohn.").
+ *    Sonst bilanz = '' und neutral = false.
  * Tests: test/balken.test.js
  */
-import { euro, euroDiff, ganzeDifferenz } from './diagramme.js';
+import { euro, euroDiff, ganzeBilanz } from './diagramme.js';
 
 const monate = (n) => (n === 1 ? '1 Monat' : `${n} Monate`);
 
@@ -55,34 +61,56 @@ function segmente(r, allein) {
  * @param {{alleinerziehend?: boolean}} [o]
  */
 export function balkenmodell(v, { alleinerziehend = false } = {}) {
-  const g = ganzeDifferenz(v);
+  const g = ganzeBilanz(v);
+  const beste = !!v.beste;
   const max = Math.max(g.alt, g.neu);
   const hoehe = (x) => (max > 0 ? x / max : 0);
   const heute = { summe: g.alt, summeText: euro(g.alt), hoehe: hoehe(g.alt), segmente: segmente(v.alt, alleinerziehend) };
   const geplant = { summe: g.neu, summeText: euro(g.neu), hoehe: hoehe(g.neu), segmente: segmente(v.neu, alleinerziehend) };
-  const vorzeichen = g.differenz < 0 ? 'minus' : g.differenz > 0 ? 'plus' : 'null';
+  const delta = beste ? g.unterm : g.differenz;
+  const vorzeichen = delta < 0 ? 'minus' : delta > 0 ? 'plus' : 'null';
+  // Das Stück folgt immer dem Elterngeld (Geometrie), die Farbe dem gezeigten Ergebnis
   const stueck =
-    vorzeichen === 'null'
+    g.differenz === 0
       ? { art: null, von: heute.hoehe, bis: heute.hoehe }
-      : { art: vorzeichen === 'minus' ? 'fehlt' : 'mehr', von: Math.min(heute.hoehe, geplant.hoehe), bis: Math.max(heute.hoehe, geplant.hoehe) };
+      : { art: g.differenz < 0 ? 'fehlt' : 'mehr', von: Math.min(heute.hoehe, geplant.hoehe), bis: Math.max(heute.hoehe, geplant.hoehe) };
   const prozent = Math.round(g.prozent) || 0;
-  const prozentText = vorzeichen === 'null' ? '' : prozent === 0 ? '< 1 %' : `${prozent < 0 ? '−' : '+'}${Math.abs(prozent)} %`;
+  const prozentText = beste ? 'unterm Strich' : g.differenz === 0 ? '' : prozent === 0 ? '< 1 %' : `${prozent < 0 ? '−' : '+'}${Math.abs(prozent)} %`;
   const verfallen = Math.max(0, v.entfalleneMonate || 0);
   const verfallenText = verfallen > 0 ? `− ${monate(verfallen)} ohne Elterngeld` : '';
-  const deltaText = vorzeichen === 'null' ? '±0 €' : euroDiff(g.differenz);
+  const deltaText = vorzeichen === 'null' ? '±0 €' : euroDiff(delta);
   const aussage =
-    vorzeichen === 'null' ? 'gleich viel' : `${euro(Math.abs(g.differenz))} ${vorzeichen === 'minus' ? 'weniger' : 'mehr'} (${prozentText.replace(/^[−+] ?/, '')})`;
+    g.differenz === 0 ? 'gleich viel' : `${euro(Math.abs(g.differenz))} ${g.differenz < 0 ? 'weniger' : 'mehr'}${beste ? '' : ` (${prozentText.replace(/^[−+] ?/, '')})`}`;
+  const plaene = beste ? ` bei der jeweils besten Aufteilung (heute ${planKurz(v.alt.plan)}, geplant ${planKurz(v.neu.plan)} Monate)` : '';
+  const bilanz = beste ? bilanzSatz(v) : '';
   return {
     heute,
     geplant,
     stueck,
-    delta: g.differenz,
+    neutral: beste,
+    bilanz,
+    delta,
     deltaText,
     prozent,
     prozentText,
     vorzeichen,
     verfallen,
     verfallenText,
-    beschreibung: `Elterngeld für die Familie: heute ${euro(g.alt)}, geplant ${euro(g.neu)}, ${aussage}.${verfallen > 0 ? ` ${monate(verfallen)} ohne Elterngeld.` : ''}`,
+    beschreibung: `Elterngeld für die Familie${plaene}: heute ${euro(g.alt)}, geplant ${euro(g.neu)}, ${aussage}.${verfallen > 0 ? ` ${monate(verfallen)} ohne Elterngeld.` : ''}${beste ? ` Unterm Strich mit Lohn: ${deltaText}.` : ''}`,
   };
+}
+
+/** „12 + 2": Monate Mutter + Partner:in. */
+export const planKurz = (p) => `${p.monateA} + ${p.monateB}`;
+
+const betragWort = (x, wort) => (x > 0 ? `${euro(x)} mehr ${wort}` : x < 0 ? `${euro(-x)} weniger ${wort}` : `gleich viel ${wort}`);
+
+/**
+ * Zeile unter den Summen bei der besten Aufteilung, je Familie in ganzen Euro (ganzeBilanz):
+ * „580 € mehr Elterngeld, aber 2.000 € weniger Lohn." („aber" bei entgegengesetzter Richtung).
+ */
+export function bilanzSatz(v) {
+  const g = ganzeBilanz(v);
+  const verbinder = g.differenz * g.lohn < 0 ? ', aber ' : g.differenz * g.lohn > 0 ? ' und ' : ', ';
+  return `${betragWort(g.differenz, 'Elterngeld')}${verbinder}${betragWort(g.lohn, 'Lohn')}.`;
 }

@@ -79,3 +79,14 @@ test('Euer Ergebnis folgt dem Rechner: 4 Partnermonate = 10 + 4, Geschwisterbonu
   assert.equal(r.differenz, ganzeDifferenz(gezeigt).differenz);
   assert.notEqual(r.differenz, ergebnisKarte(grundlage({ ...STANDARD, monB: 4 }), fuerPartnermonate(STANDARD, grundlage({ ...STANDARD, monB: 4 }), 4), 10, 4).differenz);
 });
+
+import { feldWert, ergebnisBeste, plaeneText } from '../site/js/ui/karte.js';
+test('Karte, beste Aufteilung: Feldwert unterm Strich samt Plänen; Euer Ergebnis', () => {
+  const w = feldWert({ mutterschutz: 2, mutterschutzVerbraucht80: true });
+  assert.deepEqual(w(1800, 2800), { differenz: -1420, alt: { monateA: 12, monateB: 2 }, neu: { monateA: 10, monateB: 4 } });
+  assert.equal(w(1800, 2800), w(1800, 2800)); // gemerkt
+  assert.equal(plaeneText({ monateA: 12, monateB: 2 }, { monateA: 10, monateB: 4 }), 'heute 12 + 2, geplant 10 + 4');
+  const e = grundlage(STANDARD);
+  const r = ergebnisBeste(e, fuerPartnermonate(STANDARD, e, 2));
+  assert.deepEqual([r.differenz, r.lohn, r.unterm, r.plaene], [580, -2000, -1420, 'heute 12 + 2, geplant 10 + 4']);
+});

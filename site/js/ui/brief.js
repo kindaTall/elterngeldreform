@@ -5,10 +5,14 @@
  * Aufteilung, entfallende Monate), Einordnung (Haushaltsentlastung), Bitte mit Forderungen, Schluss.
  * Beträge stehen immer je Familie, nie getrennt nach Mutter und Partner.
  * Situation `solidarisch` (nicht selbst betroffen): die Rechnung steht als Beispiel in der dritten Person.
+ * Mit Bonus im Rechner (eingabe.bonusA/bonusB) steht ein Satz dazu: Betrag je Familie, zählt nur im Entwurf.
+ * Beste Aufteilung (vergleich aus vergleicheBeste(), vergleich.beste): die Rechnung nennt beide
+ * Aufteilungen, Elterngeld- und Lohndifferenz und das Ergebnis unterm Strich (wie Schritt 2).
  * Die Seite versendet nichts: Der Text wird kopiert, gedruckt/als PDF gespeichert, als Datei
  * geladen oder per mailto: an das eigene E-Mail-Programm übergeben.
  */
-import { euro, ganzeDifferenz } from './diagramme.js';
+import { bonusGesamt } from '../calc/szenario.js';
+import { euro, ganzeDifferenz, ganzeBilanz } from './diagramme.js';
 
 /** Adressaten. E-Mail nur, wo die Adresse öffentlich und funktionsbezogen ist. */
 export const ADRESSATEN = [
@@ -99,14 +103,24 @@ export function brief({ eingabe, vergleich, an, mdbName = '', name = '', ort = '
   const { differenz: d, prozent: differenzProzent } = ganzeDifferenz(vergleich);
   const bekaeme = fremd ? 'bekäme die Familie' : allein ? 'bekäme ich' : 'bekämen wir';
   let ergebnis;
-  if (d < 0) {
+  if (vergleich.beste && !allein) {
+    plan = `${fremd ? 'Die Nettoeinkommen vor der Geburt betragen in meinem Beispiel' : 'Unsere Nettoeinkommen vor der Geburt betragen'} ${euro(eingabe.nettoA)} und ${euro(eingabe.nettoB)} im Monat.`;
+    const b = ganzeBilanz(vergleich);
+    const wort = (x, w) => (x > 0 ? `${euro(x)} mehr ${w}` : x < 0 ? `${euro(-x)} weniger ${w}` : `gleich viel ${w}`);
+    const verbinder = b.differenz * b.lohn < 0 ? ', aber ' : b.differenz * b.lohn > 0 ? ' und ' : ', ';
+    const schluss =
+      b.unterm < 0 ? `Unterm Strich ${fremd ? 'fehlen der Familie' : 'fehlen uns'} ${euro(-b.unterm)}.` : b.unterm > 0 ? `Unterm Strich ${fremd ? 'hätte die Familie' : 'hätten wir'} ${euro(b.unterm)} mehr. ${GRUND_50}` : `Unterm Strich bliebe es gleich. ${GRUND_50}`;
+    ergebnis =
+      `Gerechnet ist für beide Fassungen die Aufteilung der 14 Monate, bei der ${fremd ? 'der Familie' : 'uns'} am wenigsten Einkommen fehlt: heute ${monate(alt.plan.monateA)} für die Mutter und ${monate(alt.plan.monateB)} für den Partner, nach dem Entwurf ${monate(neu.plan.monateA)} und ${monate(neu.plan.monateB)}. ` +
+      `Nach dem Entwurf ${bekaeme} damit ${wort(b.differenz, 'Elterngeld')} (${euro(neu.summe)} statt ${euro(alt.summe)})${verbinder}${wort(b.lohn, 'Lohn')}. ${schluss}`;
+  } else if (d < 0) {
     ergebnis = `Nach geltendem Recht ${bekaeme} dafür ${euro(alt.summe)}, nach dem Entwurf ${euro(neu.summe)}. Das sind ${euro(-d)}${differenzProzent ? ` oder ${prozent(differenzProzent)}` : ''} weniger.`;
   } else if (d > 0) {
     ergebnis = `Nach geltendem Recht ${bekaeme} dafür ${euro(alt.summe)}, nach dem Entwurf ${euro(neu.summe)}, also ${euro(d)} mehr. ${GRUND_50}`;
   } else {
     ergebnis = `Nach geltendem Recht und nach dem Entwurf ${bekaeme} dafür ${euro(alt.summe)}. ${GRUND_50}`;
   }
-  if (entfalleneMonate > 0) {
+  if (entfalleneMonate > 0 && !vergleich.beste) {
     const n = entfalleneMonate;
     const wort = ZAHLWORT[n] || String(n);
     ergebnis +=
@@ -114,6 +128,10 @@ export function brief({ eingabe, vergleich, an, mdbName = '', name = '', ort = '
         ? ` ${wort} ${n === 1 ? 'Monat fällt' : 'Monate fallen'} ${GRUND_MONATE}`
         : ` Außerdem ${n === 1 ? 'fällt ein Monat' : `fallen ${wort.toLowerCase()} Monate`} ${GRUND_MONATE}`;
   }
+
+  // Bonus (Schritt 2): nur im Entwurf eingerechnet, als Betrag der Familie
+  const bonus = bonusGesamt(eingabe);
+  const bonusSatz = bonus > 0 ? ` Mit Bonus (zusammen ${euro(bonus)} netto im Jahr), der nur nach dem Entwurf mitzählt.` : '';
 
   const liste = forderungen.filter((f) => FORDERUNGEN[f]).map((f) => `– ${FORDERUNGEN[f]}`);
   if (liste.length) liste[liste.length - 1] = liste[liste.length - 1].replace(/,$/, '.');
@@ -126,7 +144,7 @@ export function brief({ eingabe, vergleich, an, mdbName = '', name = '', ort = '
     betreff,
     adressat.anrede(mdbName.trim()),
     einstieg,
-    `${plan} ${ergebnis}`,
+    `${plan}${bonusSatz} ${ergebnis}`,
     'Der Entwurf soll den Bundeshaushalt im Jahr 2030 um 1,36 Milliarden Euro entlasten. Dieses Geld fehlt Familien im ersten Lebensjahr ihres Kindes.',
     bitte,
     'Wie stehen Sie dazu? Über eine kurze Antwort würde ich mich freuen.',

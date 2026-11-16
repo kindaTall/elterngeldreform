@@ -218,3 +218,25 @@ test('Netzwerk-Links: X und Bluesky bekommen die Kurzfassung, die anderen den vo
   assert.equal(liste.find((n) => n.name === 'Bluesky').href, 'https://bsky.app/intent/compose?text=kurz');
   assert.equal(liste.find((n) => n.name === 'WhatsApp').href, 'https://wa.me/?text=voll');
 });
+
+// Beste Aufteilung: Teilen nennt „unterm Strich", Elterngeld und Lohn, beide Aufteilungen
+import { vergleicheBeste as besteV } from '../site/js/calc/szenario.js';
+test('Teilen bei der besten Aufteilung: Zahl unterm Strich, richtig beschriftet', () => {
+  const a = { eingabe: { nettoA: 1800, nettoB: 2800 }, gezeigt: besteV({ nettoA: 1800, nettoB: 2800, mutterschutzMonate: 2, mutterschutzVerbraucht80: true }) };
+  assert.ok(teiltext(a).includes('Für unsere Familie hieße das unterm Strich −1.420 € (Elterngeld +580 €, Lohn −2.000 €), bei der jeweils günstigsten Aufteilung: der Partner bliebe 4 statt 2 Monate zu Hause.'));
+  const k = kurztext(a);
+  assert.ok(k.includes('unterm Strich −1.420 €'));
+  assert.ok(laengeX(k) <= KURZ_GRENZE.x);
+  const b = bildTexte(a);
+  assert.equal(b.differenz, '−1.420 €');
+  assert.equal(b.richtung, 'weniger');
+  assert.equal(b.wer, 'Für uns hieße das unterm Strich:');
+  assert.equal(b.vergleich, 'aus Elterngeld +580 € und Lohn −2.000 €');
+  assert.equal(b.bedingung, 'Jeweils günstigste Aufteilung: heute Mutter 12, Partner 2 Monate; geplant Mutter 10, Partner 4');
+});
+
+test('Teilen-Bild: „mit Bonus" in der kleinen Zeile, nur wenn ein Bonus eingerechnet ist', () => {
+  const e = { nettoA: 1800, nettoB: 2800, monateA: 10, monateB: 4, mutterschutzMonate: 2 };
+  assert.equal(bildTexte(fuer(e)).hinweis, 'Modellrechnung zum Gesetzentwurf vom 12.11.2026, ohne Gewähr');
+  assert.equal(bildTexte(fuer({ ...e, bonusB: 3000 })).hinweis, 'Modellrechnung zum Gesetzentwurf vom 12.11.2026, mit Bonus, ohne Gewähr');
+});

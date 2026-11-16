@@ -74,3 +74,22 @@ test('mailto: über der Grenze nur Betreff und Adresse, der Text bleibt draußen
   assert.equal(m.mitText, false);
   assert.equal(m.href, 'mailto:a@example.org?subject=Betreff');
 });
+
+// Beste Aufteilung im Brief: beide Aufteilungen, Elterngeld, Lohn, unterm Strich
+import { vergleicheBeste } from '../site/js/calc/szenario.js';
+test('Brief bei der besten Aufteilung', () => {
+  const v = vergleicheBeste({ nettoA: 1800, nettoB: 2800, mutterschutzMonate: 2, mutterschutzVerbraucht80: true });
+  const { text } = brief({ eingabe: { nettoA: 1800, nettoB: 2800 }, vergleich: v, an: 'mdb' });
+  for (const teil of ['heute 12 Monate für die Mutter und 2 Monate für den Partner, nach dem Entwurf 10 Monate und 4 Monate', '580 € mehr Elterngeld (15.880 € statt 15.300 €), aber 2.000 € weniger Lohn', 'Unterm Strich fehlen uns 1.420 €.']) {
+    assert.ok(text.includes(teil), teil);
+  }
+  assert.ok(!text.includes('fallen ganz weg'));
+});
+
+test('Brief mit Bonus: ein Satz mit dem Betrag je Familie, ohne Bonus kein Satz', () => {
+  const mit = { ...eingabe, bonusA: 1000, bonusB: 2000 };
+  const { text } = brief({ eingabe: mit, vergleich: vergleiche(mit), an: 'mdb', datum });
+  assert.ok(text.includes('Mit Bonus (zusammen 3.000 € netto im Jahr), der nur nach dem Entwurf mitzählt.'));
+  assert.ok(!text.includes('1.000 € netto im Jahr') && !text.includes('2.000 € netto im Jahr'));
+  assert.ok(!brief({ eingabe, vergleich: vergleiche(eingabe), an: 'mdb', datum }).text.includes('Mit Bonus'));
+});

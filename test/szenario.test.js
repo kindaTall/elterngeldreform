@@ -178,3 +178,163 @@ test('volle Ausschöpfung: zweimal 3.000 € netto = −1.200 €, monateA/monat
   assert.equal(v.neu.summe, 20400);
   assert.equal(v.differenz, -1200);
 });
+
+// Beste Aufteilung (kleinster Verdienstausfall) je Rechtsstand, von Hand nachgerechnet.
+import { vergleicheBeste, besterPlan, verdienstausfall, bonusGesamt } from '../site/js/calc/szenario.js';
+const paar = (nettoA, nettoB) => ({ nettoA, nettoB, mutterschutzMonate: nettoA > 0 ? 2 : 0, mutterschutzVerbraucht80: true });
+
+test('beste Aufteilung 1.800/2.800: heute 12+2, geplant 10+4, unterm Strich −1.420 €', () => {
+  // heute: 10 × 1.170 + 2 × 1.800 = 15.300; Ausfall 10 × 630 + 2 × 1.000 = 8.300
+  // geplant: 2 × 1.440 + 6 × 900 + 4 × 1.900 = 15.880; Ausfall 2 × 360 + 6 × 900 + 4 × 900 = 9.720
+  const v = vergleicheBeste(paar(1800, 2800));
+  assert.deepEqual(v.alt.plan, { monateA: 12, monateB: 2 });
+  assert.deepEqual(v.neu.plan, { monateA: 10, monateB: 4 });
+  assert.equal(v.alt.summe, 15300);
+  assert.equal(v.neu.summe, 15880);
+  assert.equal(v.alt.ausfall, 8300);
+  assert.equal(v.neu.ausfall, 9720);
+  assert.equal(v.differenz, 580);
+  assert.equal(v.differenzLohn, -2000);
+  assert.equal(v.untermStrich, -1420);
+  assert.equal(v.entfalleneMonate, 0);
+  assert.equal(v.beste, true);
+});
+
+test('beste Aufteilung 2.385/1.750: Partner:in nimmt heute 12, geplant 10 Monate (−270 €)', () => {
+  // heute 2 + 12: nur Mutterschutz bei der Mutter, 12 × 1.137,50 = 13.650, Ausfall 12 × 612,50 = 7.350
+  // geplant 4 + 10: Mutter 2 × 1.900 (Höchstbetrag), Partner:in 4 × 1.400 + 6 × 875 → 14.650, Ausfall 970 + 6.650 = 7.620
+  const v = vergleicheBeste(paar(2385, 1750));
+  assert.deepEqual(v.alt.plan, { monateA: 2, monateB: 12 });
+  assert.deepEqual(v.neu.plan, { monateA: 4, monateB: 10 });
+  assert.equal(v.alt.summe, 13650);
+  assert.equal(v.neu.summe, 14650);
+  assert.equal(v.alt.ausfall, 7350);
+  assert.equal(v.neu.ausfall, 7620);
+  assert.equal(v.differenzLohn, -1270);
+  assert.equal(v.untermStrich, -270);
+});
+
+test('beste Aufteilung 0/2.385: Mutter ohne Einkommen, unterm Strich −570,50 €', () => {
+  // heute 12 × 300 + 2 × 1.550,25 = 6.700,50, Ausfall −3.600 + 2 × 834,75 = −1.930,50
+  // geplant 10 × 330 + 4 × 1.900 = 10.900, Ausfall −3.300 + 4 × 485 = −1.360
+  const v = vergleicheBeste(paar(0, 2385));
+  assert.deepEqual(v.alt.plan, { monateA: 12, monateB: 2 });
+  assert.deepEqual(v.neu.plan, { monateA: 10, monateB: 4 });
+  assert.equal(v.alt.summe, 6700.5);
+  assert.equal(v.neu.summe, 10900);
+  assert.equal(v.differenz, 4199.5);
+  assert.equal(v.differenzLohn, -4770);
+  assert.equal(v.untermStrich, -570.5);
+});
+
+test('beste Aufteilung 3.000/3.000: Gleichstand → weniger Partnermonate; Lohn gleich, unterm Strich = Elterngeld', () => {
+  // heute kostet jede Aufteilung 12 × 1.200 = 14.400 → 12 + 2; geplant jede 15.600 → 10 + 4
+  const v = vergleicheBeste(paar(3000, 3000));
+  assert.deepEqual(v.alt.plan, { monateA: 12, monateB: 2 });
+  assert.deepEqual(v.neu.plan, { monateA: 10, monateB: 4 });
+  assert.equal(v.alt.ausfall, 14400);
+  assert.equal(v.neu.ausfall, 15600);
+  assert.equal(v.differenzLohn, 0);
+  assert.equal(v.untermStrich, v.differenz);
+  assert.equal(v.untermStrich, -1200);
+});
+
+test('beste Aufteilung ohne Einkommen: heute nur 12 Monate zulässig', () => {
+  const v = vergleicheBeste(paar(0, 0));
+  assert.deepEqual(v.alt.plan, { monateA: 12, monateB: 0 });
+  assert.deepEqual(v.neu.plan, { monateA: 10, monateB: 4 });
+  assert.equal(v.untermStrich, 1020);
+  assert.equal(v.entfalleneMonate, 0);
+});
+
+test('beste Aufteilung: unterm Strich = Elterngeld + Lohn; Mutterschutz bleibt bei der Mutter', () => {
+  for (const [a, b] of [[1800, 2800], [750, 3300], [1750, 0], [4000, 1000], [2500, 2500], [5000, 200]]) {
+    const v = vergleicheBeste(paar(a, b));
+    assert.ok(Math.abs(v.untermStrich - (v.differenz + v.differenzLohn)) < 0.01, `${a}/${b}`);
+    assert.ok(v.alt.plan.monateA >= 2 && v.neu.plan.monateA >= 2, `${a}/${b}`);
+    assert.equal(v.alt.plan.monateA + v.alt.plan.monateB, 14);
+    assert.equal(v.neu.plan.monateA + v.neu.plan.monateB, 14);
+  }
+  // Mehrlinge: 3 Monate Mutterschutz
+  assert.ok(besterPlan({ ...paar(4000, 1000), mutterschutzMonate: 3 }, ALT).plan.monateA >= 3);
+});
+
+test('beste Aufteilung: Verdienstausfall eines Plans; bei gleicher Aufteilung ist unterm Strich die Elterngelddifferenz', () => {
+  const e = paar(1800, 2800);
+  const r = berechne({ ...e, monateA: 12, monateB: 2 }, ALT);
+  assert.deepEqual(verdienstausfall(r, e), { lohnausfall: 23600, ausfall: 8300 });
+  // gleiche Aufteilung 10 + 4 in beiden: Lohn gleich, Unterschied nur beim Elterngeld
+  const alt = berechne({ ...e, monateA: 10, monateB: 4 }, ALT), neu = berechne({ ...e, monateA: 10, monateB: 4 }, NEU);
+  assert.equal(verdienstausfall(alt, e).ausfall - verdienstausfall(neu, e).ausfall, neu.summe - alt.summe);
+});
+
+test('beste Aufteilung: Alleinerziehende wie bisher (voller Plan, keine Optimierung)', () => {
+  const e = { nettoA: 2000, mutterschutzMonate: 2, alleinerziehend: true };
+  const v = vergleicheBeste(e);
+  assert.equal(v.beste, false);
+  assert.equal(v.differenz, vergleicheVoll(e).differenz);
+});
+
+// Bonus netto im Jahr (bonusA/bonusB): zählt nur im Entwurf, als Zwölftel zum Netto; von Hand nachgerechnet.
+test('Bonus Partner 3.000 € bei 2.800 € netto: Bemessung 3.050 €, 80 % = 2.440 € > Höchstbetrag 1.900 € → Summe unverändert', () => {
+  const plan = { nettoA: 1800, nettoB: 2800, monateA: 10, monateB: 4, mutterschutzMonate: 2 };
+  const mit = berechne({ ...plan, bonusB: 3000 }, NEU);
+  assert.deepEqual(mit.monate.B.map((m) => m.betrag), [1900, 1900, 1900, 1900]);
+  assert.equal(mit.summe, berechne(plan, NEU).summe);
+  // in einem 50-%-Monat wirkt er: 6 + 10 Monate, Partner:in 6 × 50 % von 3.050 = 1.525 statt 1.400 €
+  const lang = { nettoA: 1800, nettoB: 2800, monateA: 4, monateB: 10, mutterschutzMonate: 2 };
+  assert.equal(berechne({ ...lang, bonusB: 3000 }, NEU).monate.B[9].betrag, 1525);
+  assert.equal(berechne(lang, NEU).monate.B[9].betrag, 1400);
+});
+
+test('Bonus Mutter 1.800 € bei 1.800 € netto: Bemessung 1.950 €, Monate 3–4 zu 80 % = 1.560 €, danach 975 €; heute unverändert', () => {
+  const plan = { nettoA: 1800, nettoB: 2800, bonusA: 1800, monateA: 10, monateB: 4, mutterschutzMonate: 2 };
+  const v = vergleiche(plan);
+  assert.deepEqual(v.neu.monate.A.map((m) => m.betrag), [0, 0, 1560, 1560, 975, 975, 975, 975, 975, 975]);
+  assert.equal(v.neu.summeA, 8970); // statt 8.280 €
+  assert.equal(v.neu.summe, 16570);
+  assert.equal(v.alt.summe, vergleiche({ ...plan, bonusA: 0 }).alt.summe);
+});
+
+test('Bonus: beste Aufteilung 1.800/2.800 mit Bonus Mutter 1.800 € → Verdienstausfall rechnet ohne Bonus, unterm Strich −730 €', () => {
+  // geplant 10 + 4: Elterngeld 8.970 + 7.600 = 16.570; Lohn 8 × 1.800 + 4 × 2.800 = 25.600 → Ausfall 9.030 (ohne Bonus 9.720)
+  const v = vergleicheBeste({ ...paar(1800, 2800), bonusA: 1800 });
+  assert.deepEqual(v.neu.plan, { monateA: 10, monateB: 4 });
+  assert.equal(v.neu.summe, 16570);
+  assert.equal(v.neu.lohnausfall, 25600);
+  assert.equal(v.neu.ausfall, 9030);
+  assert.equal(v.alt.ausfall, 8300);
+  assert.equal(v.differenz, 1270);
+  assert.equal(v.differenzLohn, -2000);
+  assert.equal(v.untermStrich, -730);
+  // Bonus beim Partner (Deckel): nichts ändert sich
+  assert.deepEqual(vergleicheBeste({ ...paar(1800, 2800), bonusB: 3000 }), vergleicheBeste(paar(1800, 2800)));
+});
+
+test('Bonus kann die beste Aufteilung im Entwurf verschieben: 1.800/1.800 mit Bonus Partner 3.000 € → 4 + 10 statt 10 + 4', () => {
+  // ohne Bonus Gleichstand: 10 + 4 und 4 + 10 geben je 14.040 € (zuerst gefunden: weniger Partnermonate)
+  const ohne = vergleicheBeste(paar(1800, 1800));
+  assert.deepEqual(ohne.neu.plan, { monateA: 10, monateB: 4 });
+  assert.equal(ohne.neu.summe, 14040);
+  // Partner:in 2.050 € Bemessung: 4 × 1.640 + 6 × 1.025 = 12.710; Mutter 2 × 1.440 = 2.880 → 15.590; Lohn 3.600 + 18.000 → Ausfall 6.010
+  // (10 + 4 gäbe 8.280 + 6.560 = 14.840, Ausfall 6.760)
+  const mit = vergleicheBeste({ ...paar(1800, 1800), bonusB: 3000 });
+  assert.deepEqual(mit.neu.plan, { monateA: 4, monateB: 10 });
+  assert.equal(mit.neu.summe, 15590);
+  assert.equal(mit.neu.ausfall, 6010);
+  assert.deepEqual(mit.alt.plan, { monateA: 12, monateB: 2 });
+  assert.equal(mit.alt.summe, 14040);
+  assert.equal(mit.untermStrich, 1550); // Lohn gleich: dasselbe wie die Elterngelddifferenz
+});
+
+test('Bonus zählt nicht ohne Monatsnetto, nicht bei Alleinerziehenden (Partner:in) und nie negativ', () => {
+  const e = { ...paar(0, 2800), monateA: 10, monateB: 4 };
+  assert.equal(berechne({ ...e, bonusA: 6000 }, NEU).summe, berechne(e, NEU).summe);
+  const allein = { nettoA: 2000, mutterschutzMonate: 2, alleinerziehend: true, monateA: 14, monateB: 0 };
+  assert.equal(berechne({ ...allein, bonusB: 6000 }, NEU).summe, berechne(allein, NEU).summe);
+  assert.ok(berechne({ ...allein, bonusA: 6000 }, NEU).summe > berechne(allein, NEU).summe);
+  assert.equal(berechne({ ...e, nettoA: 1800, bonusA: -5000 }, NEU).summe, berechne({ ...e, nettoA: 1800 }, NEU).summe);
+  assert.equal(bonusGesamt({ nettoA: 1800, nettoB: 2800, bonusA: 1000, bonusB: 2000 }), 3000);
+  assert.equal(bonusGesamt({ nettoA: 1800, nettoB: 2800, bonusA: 1000, bonusB: 2000, alleinerziehend: true }), 1000);
+  assert.equal(bonusGesamt({ nettoA: 0, nettoB: 2800, bonusA: 1000, bonusB: 2000 }), 2000);
+});

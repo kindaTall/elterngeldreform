@@ -1,5 +1,5 @@
 /**
- * Symbole für die Knöpfe im Teilen-Feld: Inline-SVG, einfarbig (currentColor), keine externen Anfragen
+ * Symbole für die Knöpfe im Teilen-Feld und das Warndreieck im Rechner: Inline-SVG, einfarbig (currentColor), keine externen Anfragen
  * (Content-Security-Policy: img-src 'self' data:, keine Icon-Schrift). Nur createElementNS (kein innerHTML).
  *
  * Marken (art 'fuell'): Pfade aus Simple Icons, https://simpleicons.org, Version 13.21.0,
@@ -23,6 +23,7 @@ export const SYMBOLE = {
   link: { art: 'linie', d: 'M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1.2 1.2M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1.2-1.2' },
   bild: { art: 'linie', d: 'M12 4v11M7.5 10.5l4.5 4.5 4.5-4.5M5 19.5h14' },
   kopieren: { art: 'linie', d: 'M9 9h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1zM16 9V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3' },
+  warnung: { art: 'linie', d: 'M12 3.5 2.5 20h19L12 3.5zM12 10v4.5M12 17.2v.1' },
   teilen: { art: 'linie', d: 'M12 15V3.5M8 7l4-3.5L16 7M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1' },
 };
 

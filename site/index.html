@@ -50,10 +50,10 @@
       <div class="buehne-links">
         <p class="stand" data-zeig><a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurf</a> vom 12.11.2026 · für Geburten ab 1.11.2027</p>
         <h1 data-zeig style="--i:1">1,36 Milliarden Euro weniger Elterngeld.</h1>
-        <p class="vorspann" data-zeig style="--i:2">So viel will die Bundesregierung 2030 einsparen. <a href="#statistik">Nach unserem Überschlag</a> bekämen rund <span id="vorspann-anteil">80</span> Prozent der Familien weniger.</p>
+        <p class="vorspann" data-zeig style="--i:2">So viel will die Bundesregierung 2030 einsparen. <a href="#statistik">Nach unserem Überschlag</a> hätten rund <span id="vorspann-anteil">80</span> Prozent der Familien unterm Strich weniger.</p>
         <h2 class="plakat-titel" data-zeig style="--i:3">Was das für Familien heißt</h2>
         <ol class="plakate">
-          <li data-zeig style="--i:4"><div class="wechsel minus"><b id="plakat-schnitt">−1.700 €</b></div><p>weniger je Familie im Schnitt, <a href="#statistik">nach unserem Überschlag</a></p></li>
+          <li data-zeig style="--i:4"><div class="wechsel minus"><b id="plakat-schnitt">−1.800 €</b></div><p>weniger je Familie im Schnitt, unterm Strich, <a href="#statistik">nach unserem Überschlag</a></p></li>
           <li data-zeig style="--i:5"><div class="wechsel minus"><b>2 Monate</b></div><p><strong>Lücke bis zum Kita-Anspruch</strong>, wenn der Partner nicht 2 Monate im Anschluss übernimmt. Gut die Hälfte der Väter nimmt heute kein Elterngeld.</p></li>
         </ol>
         <p class="quellenlink" data-zeig style="--i:6"><a href="#quellen-start">Quellen und Rechenweg</a></p>
@@ -99,31 +99,53 @@
         <div class="saeulen-fuss" aria-hidden="true">
           <div><span>Heute</span><b id="summe-heute">–</b></div>
           <div><span>Geplant</span><b id="summe-geplant">–</b><em id="verfallen"></em></div>
+          <p class="bilanz" id="bilanz"></p>
         </div>
         <figcaption class="nur-vorlesen" id="saeulen-text" aria-live="polite"></figcaption>
       </figure>
 
       <div class="rechner-rechts" data-zeig style="--i:1">
         <form class="eingaben rechner-eingaben" autocomplete="off">
-          <div class="netto-paar">
+          <div class="netto-paar bonus-zu" id="netto-paar">
             <div class="feld">
-              <label for="einkA-zahl">Mutter, <span data-einkwort>netto</span></label>
-              <span class="mit-einheit"><input class="zahlfeld" id="einkA-zahl" type="number" min="0" max="20000" step="50" inputmode="numeric"><i>€</i></span>
+              <div class="zeile2">
+                <div class="spalte-netto">
+                  <label for="einkA-zahl">Mutter, <span data-einkwort>netto</span></label>
+                  <span class="mit-einheit"><input class="zahlfeld" id="einkA-zahl" type="number" min="0" max="20000" step="50" inputmode="numeric"><i>€</i></span>
+                </div>
+                <div class="spalte-bonus">
+                  <label for="bonusA-zahl">+ Bonus netto im Jahr</label>
+                  <span class="mit-einheit"><input class="zahlfeld" id="bonusA-zahl" type="number" min="0" max="100000" step="100" inputmode="numeric" placeholder="0 €"><i>€</i></span>
+                </div>
+              </div>
               <input id="einkA" type="range" min="0" max="6000" step="50" aria-label="Einkommen Mutter">
             </div>
             <div class="feld" id="feld-einkB">
-              <label for="einkB-zahl">Partner:in, <span data-einkwort>netto</span></label>
-              <span class="mit-einheit"><input class="zahlfeld" id="einkB-zahl" type="number" min="0" max="20000" step="50" inputmode="numeric"><i>€</i></span>
+              <div class="zeile2">
+                <div class="spalte-netto">
+                  <label for="einkB-zahl">Partner:in, <span data-einkwort>netto</span></label>
+                  <span class="mit-einheit"><input class="zahlfeld" id="einkB-zahl" type="number" min="0" max="20000" step="50" inputmode="numeric"><i>€</i></span>
+                </div>
+                <div class="spalte-bonus">
+                  <label for="bonusB-zahl">+ Bonus netto im Jahr</label>
+                  <span class="mit-einheit"><input class="zahlfeld" id="bonusB-zahl" type="number" min="0" max="100000" step="100" inputmode="numeric" placeholder="0 €"><i>€</i></span>
+                </div>
+              </div>
               <input id="einkB" type="range" min="0" max="6000" step="50" aria-label="Einkommen Partner:in">
             </div>
           </div>
-          <label class="haken"><input type="checkbox" id="allein"><span>Alleinerziehend</span></label>
+          <div class="haken-reihe">
+            <label class="haken"><input type="checkbox" id="allein"><span>Alleinerziehend</span></label>
+            <label class="haken"><input type="checkbox" id="bonus-an"><span>Bonus / Weihnachtsgeld</span></label>
+          </div>
           <div class="partnerwahl" id="partnerwahl">
             <span>Monate Partner:in</span>
             <div class="umschalter" role="group" aria-label="Elterngeld-Monate Partner:in">
+              <button type="button" class="beste" id="beste-wahl" aria-pressed="true"><b>Beste Aufteilung</b><small>kleinster Verdienstausfall je Fassung</small></button>
               <button type="button" data-monb="0" aria-pressed="false">0</button>
               <button type="button" data-monb="2" aria-pressed="false">2</button>
               <button type="button" data-monb="4" aria-pressed="true">4</button>
+              <button type="button" data-monb="extra" id="monb-extra" aria-pressed="false" hidden></button>
               <button type="button" data-monb="andere" aria-pressed="false">andere</button>
             </div>
             <div class="regler" id="monB-regler">
@@ -181,7 +203,6 @@
             </div>
           </fieldset>
         </div>
-        <p class="klein">Sonderzahlungen wie Weihnachtsgeld zählen im Entwurf künftig mit und können das Ergebnis etwas verbessern. Der Rechner berücksichtigt sie nicht.</p>
       </form>
       <div class="verlauf">
         <h3>Elterngeld pro Lebensmonat des Kindes</h3>
@@ -323,19 +344,19 @@
         </div>
       </details>
       <details id="statistik">
-        <summary><span class="frage">Wie viele Familien bekommen weniger?</span><span class="kern">Rund <span id="kern-anteil">80</span> %, im Schnitt <span id="kern-betrag">1.700 €</span> je Familie (eigener Überschlag)</span></summary>
+        <summary><span class="frage">Wie viele Familien haben weniger?</span><span class="kern">Rund <span id="kern-anteil">80</span> %, im Schnitt <span id="kern-betrag">1.800 €</span> je Familie unterm Strich (eigener Überschlag)</span></summary>
         <div class="inhalt">
-          <p class="aussage">Eigener Überschlag für alle 2023 geborenen Kinder: gleiche Einkommen, gleiche Aufteilung, nur die Regeln neu.</p>
+          <p class="aussage">Eigener Überschlag für alle 2023 geborenen Kinder: gleiche Einkommen, 14 Monate zusammen, nur die Regeln neu.</p>
           <div class="kennzahlen" id="stat-kennzahlen"></div>
           <div class="zwei">
             <div class="diagramm">
               <h3>Nach Monaten des Partners</h3>
-              <p class="unter">Änderung je Familie in Euro</p>
+              <p class="unter">Änderung je Familie in Euro, unterm Strich</p>
               <div id="stat-aufteilung"></div>
             </div>
             <div class="diagramm">
               <h3>Nach Netto der Mutter vor der Geburt</h3>
-              <p class="unter">Änderung je Familie in Euro, Elterngeld des Partners eingerechnet</p>
+              <p class="unter">Änderung je Familie in Euro, unterm Strich</p>
               <div id="stat-einkommen"></div>
             </div>
           </div>
@@ -375,7 +396,12 @@
         <div class="inhalt">
           <div class="seitlich">
             <div>
-              <p class="aussage">Jedes Feld ist ein Paar, euer Feld ist markiert. Rot heißt weniger, grün mehr, bei gleicher Aufteilung wie heute.</p>
+              <p class="aussage">Jedes Feld ist ein Paar, euer Feld ist markiert. Rot heißt weniger, grün mehr.</p>
+              <div class="umschalter" role="group" aria-label="Art des Vergleichs">
+                <button type="button" data-kartenmodus="gleich" aria-pressed="true">gleiche Aufteilung</button>
+                <button type="button" data-kartenmodus="beste" aria-pressed="false">beste Aufteilung</button>
+              </div>
+              <p class="unter kartenmodus-hinweis">Beste Aufteilung = kleinster Verdienstausfall, je Rechtsstand; Zahl unterm Strich (Elterngeld und Lohn).</p>
               <div class="umschalter" role="group" aria-label="Aufteilung der Monate heute">
                 <button type="button" data-plan="12-2" aria-pressed="true">12 + 2 Monate</button>
                 <button type="button" data-plan="12-0" aria-pressed="false">12 + 0</button>
@@ -399,7 +425,7 @@
               </div>
             </div>
             <div class="diagramm">
-              <h3>Änderung der Elterngeld-Summe je Familie</h3>
+              <h3 id="karte-titel">Änderung der Elterngeld-Summe je Familie</h3>
               <div id="heatmap" tabindex="0" role="group" aria-label="Karte: mit den Pfeiltasten ein Feld wählen, Escape hebt die Auswahl auf"></div>
               <div id="heatmap-legende"></div>
             </div>
@@ -413,9 +439,10 @@
             <h3>Quellen der Zahlen auf der Startseite</h3>
             <ul>
               <li><strong>1,36 Milliarden Euro weniger im Jahr 2030:</strong> <a href="https://www.bmbfsfj.bund.de/resource/blob/299524/0bc742ce04a856f106d7ae75365abb93/20261113-gesetzentwurf-elterngeld-data.pdf" target="_blank" rel="noopener">Gesetzentwurf</a>, S. 3 und 5–9. Fast ein Fünftel der heutigen Ausgaben von 7,06 Mrd. € (Bundeshaushalt, Ist 2025).</li>
-              <li><strong>Rund 80 Prozent der Familien, im Schnitt −1.700 € je Familie:</strong> eigene Modellrechnung auf Basis der Elterngeldstatistik des Statistischen Bundesamts, keine Zahl aus dem Entwurf. Sie gilt, wenn alle aufteilen wie bisher; je nach Annahme sind es <span id="quellen-spanne-anteil">72 bis 87</span> Prozent und <span id="quellen-spanne-betrag">1.400 bis 2.300 €</span> (<a href="#statistik">Überschlag</a>).</li>
+              <li><strong>Rund 80 Prozent der Familien, im Schnitt −1.800 € je Familie unterm Strich:</strong> eigene Modellrechnung auf Basis der Elterngeldstatistik des Statistischen Bundesamts, keine Zahl aus dem Entwurf. Unterm Strich: Elterngeld plus Lohn. Familien dürfen die 14 Monate neu aufteilen und tun es, wenn ihnen dann mehr bleibt; das ändert kaum etwas, weil dann meist der höhere Lohn des Partners fehlt. Je nach Annahme sind es <span id="quellen-spanne-anteil">75 bis 89</span> Prozent und <span id="quellen-spanne-betrag">1.500 bis 2.300 €</span> (<a href="#statistik">Überschlag</a>).</li>
               <li><strong>2 Monate Lücke bis zum Kita-Anspruch:</strong> Der Partner muss mindestens 2 Monate übernehmen, und zwar im Anschluss an die Mutter, nicht parallel. Kita-Anspruch: § 24 Abs. 2 SGB VIII.</li>
               <li><strong>Gut die Hälfte der Väter ohne Elterngeld:</strong> Statistisches Bundesamt, bei 53,6 % der 2023 geborenen Kinder bezog der Vater kein Elterngeld.</li>
+              <li><strong>Aufteilung der Monate bei Paaren:</strong> Statistisches Bundesamt, <a href="https://www.statistischebibliothek.de/mir/servlets/MCRFileNodeServlet/DEHeft_derivate_00095674/WISTA_1_2022.pdf" target="_blank" rel="noopener">WISTA 1/2022</a>, Tabelle 4 (Paare mit Elterngeld beider, Jahrgang 2018).</li>
               <li><a href="#regeln">Alle Änderungen im Vergleich</a></li>
             </ul>
           </div>
@@ -424,14 +451,16 @@
               <h3>Was der Rechner abbildet</h3>
               <p>Basiselterngeld in Monaten ohne Erwerbseinkommen, nach § 2 BEEG und § 2 des Entwurfs: Ersatzrate, Staffel unter 1.000 € netto, Mindest- und Höchstbetrag, Geschwisterbonus, Mehrlingszuschlag, zulässige Monate je Elternteil. ElterngeldPlus ohne Teilzeit ergibt heute dieselbe Summe über die doppelte Zeit; wie der Entwurf Plus-Monate auf die 80-%-Monate anrechnet, regelt er nicht. Der Rechner zeigt deshalb nur Basiselterngeld. Im Brutto-Modus rechnet er das Netto wie die Elterngeldstellen: pauschale Abzüge (§§ 2e, 2f BEEG), Lohnsteuer nach dem amtlichen Programmablaufplan 2026.</p>
               <h3>Was er nicht abbildet</h3>
-              <p>Teilzeit im Bezug, den wegfallenden Partnerschaftsbonus, die Einkommensgrenze von 175.000 €, die Anrechnung auf Bürgergeld, den Progressionsvorbehalt und Sonderzahlungen wie Weihnachtsgeld, die der Entwurf künftig mitzählt (das erhöht das Elterngeld für Beschäftigte mit solchen Zahlungen).</p>
+              <p>Teilzeit im Bezug, den wegfallenden Partnerschaftsbonus, die Einkommensgrenze von 175.000 €, die Anrechnung auf Bürgergeld, den Progressionsvorbehalt.</p>
               <h3>Annahmen</h3>
               <ul>
-                <li><strong>Aufteilung:</strong> Verglichen wird dieselbe Aufteilung nach beiden Fassungen. Partnermonate wählt ihr in Schritt 2, die Monate der Mutter unter „Genauer rechnen“ (Vorgabe: so viele wie möglich). Was der Entwurf nicht zulässt, entfällt: Aus 12 + 2 Monaten werden 10 + 2.</li>
+                <li><strong>Beste Aufteilung (Vorgabe in Schritt 2):</strong> Für jede Fassung sucht der Rechner die zulässige Aufteilung von zusammen 14 Monaten, nacheinander genommen, bei der der Familie am wenigsten Einkommen fehlt: Netto des Elternteils zu Hause minus Elterngeld, Mutterschutzmonate kosten nichts. Die große Zahl ist dann „unterm Strich“: Unterschied beim Elterngeld plus Unterschied beim Lohn. Das rechnet nur mit Geld und unterstellt, dass das Kind 14 Monate zu Hause betreut wird; Stillen, Wünsche des Arbeitgebers, Teilzeit und Folgen für die Karriere bleiben außen vor. Wie selten Väter heute länger als zwei Monate nehmen, zeigt der Rechner darunter.</li>
+                <li><strong>Gleiche Aufteilung:</strong> Wer in Schritt 2 selbst Partnermonate wählt, vergleicht dieselbe Aufteilung nach beiden Fassungen; die Monate der Mutter stehen unter „Genauer rechnen“ (Vorgabe: so viele wie möglich). Was der Entwurf nicht zulässt, entfällt: Aus 12 + 2 Monaten werden 10 + 2. Unterm Strich ist das dasselbe wie die Elterngelddifferenz, weil der Lohn gleich bleibt.</li>
                 <li><strong>Mutterschutz:</strong> Hat die Mutter vor der Geburt Einkommen, zählen zwei Lebensmonate (bei Mehrlingen drei) mit Mutterschaftsgeld statt Elterngeld. Die Schutzfrist endet tatsächlich einige Tage früher; das verschiebt das Ergebnis um einige Dutzend Euro.</li>
                 <li><strong>Mutterschutz und 80-%-Monate:</strong> Ob die Mutterschutzmonate zwei der vier 80-%-Monate verbrauchen, sagt der Entwurf nicht ausdrücklich. Er lässt aber § 4 Abs. 4 Satz 3 unverändert, nach dem sie als Elterngeld-Monate der Mutter gelten; voreingestellt ist deshalb: Sie zählen mit. So liest ihn der Deutsche Juristinnenbund ausdrücklich (Stellungnahme 26-37 vom 2.11.2026); Familienbund der Katholiken und Deutscher Frauenrat rechnen im Ergebnis genauso (zwei Monate zu 80 %, sechs zu 50 %). Alle drei äußerten sich zum Referentenentwurf; die Regel ist im Kabinettsentwurf unverändert. Die andere Auslegung lässt sich unter „Genauer rechnen“ wählen.</li>
                 <li><strong>Alleinerziehende:</strong> acht Monate zu 80 %; das steht in der Begründung des Entwurfs (S. 3, 27, 45), nicht im Gesetzestext.</li>
                 <li><strong>Geschwisterbonus:</strong> in allen Monaten angesetzt.</li>
+                <li><strong>Bonus netto im Jahr:</strong> wird nur im Entwurf mit einem Zwölftel je Monat zum Netto gerechnet, vereinfacht: Das Elterngeld rechnet mit pauschalen Abzügen vom Brutto, und künftig zählt das Kalenderjahr vor der Geburt. Beim Verdienstausfall bleibt der Bonus außen vor (angenommen: er wird unabhängig von der Elternzeit gezahlt). Karte und Statistik rechnen ohne Bonus.</li>
               </ul>
             </div>
             <div>

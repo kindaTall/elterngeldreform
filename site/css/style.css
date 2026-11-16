@@ -245,6 +245,8 @@ input[type='range'] { width: 100%; height: 28px; margin: 0; accent-color: var(--
 .umschalter button { font: inherit; font-size: 14.5px; font-weight: 600; padding: 6px 14px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; color: var(--tinte-2); transition: background 0.2s, color 0.2s, box-shadow 0.2s; }
 .umschalter button:hover { color: var(--tinte); }
 .umschalter button[aria-pressed='true'] { background: #fff; color: var(--tinte); box-shadow: 0 1px 3px rgba(16, 18, 22, 0.14); }
+.umschalter button:disabled { opacity: 0.45; cursor: default; }
+.umschalter button:disabled:hover { color: var(--tinte-2); }
 
 .knoepfe { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
 .knopf { font: inherit; font-size: 15px; font-weight: 600; line-height: 1.2; padding: 11px 16px; border: 1px solid var(--linie-2); border-radius: var(--r-klein); background: #fff; color: var(--tinte); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; transition: transform 0.15s, box-shadow 0.2s, background 0.15s, border-color 0.15s; }
@@ -310,12 +312,17 @@ input[type='range'] { width: 100%; height: 28px; margin: 0; accent-color: var(--
 .stueck { z-index: 1; border-radius: 6px 6px 0 0; }
 .stueck.fehlt { border: 2px dashed var(--verlust); border-bottom: 0; }
 .stueck.mehr { background: #9fdcc0; }
+/* beste Aufteilung: das Stück zeigt nur den Unterschied beim Elterngeld, die Farbe der Balken das Ergebnis unterm Strich */
+.stueck.fehlt.neutral { border-color: var(--linie-2); }
+.stueck.mehr.neutral { background: rgba(255, 255, 255, 0.55); box-shadow: inset 0 0 0 1px var(--linie-2); }
 .delta { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; line-height: 1; white-space: nowrap; transition: color 0.3s; }
 .delta b { font-size: var(--delta); font-weight: 800; letter-spacing: -0.04em; }
 .delta span { font-size: 16px; font-weight: 700; margin-top: 6px; min-height: 16px; }
 [data-vorzeichen='minus'] .delta { color: var(--verlust); }
 [data-vorzeichen='plus'] .delta { color: var(--gewinn); }
-.saeulen-fuss { padding-top: 10px; min-height: 92px; }
+.saeulen-fuss { padding-top: 10px; min-height: 112px; align-content: start; row-gap: 0; }
+/* Zeile unter den Summen bei der besten Aufteilung: Elterngeld und Lohn, über beide Spalten */
+.saeulen-fuss .bilanz { grid-column: 1 / -1; margin: 6px 0 0; font-size: 16px; font-weight: 650; line-height: 1.35; color: var(--tinte); }
 .saeulen-fuss div { display: flex; flex-direction: column; }
 .saeulen-fuss span { font-size: 14px; font-weight: 600; color: var(--tinte-2); }
 .saeulen-fuss b { font-size: clamp(22px, 2.3vw, 30px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
@@ -324,21 +331,50 @@ input[type='range'] { width: 100%; height: 28px; margin: 0; accent-color: var(--
 .js .saeulen:not(.da) .teile, .js .saeulen:not(.da) .stueck { --l: 0% !important; --von: 0% !important; }
 
 .rechner-eingaben { padding: 20px 22px; }
-.netto-paar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 16px; }
-.netto-paar .feld { grid-template-columns: minmax(0, 1fr); gap: 4px; margin-bottom: 8px; }
-.netto-paar label { font-weight: 600; color: var(--tinte); }
+.netto-paar { display: grid; grid-template-columns: minmax(0, 1fr); }
+.netto-paar .feld { grid-template-columns: minmax(0, 1fr); gap: 6px; margin-bottom: 10px; }
+.netto-paar label { font-weight: 600; color: var(--tinte); line-height: 22px; }
 .mit-einheit { position: relative; display: block; }
 .feld .mit-einheit .zahlfeld { width: 100%; text-align: left; font-size: 20px; font-weight: 700; padding: 7px 34px 7px 12px; }
 .mit-einheit i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-style: normal; color: var(--tinte-3); pointer-events: none; }
 .rechner-eingaben .haken { margin: 0 0 14px; }
+/* Bonus netto im Jahr: je Netto-Feld ein schmales Feld rechts daneben. Angehakt („Bonus / Weihnachtsgeld", main.js setzt
+   .bonus-offen) wächst die Spalte in 200 ms von 0 auf; das Netto-Feld wird dafür schmaler, die Höhe bleibt gleich. Zugeklappt
+   ist das Feld unsichtbar (visibility), also nicht fokussierbar. */
+.netto-paar .zeile2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0fr); column-gap: 0; transition: grid-template-columns 200ms ease, column-gap 200ms ease; }
+.netto-paar.bonus-offen .zeile2 { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); column-gap: 12px; }
+.netto-paar .spalte-netto, .netto-paar .spalte-bonus { display: flex; flex-direction: column; gap: 4px; }
+.netto-paar .spalte-bonus { overflow: hidden; opacity: 0; visibility: hidden; transition: opacity 200ms ease, visibility 0s linear 200ms; }
+.netto-paar.bonus-offen .spalte-bonus { opacity: 1; visibility: visible; transition: opacity 200ms ease 40ms, visibility 0s; }
+.netto-paar .spalte-bonus label { font-weight: 500; color: var(--tinte-2); white-space: nowrap; font-size: 13.5px; }
+.netto-paar .spalte-bonus .zahlfeld { font-size: 17px; font-weight: 600; }
+.netto-paar .spalte-bonus .mit-einheit { flex: 1; display: flex; } /* Feld so hoch wie das Netto-Feld daneben */
+.netto-paar .spalte-bonus .zahlfeld::placeholder { color: var(--tinte-3); font-weight: 500; opacity: 1; }
+.netto-paar .zahlfeld:placeholder-shown + i { display: none; }
+.netto-paar .feld > input[type='range'] { margin-top: 2px; }
+.haken-reihe { display: flex; flex-wrap: wrap; gap: 0 16px; margin: 0 0 14px; }
+.haken-reihe .haken, .rechner-eingaben .haken-reihe .haken { margin: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .netto-paar .zeile2, .netto-paar .spalte-bonus, .netto-paar.bonus-offen .spalte-bonus { transition: none; }
+}
 .partnerwahl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 15px; font-weight: 600; }
-.partnerwahl .umschalter { margin: 0; }
+.partnerwahl .umschalter { margin: 0; display: inline-grid; grid-template-columns: repeat(4, auto); }
+.partnerwahl .umschalter.fuenf { grid-template-columns: repeat(5, auto); }
+/* „Beste Aufteilung" als oberes Segment derselben Pillbox, so breit wie 0 + 2 + 4 + andere */
+.partnerwahl .umschalter .beste { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.25; }
+.partnerwahl .umschalter .beste small { font-size: 12px; font-weight: 500; color: var(--tinte-3); }
 .partnerwahl .umschalter button { padding: 5px 14px; }
 .regler { flex: 1 0 100%; display: grid; grid-template-columns: minmax(0, 1fr) 76px; gap: 12px; align-items: center; animation: auf 0.3s var(--weich) both; }
 .regler output { font-size: 14px; font-weight: 650; text-align: right; }
-.einordnung { margin: 10px 0 0; padding-top: 12px; border-top: 1px solid var(--linie-2); font-size: 15px; line-height: 1.4; min-height: calc(2.8em + 13px); }
+.einordnung { margin: 10px 0 0; padding-top: 12px; border-top: 1px solid var(--linie-2); font-size: 14.5px; line-height: 1.4; min-height: calc(2.8em + 13px); }
 .einordnung:empty { border-top-color: transparent; }
 .einordnung a { font-size: 12.5px; color: var(--tinte-3); white-space: nowrap; }
+/* Warnzeilen: je ein Satz, davor ein kleines Warndreieck (symbole.js) */
+.warnzeile { display: block; position: relative; }
+.warnzeile + .warnzeile { margin-top: 3px; }
+.warnzeile:has(.dreieck) { padding-left: 24px; font-weight: 600; }
+.dreieck { position: absolute; left: 0; top: 0.12em; display: inline-flex; }
+.dreieck svg { width: 17px; height: 17px; }
 .knopf.leise { border-color: transparent; background: none; color: var(--tinte-2); }
 .knopf.leise:hover { border-color: var(--linie-2); }
 .knopf.leise[aria-expanded='true'] { color: var(--tinte); border-color: var(--linie-2); }
@@ -348,11 +384,11 @@ input[type='range'] { width: 100%; height: 28px; margin: 0; accent-color: var(--
    Geplant darunter, Länge im Verhältnis der Summen), Beschriftung „Heute 15.300 €" darüber, die
    Differenz rechts über dem fehlenden Stück. Die Tönungen Mutter/Partner:in stehen im Balken, wenn
    sie hineinpassen, sonst klein in der Zeile darunter (main.js, zeigeBalken: Klasse .eng). Die
-   Netto-Felder stehen ohne Regler nebeneinander; der Regler für „andere" klappt nur bei Bedarf auf. */
+   Netto-Felder stehen ohne Regler untereinander, ein Häkchen blendet je Feld das Bonusfeld daneben ein; der Regler für „andere" klappt nur bei Bedarf auf. */
 @media (max-width: 899px) {
   #ergebnis { --delta: min(34px, 8.9vw); }
-  #ergebnis h2 { font-size: min(22px, 5vw); line-height: 1.2; letter-spacing: -0.02em; white-space: nowrap; margin: 0 0 10px; max-width: none; }
-  .rechner { grid-template-columns: minmax(0, 1fr) auto; gap: 12px 8px; align-items: center; }
+  #ergebnis h2 { font-size: min(22px, 5vw); line-height: 1.2; letter-spacing: -0.02em; white-space: nowrap; margin: 0 0 6px; max-width: none; }
+  .rechner { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
   .rechner-rechts, .rechner .weiter { display: contents; }
   .saeulen, .rechner-eingaben, .rechner .gewaehr { grid-column: 1 / -1; }
   .rechner-eingaben { order: 1; }
@@ -363,11 +399,15 @@ input[type='range'] { width: 100%; height: 28px; margin: 0; accent-color: var(--
   .saeulen { display: grid; grid-template-columns: minmax(0, 1fr); max-width: none; }
   .saeulen-flaeche, .saeulen-fuss { display: contents; }
   .saeulen-fuss div { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 8px; }
-  .saeulen-fuss div:first-child { grid-row: 1; }
-  .saeulen-fuss div:last-child { grid-row: 3; min-height: 54px; align-content: flex-end; padding-right: calc(var(--delta) * 3.8); } /* rechts steht die Differenz */
+  .saeulen-fuss div:first-of-type { grid-row: 1; }
+  .saeulen-fuss div:last-of-type { grid-row: 3; min-height: 54px; align-content: flex-end; padding-right: calc(var(--delta) * 3.8); } /* rechts steht die Differenz */
   .saeulen-fuss b { font-size: 21px; }
   .saeulen-fuss em { flex-basis: 100%; font-size: 13px; margin: 0; }
-  .saeule { height: 40px; margin: 4px 0 21px; } /* darunter Platz für die Zeile mit den Tönungen */
+  .saeule { height: 34px; margin: 4px 0 21px; } /* darunter Platz für die Zeile mit den Tönungen */
+  .saeulen-fuss .bilanz { grid-row: 5; margin: -10px 0 0; font-size: 13px; }
+  .saeulen-fuss .bilanz:empty { display: none; }
+  /* stehen die Beschriftungen unter dem Balken (eng), braucht die Bilanzzeile Abstand statt Sog nach oben */
+  .saeulen:has(#saeule-geplant.eng) .saeulen-fuss .bilanz { margin-top: 8px; }
   #saeule-heute { grid-row: 2; }
   #saeule-geplant { grid-row: 4; margin-bottom: 19px; }
   .teile { position: static; display: flex; flex-direction: row-reverse; height: 100%; width: var(--l, 0); border-radius: 0 6px 6px 0; }
@@ -385,24 +425,31 @@ input[type='range'] { width: 100%; height: 28px; margin: 0; accent-color: var(--
   .delta { bottom: calc(100% + 4px); left: auto; right: 0; transform: none; align-items: flex-end; }
   .delta span { font-size: 14px; margin-top: 3px; }
 
-  .rechner .rechner-eingaben { padding: 12px 14px; }
-  .netto-paar { gap: 0 12px; }
-  .netto-paar .feld { margin-bottom: 4px; gap: 3px; }
+  .rechner .rechner-eingaben { padding: 10px 14px; }
+  .netto-paar .feld { margin-bottom: 2px; gap: 3px; }
   .netto-paar label { font-size: 13.5px; line-height: 1.3; }
+  .netto-paar.bonus-offen .zeile2 { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); column-gap: 10px; }
+  .netto-paar .spalte-bonus .zahlfeld { font-size: 16px; }
+  .haken-reihe { flex-wrap: nowrap; justify-content: space-between; margin: 0; }
+  .haken-reihe .haken { min-height: 38px; }
+  .haken-reihe .haken { gap: 7px; }
+  .haken-reihe .haken span { font-size: 14px; white-space: nowrap; }
   .netto-paar input[type='range'] { display: none; }
-  .feld .mit-einheit .zahlfeld { height: 44px; font-size: 19px; padding: 0 30px 0 12px; }
+  .feld .mit-einheit .zahlfeld { height: 42px; font-size: 19px; padding: 0 30px 0 12px; }
   .rechner-eingaben .haken { margin: 0; }
   .partnerwahl { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; font-size: 13.5px; font-weight: 600; line-height: 1.3; }
   .partnerwahl .umschalter { display: grid; grid-template-columns: 1fr 1fr 1fr 1.6fr; }
+  .partnerwahl .umschalter.fuenf { grid-template-columns: 1fr 1fr 1fr 1fr 1.6fr; }
+  .partnerwahl .umschalter .beste small { display: none; }
   .partnerwahl .umschalter button { min-height: 44px; padding: 0 6px; font-size: 15px; }
   .regler.unsichtbar { display: none; }
   .regler { margin-top: 4px; }
-  .einordnung { margin-top: 8px; padding-top: 8px; font-size: 13px; line-height: 1.35; min-height: calc(2.7em + 9px); }
-  .einordnung a { font-size: 12px; }
+  .einordnung { margin-top: 6px; padding-top: 6px; font-size: 13px; line-height: 1.3; min-height: calc(2.6em + 7px); }
+        .einordnung a { font-size: 12px; }
 }
-/* Desktop: Balkenfläche füllt die Bildschirmseite, abzüglich Überschrift (58px), Fuß (92px) und 4px Luft */
+/* Desktop: Balkenfläche füllt die Bildschirmseite, abzüglich Überschrift (58px), Fuß (112px, mit Zeile zu Elterngeld und Lohn) und 4px Luft */
 @media (min-width: 900px) and (min-height: 600px) {
-  #ergebnis { --saeule: calc(var(--seite) - var(--oben) - clamp(20px, 4vh, 44px) - 154px); }
+  #ergebnis { --saeule: calc(var(--seite) - var(--oben) - clamp(20px, 4vh, 44px) - 174px); }
 }
 
 .spalten { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 48px; }
@@ -680,7 +727,7 @@ td .besser { color: var(--gewinn); font-weight: 650; }
 .euer-statt { font-size: 15px; font-weight: 600; }
 .euer .unter { margin: 4px 0 0; min-height: 4.3em; }
 .euer-feld { border-top: 1px solid var(--linie-2); margin-top: 12px; padding-top: 10px; font-size: 14.5px; }
-.euer-feld p { min-height: 86px; line-height: 1.45; }
+.euer-feld p { min-height: 108px; line-height: 1.45; }
 .euer-feld p > span { display: block; }
 .feld-kopf { display: flex !important; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--tinte); margin-bottom: 2px; }
 .feld-kopf .eck { width: 14px; height: 14px; margin: 0 3px; border: 2px solid var(--tinte); flex: none; }
